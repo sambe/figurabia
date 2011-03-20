@@ -4,13 +4,13 @@
  */
 package figurabia.ui.video.engine.messages;
 
-import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.actorframework.MessageSendable;
 
 public abstract class ResponseRequest {
 
-    public final Actor responseTo;
+    public final MessageSendable responseTo;
 
-    public ResponseRequest(Actor responseTo) {
+    public ResponseRequest(MessageSendable responseTo) {
         this.responseTo = responseTo;
     }
 

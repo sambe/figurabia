@@ -1,0 +1,7 @@
+bin
+figurantdata/pics/*
+figurantdata/vids/*
+figurantdata/db/objects_*.xml
+figurantdata/db/objects.*.xml
+*.log
+*.old

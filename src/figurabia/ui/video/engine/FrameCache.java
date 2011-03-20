@@ -14,6 +14,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.actorframework.MessageSendable;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.FetchFrames;
 import figurabia.ui.video.engine.messages.FrameRequest;
@@ -28,7 +29,8 @@ public class FrameCache extends Actor {
     }
 
     // TODO do timing tests to find the optimal value
-    private static int BATCH_SIZE = 8;
+    private static final int BATCH_SIZE = 8;
+    private static final int CACHE_SIZE = 96;
 
     private final FrameFetcher frameFetcher;
 
@@ -51,7 +53,7 @@ public class FrameCache extends Actor {
         super(errorHandler);
         this.frameFetcher = frameFetcher;
 
-        frames = new CachedFrame[24];
+        frames = new CachedFrame[CACHE_SIZE];
         for (int i = 0; i < frames.length; i++) {
             frames[i] = new CachedFrame();
             frames[i].index = i;
@@ -123,7 +125,7 @@ public class FrameCache extends Actor {
         }
     }
 
-    private void replyFrameRequest(CachedFrame cachedFrame, Actor responseTo) {
+    private void replyFrameRequest(CachedFrame cachedFrame, MessageSendable responseTo) {
         if (cachedFrame.usageCount == 0) {
             unusedLRU.remove(cachedFrame);
             cachedFrame.state = CachedFrameState.IN_USE;
@@ -142,6 +144,7 @@ public class FrameCache extends Actor {
             }
             if (cf.state == CachedFrameState.CACHE || cf.state == CachedFrameState.IN_USE) {
                 replyFrameRequest(cf, fr.responseTo);
+                queuedRequests.remove();
             } else {
                 // stop if a request cannot be answered yet,
                 // to ensure that requests are answered in order

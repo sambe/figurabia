@@ -13,7 +13,7 @@ import figurabia.ui.video.engine.messages.MediaError;
  * 
  * @author Samuel Berner
  */
-public abstract class Actor {
+public abstract class Actor implements MessageSendable {
 
     private Thread thread;
     private volatile boolean stopped;
@@ -21,7 +21,11 @@ public abstract class Actor {
     private Actor errorHandler;
 
     protected Actor(Actor errorHandler) {
-        thread = new Thread(new ActorRunnable());
+        String className = this.getClass().getSimpleName();
+        if (className.equals("")) {
+            className = "Anonymous Actor";
+        }
+        thread = new Thread(new ActorRunnable(), className);
         queue = new ConcurrentLinkedQueue<Object>();
         this.errorHandler = errorHandler;
     }
@@ -29,6 +33,12 @@ public abstract class Actor {
     private class ActorRunnable implements Runnable {
         @Override
         public void run() {
+            try {
+                init();
+            } catch (Exception e) {
+                handleException("exception in init()", e);
+                return;
+            }
             while (!stopped) {
                 Object message = queue.poll();
 
@@ -71,6 +81,13 @@ public abstract class Actor {
         } catch (InterruptedException e) {
             // stop sleeping here
         }
+    }
+
+    /**
+     * Does whatever initialization needs to be done by the handler thread before starting to handle messages.
+     */
+    protected void init() throws Exception {
+
     }
 
     /**

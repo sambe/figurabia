@@ -8,12 +8,9 @@ import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.media.Buffer;
-import javax.media.format.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
@@ -22,14 +19,16 @@ import javax.swing.JPanel;
 
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.access.AudioBuffer;
-import figurabia.ui.video.access.MediaInputStream;
 import figurabia.ui.video.access.VideoBuffer;
 import figurabia.ui.video.engine.FrameCache;
 import figurabia.ui.video.engine.FrameFetcher;
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.actorframework.ObjectReceiver;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.FrameRequest;
 import figurabia.ui.video.engine.messages.MediaError;
+import figurabia.ui.video.engine.messages.MediaInfoRequest;
+import figurabia.ui.video.engine.messages.MediaInfoResponse;
 
 public class ActorMoviePlayer {
 
@@ -54,19 +53,21 @@ public class ActorMoviePlayer {
                 }
             }
         };
-        MediaInputStream mis = new MediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
-        FrameFetcher frameFetcher = new FrameFetcher(errorHandler, mis);
+        FrameFetcher frameFetcher = new FrameFetcher(errorHandler, new File("/home/sberner/Desktop/10-21.04.09.flv"));
         FrameCache frameCache = new FrameCache(errorHandler, frameFetcher);
 
         errorHandler.start();
         frameFetcher.start();
         frameCache.start();
+        ObjectReceiver receiver = new ObjectReceiver();
+        frameFetcher.send(new MediaInfoRequest(receiver));
+        final MediaInfoResponse mir = (MediaInfoResponse) receiver.waitForMessage();
 
         // create screen
         JPanel screen = new JPanel();
         screen.setLayout(null);
-        int width = mis.getVideoFormat().getSize().width;
-        int height = mis.getVideoFormat().getSize().height;
+        int width = mir.videoFormat.getSize().width;
+        int height = mir.videoFormat.getSize().height;
         JButton setPositionButton = new JButton("Set Position");
         setPositionButton.setBounds(10, height + 10, 180, 30);
         screen.add(setPositionButton);
@@ -81,12 +82,12 @@ public class ActorMoviePlayer {
         });
 
         // create sound channel
-        DataLine.Info info = new DataLine.Info(SourceDataLine.class, mis.getAudioFormat());
+        DataLine.Info info = new DataLine.Info(SourceDataLine.class, mir.audioFormat);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
-        line.open(mis.getAudioFormat());
+        line.open(mir.audioFormat);
         line.start();
 
-        // get frames (TODO handle flags in buffers)
+        // get frames
         long seqnum = 0;
         for (int i = 0; i < 100; i++) {
 
@@ -96,31 +97,19 @@ public class ActorMoviePlayer {
                 newLocationToSet = -1;
             }
 
-            final List<CachedFrame> requestedFrames = new ArrayList<CachedFrame>(FRAME_BATCH);
-            final AtomicInteger arrived = new AtomicInteger(0);
-            Actor frameReceiver = new Actor(errorHandler) {
-                @Override
-                protected void act(Object message) {
-                    if (message instanceof CachedFrame) {
-                        CachedFrame cf = (CachedFrame) message;
-                        requestedFrames.add(cf);
-                        arrived.incrementAndGet();
-                    }
-                }
-            };
-
-            // preprocess frames
+            // retrieve frames
+            ObjectReceiver frameReceiver = new ObjectReceiver(FRAME_BATCH);
             for (int j = 0; j < FRAME_BATCH; j++) {
                 frameCache.send(new FrameRequest(seqnum++, frameReceiver));
             }
-            while (arrived.get() != FRAME_BATCH) {
-                Thread.sleep(1);
-            }
+            List<CachedFrame> requestedFrames = frameReceiver.waitForAllMessages(CachedFrame.class);
+
+            // preprocess frames
             for (int j = 0; j < FRAME_BATCH; j++) {
                 AudioBuffer audioBuffer = requestedFrames.get(j).frame.audio;
                 Buffer buffer = audioBuffer.getBuffer();
                 // reverse audio
-                int samplesize = ((AudioFormat) buffer.getFormat()).getSampleSizeInBits() / 8;
+                int samplesize = mir.audioFormat.getSampleSizeInBits() / 8;
                 int offset = buffer.getOffset();
                 int length = buffer.getLength();
                 byte[] audioData = (byte[]) buffer.getData();
@@ -170,9 +159,6 @@ public class ActorMoviePlayer {
 
         // close sound channel
         line.close();
-
-        // close media stream
-        mis.close();
 
         // stop actors
         frameFetcher.stop();
