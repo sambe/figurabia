@@ -9,9 +9,11 @@ import figurabia.ui.video.engine.actorframework.MessageSendable;
 public class FrameRequest extends ResponseRequest {
 
     public final long seqNum;
+    public final int usageCount;
 
-    public FrameRequest(long seqNum, MessageSendable responseTo) {
+    public FrameRequest(long seqNum, int usageCount, MessageSendable responseTo) {
         super(responseTo);
         this.seqNum = seqNum;
+        this.usageCount = usageCount;
     }
 }

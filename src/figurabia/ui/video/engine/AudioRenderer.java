@@ -14,15 +14,15 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
-import figurabia.ui.video.access.MediaFrame;
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.RecyclingBag;
 
 public class AudioRenderer extends Actor {
 
     private final SourceDataLine line;
-    private final Queue<MediaFrame> frameQueue = new LinkedList<MediaFrame>();
+    private final Queue<CachedFrame> frameQueue = new LinkedList<CachedFrame>();
     private int bufferPos = 0;
 
     private final Actor recycler;
@@ -40,9 +40,9 @@ public class AudioRenderer extends Actor {
 
     @Override
     protected void act(Object message) {
-        if (message instanceof MediaFrame) {
+        if (message instanceof CachedFrame) {
             //System.out.println("AudioRenderer: receiving media frame");
-            handleMediaFrame((MediaFrame) message);
+            handleMediaFrame((CachedFrame) message);
         } else if (message instanceof ControlCommand) {
             ControlCommand c = (ControlCommand) message;
             System.out.println("AudioRenderer: receiving ControlCommand: " + c.command);
@@ -55,6 +55,10 @@ public class AudioRenderer extends Actor {
                 line.stop();
                 break;
             case FLUSH:
+                // recycle all frames in the queue
+                for (CachedFrame cf : frameQueue) {
+                    recycler.send(new RecyclingBag(cf));
+                }
                 frameQueue.clear();
                 line.flush();
                 break;
@@ -79,8 +83,8 @@ public class AudioRenderer extends Actor {
 
     private void fillAudioBuffer() {
         int available;
-        while (frameQueue.peek() != null && (available = line.available()) != 0) {
-            Buffer audioBuffer = frameQueue.peek().audio.getBuffer();
+        if (frameQueue.peek() != null && (available = line.available()) != 0) {
+            Buffer audioBuffer = frameQueue.peek().frame.audio.getBuffer();
             int offset = audioBuffer.getOffset() + bufferPos;
             int length = audioBuffer.getLength() - bufferPos;
             if (length > available) {
@@ -92,17 +96,19 @@ public class AudioRenderer extends Actor {
             //        + length);
             int bytesWritten = line.write((byte[]) audioBuffer.getData(), offset, length);
             //System.out.println("AudioRenderer: after writing to line: bytesWritten: " + bytesWritten);
-            //System.out.println("written " + bytesWritten + " bytes to audio line");
+            System.out.println("written " + bytesWritten + " bytes to audio line");
 
             bufferPos += bytesWritten;
             if (bufferPos == audioBuffer.getLength() + audioBuffer.getOffset()) {
+                System.err.println("DEBUG: Finished playing audio for frame "
+                        + frameQueue.peek().seqNum);
                 recycler.send(new RecyclingBag(frameQueue.poll()));
                 bufferPos = 0;
             }
         }
     }
 
-    private void handleMediaFrame(MediaFrame frame) {
+    private void handleMediaFrame(CachedFrame frame) {
         frameQueue.add(frame);
     }
 
