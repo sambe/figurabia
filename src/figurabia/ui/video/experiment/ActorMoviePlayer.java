@@ -67,7 +67,7 @@ public class ActorMoviePlayer {
         frameFetcher.send(new MediaInfoRequest(receiver));
         final MediaInfoResponse mir = (MediaInfoResponse) receiver.waitForMessage();
 
-        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat, frameCache);
+        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat);
         audioRenderer.start();
         audioRenderer.send(new ControlCommand(Command.START));
 
@@ -90,8 +90,8 @@ public class ActorMoviePlayer {
         });
 
         // get frames
-        long seqnum = 20 * FRAME_BATCH;
-        for (int i = 0; i < 20; i++) {
+        long seqnum = 40 * FRAME_BATCH;
+        for (int i = 0; i < 40; i++) {
 
             if (newLocationToSet != -1) {
                 seqnum = newLocationToSet;
@@ -152,11 +152,14 @@ public class ActorMoviePlayer {
 
         // close screen
         frame.setVisible(false);
+        frame.dispose();
 
         // stop actors
         audioRenderer.stop();
         frameFetcher.stop();
         frameCache.stop();
         errorHandler.stop();
+
+        //System.exit(0);
     }
 }

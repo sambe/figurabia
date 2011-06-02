@@ -77,7 +77,7 @@ public abstract class Actor implements MessageSendable {
      */
     protected void idle() {
         try {
-            Thread.sleep(1);
+            Thread.sleep(10);
         } catch (InterruptedException e) {
             // stop sleeping here
         }

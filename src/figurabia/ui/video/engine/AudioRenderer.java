@@ -10,32 +10,39 @@ import java.util.Queue;
 import javax.media.Buffer;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
-import figurabia.ui.video.engine.messages.RecyclingBag;
 
 public class AudioRenderer extends Actor {
 
-    private final SourceDataLine line;
+    private AudioFormat audioFormat;
+    private SourceDataLine line;
     private final Queue<CachedFrame> frameQueue = new LinkedList<CachedFrame>();
     private int bufferPos = 0;
 
-    private final Actor recycler;
-
-    public AudioRenderer(Actor errorHandler, AudioFormat audioFormat, Actor recycler)
-            throws LineUnavailableException {
+    public AudioRenderer(Actor errorHandler, AudioFormat audioFormat) {
         super(errorHandler);
-        this.recycler = recycler;
+        this.audioFormat = audioFormat;
+    }
 
+    @Override
+    protected void init() throws Exception {
         // create sound channel
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
         line = (SourceDataLine) AudioSystem.getLine(info);
         line.open(audioFormat);
+
+        // TODO do something with these controls
+        FloatControl mixerSourceLineGainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
+        BooleanControl mixerSourceLineMuteControl = (BooleanControl) line.getControl(BooleanControl.Type.MUTE);
+        FloatControl mixerSourceLinePanControl = (FloatControl) line.getControl(FloatControl.Type.PAN);
+        FloatControl mixerSourceLineSampleRateControl = (FloatControl) line.getControl(FloatControl.Type.SAMPLE_RATE);
     }
 
     @Override
@@ -57,7 +64,7 @@ public class AudioRenderer extends Actor {
             case FLUSH:
                 // recycle all frames in the queue
                 for (CachedFrame cf : frameQueue) {
-                    recycler.send(new RecyclingBag(cf));
+                    cf.recycle();
                 }
                 frameQueue.clear();
                 line.flush();
@@ -96,13 +103,13 @@ public class AudioRenderer extends Actor {
             //        + length);
             int bytesWritten = line.write((byte[]) audioBuffer.getData(), offset, length);
             //System.out.println("AudioRenderer: after writing to line: bytesWritten: " + bytesWritten);
-            System.out.println("written " + bytesWritten + " bytes to audio line");
+            //System.out.println("written " + bytesWritten + " bytes to audio line");
 
             bufferPos += bytesWritten;
             if (bufferPos == audioBuffer.getLength() + audioBuffer.getOffset()) {
-                System.err.println("DEBUG: Finished playing audio for frame "
-                        + frameQueue.peek().seqNum);
-                recycler.send(new RecyclingBag(frameQueue.poll()));
+                //System.err.println("DEBUG: Finished playing audio for frame "
+                //        + frameQueue.peek().seqNum);
+                frameQueue.poll().recycle();
                 bufferPos = 0;
             }
         }

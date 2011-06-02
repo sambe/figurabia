@@ -56,8 +56,7 @@ public class FrameCache extends Actor {
 
         frames = new CachedFrame[CACHE_SIZE];
         for (int i = 0; i < frames.length; i++) {
-            frames[i] = new CachedFrame();
-            frames[i].index = i;
+            frames[i] = new CachedFrame(i, this);
             frames[i].seqNum = -1;
             frames[i].timestamp = 0;
             frames[i].frame = null;
@@ -205,7 +204,7 @@ public class FrameCache extends Actor {
     }
 
     private CachedFrame getUnusedFromCache() {
-        System.out.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+        //System.out.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
             throw new IllegalStateException("No frame available to reuse");
         }
