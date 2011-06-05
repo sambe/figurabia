@@ -11,6 +11,7 @@ import javax.media.format.VideoFormat;
 
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.actorframework.ObjectReceiver;
+import figurabia.ui.video.engine.messages.AudioSyncEvent;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.FrameRequest;
@@ -25,6 +26,13 @@ public class Controller extends Actor {
 
     private static final int PREFETCH_SIZE = 5;
     private static final int USAGE_COUNT = 2;
+    private static final int SYNC_OFFSET = 250;
+
+    private static enum State {
+        STOPPED,
+        PREPARING,
+        PLAYING;
+    }
 
     private Actor errorHandler;
     private FrameFetcher frameFetcher;
@@ -38,6 +46,9 @@ public class Controller extends Actor {
     private Timer timer = new Timer();
 
     private long nextSeqNumExpected = -1;
+    private long startingTimerPos = 0;
+
+    private State state;
 
     public Controller(Actor errorHandler) {
         super(errorHandler);
@@ -57,6 +68,8 @@ public class Controller extends Actor {
             handleSetPosition((SetPosition) message);
         } else if (message instanceof CachedFrame) {
             handleCachedFrame((CachedFrame) message);
+        } else if (message instanceof AudioSyncEvent) {
+            handleAudioSyncEvent((AudioSyncEvent) message);
         } else {
             throw new IllegalStateException("unknown type of message: " + message.getClass());
         }
@@ -87,11 +100,25 @@ public class Controller extends Actor {
         frameFetcher.send(new MediaInfoRequest(receiver));
         final MediaInfoResponse mir = (MediaInfoResponse) receiver.waitForMessage();
 
-        audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat);
+        audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat, this);
         audioRenderer.start();
         videoFormat = mir.videoFormat;
 
+        state = State.STOPPED;
         timer.setPosition(message.initialPosition);
+    }
+
+    private void handleAudioSyncEvent(AudioSyncEvent message) {
+        switch (message.type) {
+        case START:
+            state = State.PLAYING;
+            timer.setPosition(startingTimerPos + SYNC_OFFSET);
+            break;
+        case STOP:
+            break;
+        default:
+            throw new IllegalStateException("unknown audio sync event: " + message.type);
+        }
     }
 
     private void handleControlCommand(ControlCommand message) {
@@ -99,17 +126,20 @@ public class Controller extends Actor {
         case START:
             // TODO maybe has to wait until frames are available (cachedFrames non empty)
             if (!timer.isRunning()) {
-                long currentSeqNum = calculateSeqNum(timer.getPosition());
+                state = State.PREPARING;
+                startingTimerPos = timer.getPosition();
+                long currentSeqNum = calculateSeqNum(startingTimerPos);
                 if (nextSeqNumExpected != currentSeqNum) {
                     prefetch(currentSeqNum);
                 }
-                // TODO should synchronize (only start timer once LineEvent occurs)
-                timer.start();
                 audioRenderer.send(message);
+                timer.start();
+                // timer will be repositioned in handleAudioSyncEvent
             }
             break;
         case STOP:
             if (timer.isRunning()) {
+                state = State.STOPPED;
                 timer.stop();
                 audioRenderer.send(message);
             }
@@ -139,7 +169,7 @@ public class Controller extends Actor {
     }
 
     private void handleCachedFrame(CachedFrame frame) {
-        if (timer.isRunning()) {
+        if (state == State.PREPARING || state == State.PLAYING) {
             if (frame.seqNum != nextSeqNumExpected) {
                 // silently drop (was too late, no longer needed)
                 recycle(frame, USAGE_COUNT);
@@ -206,7 +236,7 @@ public class Controller extends Actor {
      * <code>zeroPoint</code> which marks the point in time when playback started (if it would not have ever been
      * interrupted inbetween). If it is not running the current position is stored in <code>pos</code>.
      */
-    private class Timer {
+    private static class Timer {
         private boolean running = false;
         private long zeroPoint = -1;
         private long pos = 0;

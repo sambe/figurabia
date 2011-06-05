@@ -75,7 +75,7 @@ public class MediaInputStreamTest {
             }
         };
         recycler.start();
-        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, is.getAudioFormat());
+        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, is.getAudioFormat(), null);
         audioRenderer.start();
         boolean startedPlayback = false;
 

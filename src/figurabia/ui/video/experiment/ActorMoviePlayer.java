@@ -67,7 +67,7 @@ public class ActorMoviePlayer {
         frameFetcher.send(new MediaInfoRequest(receiver));
         final MediaInfoResponse mir = (MediaInfoResponse) receiver.waitForMessage();
 
-        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat);
+        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat, null);
         audioRenderer.start();
         audioRenderer.send(new ControlCommand(Command.START));
 

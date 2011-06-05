@@ -13,9 +13,13 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.LineEvent.Type;
 
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.messages.AudioSyncEvent;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
 
@@ -26,9 +30,12 @@ public class AudioRenderer extends Actor {
     private final Queue<CachedFrame> frameQueue = new LinkedList<CachedFrame>();
     private int bufferPos = 0;
 
-    public AudioRenderer(Actor errorHandler, AudioFormat audioFormat) {
+    private final Actor syncTarget;
+
+    public AudioRenderer(Actor errorHandler, AudioFormat audioFormat, Actor syncTarget) {
         super(errorHandler);
         this.audioFormat = audioFormat;
+        this.syncTarget = syncTarget;
     }
 
     @Override
@@ -37,6 +44,24 @@ public class AudioRenderer extends Actor {
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
         line = (SourceDataLine) AudioSystem.getLine(info);
         line.open(audioFormat);
+
+        // add listener for synchronization events
+        if (syncTarget != null) {
+            line.addLineListener(new LineListener() {
+                @Override
+                public void update(LineEvent event) {
+                    if (event.getType().equals(Type.START)) {
+                        System.err.println("Received LineEvent: START");
+                        syncTarget.send(new AudioSyncEvent(AudioSyncEvent.Type.START));
+                    } else if (event.getType().equals(Type.STOP)) {
+                        System.err.println("Received LineEvent: STOP");
+                        syncTarget.send(new AudioSyncEvent(AudioSyncEvent.Type.STOP));
+                    } else {
+                        System.err.println("Received LineEvent: " + event.getType());
+                    }
+                }
+            });
+        }
 
         // TODO do something with these controls
         FloatControl mixerSourceLineGainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
