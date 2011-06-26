@@ -32,6 +32,8 @@ public class FrameCache extends Actor {
     // TODO do timing tests to find the optimal value
     private static final int BATCH_SIZE = 8;
     private static final int CACHE_SIZE = 96;
+    private static final int CACHE_MIN_RESERVE = 32;
+    private static final int CACHE_MAX_RESERVE = 80;
 
     private final FrameFetcher frameFetcher;
 
@@ -40,6 +42,7 @@ public class FrameCache extends Actor {
     private final PriorityQueue<CachedFrame> unusedLRU = new PriorityQueue<CachedFrame>();
 
     private final Queue<FrameRequest> queuedRequests = new LinkedList<FrameRequest>();
+    private FrameRequest requestForIdleProcessing = null;
 
     private RetrievalMode retrievalMode = RetrievalMode.STREAM;
 
@@ -101,6 +104,19 @@ public class FrameCache extends Actor {
         }
     }
 
+    @Override
+    protected void idle() {
+
+        // if there is a request for idle processing, handle it instead of idling.
+        FrameRequest r = requestForIdleProcessing;
+        if (r != null && unusedLRU.size() >= CACHE_MAX_RESERVE) {
+            requestForIdleProcessing = null;
+            handleFrameRequest(new FrameRequest(r.seqNum, r.usageCount, false, r.responseTo));
+        } else {
+            super.idle();
+        }
+    }
+
     private void handleFrameRequest(FrameRequest request) {
         CachedFrame cachedFrame = framesBySeqNum.get(request.seqNum);
         // if cache contains frame, take it from cache
@@ -117,9 +133,18 @@ public class FrameCache extends Actor {
                 replyFrameRequest(cachedFrame, request.responseTo);
             }
         } else { // if cache does not contain frame, request at producer
-            requestFrameFromFetcher(request.seqNum, request.usageCount);
-            // queue request for later answer
-            queuedRequests.add(request);
+            if (request.onlyIfFreeResources && unusedLRU.size() < CACHE_MIN_RESERVE) {
+                // put on a special waiting slot, where it might be replaced by any later
+                requestForIdleProcessing = request;
+            } else {
+                // if a onlyIfFreeResources request gets executed again, the previous must be outdated
+                if (request.onlyIfFreeResources) {
+                    requestForIdleProcessing = null;
+                }
+                requestFrameFromFetcher(request.seqNum, request.usageCount);
+                // queue request for later answer
+                queuedRequests.add(request);
+            }
         }
     }
 

@@ -102,7 +102,7 @@ public class ActorMoviePlayer {
             // retrieve frames
             ObjectReceiver frameReceiver = new ObjectReceiver(FRAME_BATCH);
             for (int j = 0; j < FRAME_BATCH; j++) {
-                frameCache.send(new FrameRequest(--seqnum, USAGE_COUNT_TO_ADD, frameReceiver));
+                frameCache.send(new FrameRequest(--seqnum, USAGE_COUNT_TO_ADD, false, frameReceiver));
             }
             List<CachedFrame> requestedFrames = frameReceiver.waitForAllMessages(CachedFrame.class);
 

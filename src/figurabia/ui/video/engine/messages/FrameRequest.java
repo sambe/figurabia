@@ -10,10 +10,12 @@ public class FrameRequest extends ResponseRequest {
 
     public final long seqNum;
     public final int usageCount;
+    public final boolean onlyIfFreeResources;
 
-    public FrameRequest(long seqNum, int usageCount, MessageSendable responseTo) {
+    public FrameRequest(long seqNum, int usageCount, boolean onlyIfFreeResources, MessageSendable responseTo) {
         super(responseTo);
         this.seqNum = seqNum;
         this.usageCount = usageCount;
+        this.onlyIfFreeResources = onlyIfFreeResources;
     }
 }

@@ -162,7 +162,7 @@ public class Controller extends Actor {
             // send fetching requests
             prefetch(positionSeqNum);
         } else {
-            sendFetchRequest(positionSeqNum);
+            sendFetchRequest(positionSeqNum, true);
             clearQueuedFrames();
         }
 
@@ -190,12 +190,12 @@ public class Controller extends Actor {
     private void prefetch(long positionSeqNum) {
         nextSeqNumExpected = positionSeqNum;
         for (int i = 0; i < PREFETCH_SIZE; i++) {
-            sendFetchRequest(positionSeqNum + i);
+            sendFetchRequest(positionSeqNum + i, false);
         }
     }
 
-    private void sendFetchRequest(long seqNum) {
-        frameCache.send(new FrameRequest(seqNum, USAGE_COUNT, this));
+    private void sendFetchRequest(long seqNum, boolean onlyIfFreeResources) {
+        frameCache.send(new FrameRequest(seqNum, USAGE_COUNT, onlyIfFreeResources, this));
     }
 
     private void clearQueuedFrames() {
@@ -226,7 +226,7 @@ public class Controller extends Actor {
             //System.out.println("currentSeqNum = " + currentSeqNum + "; frameSeqNum = " + frameSeqNum);
             if (frameSeqNum <= currentSeqNum) {
                 videoRenderer.send(queuedFrames.poll());
-                sendFetchRequest(frameSeqNum + PREFETCH_SIZE);
+                sendFetchRequest(frameSeqNum + PREFETCH_SIZE, false);
             }
         }
     }
