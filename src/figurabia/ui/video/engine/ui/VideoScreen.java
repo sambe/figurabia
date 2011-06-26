@@ -2,17 +2,21 @@
  * Copyright (c) 2011 by Samuel Berner (samuel.berner@gmail.com), all rights reserved
  * Created on 24.04.2011
  */
-package figurabia.ui.video.engine;
+package figurabia.ui.video.engine.ui;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
 import javax.swing.JComponent;
 
+import figurabia.ui.video.engine.VideoRenderer;
+import figurabia.ui.video.engine.actorframework.ObjectReceiver;
 import figurabia.ui.video.engine.messages.CurrentScreen;
-import figurabia.ui.video.engine.messages.Repaint;
+import figurabia.ui.video.engine.messages.ImageRequest;
+import figurabia.ui.video.engine.messages.ImageResponse;
 
 @SuppressWarnings("serial")
 public class VideoScreen extends JComponent {
@@ -39,8 +43,12 @@ public class VideoScreen extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g) {
-        if (videoRenderer != null)
-            videoRenderer.send(new Repaint(this));
+        if (videoRenderer != null) {
+            ObjectReceiver receiver = new ObjectReceiver();
+            videoRenderer.send(new ImageRequest(receiver));
+            ImageResponse imageResponse = (ImageResponse) receiver.waitForMessage();
+            VideoRenderer.paintImageOnScreen((Graphics2D) g, this, imageResponse.image);
+        }
     }
 
     /**

@@ -12,7 +12,10 @@ import java.awt.Image;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.CurrentScreen;
+import figurabia.ui.video.engine.messages.ImageRequest;
+import figurabia.ui.video.engine.messages.ImageResponse;
 import figurabia.ui.video.engine.messages.Repaint;
+import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class VideoRenderer extends Actor {
 
@@ -41,47 +44,31 @@ public class VideoRenderer extends Actor {
         } else if (message instanceof Repaint) {
             Repaint repaint = (Repaint) message;
             paintImageOnScreen(repaint.screen, currentImage);
+        } else if (message instanceof ImageRequest) {
+            ImageRequest request = (ImageRequest) message;
+            request.responseTo.send(new ImageResponse(currentImage));
         } else {
             throw new IllegalArgumentException("unknown type of message: " + message.getClass().getName());
         }
 
     }
 
-    /*@Override
-    protected void idle() {
-        super.idle();
-
-        if (timer.isRunning() && currentScreen != null && !cachedFrames.isEmpty()) {
-            // paint current frame if it changed
-            long currentSeqNum = (long) Math.floor(timer.getPosition() / videoFormat.getFrameRate());
-            if (cachedFrames.peek().seqNum != currentSeqNum) {
-                // remove frame and recycle
-                recycler.send(new RecyclingBag(cachedFrames.poll()));
-                currentImage = null; // reset image because it might be based on the buffer that is recycled
-
-                if (!cachedFrames.isEmpty()) {
-                    // paint image on screen
-                    currentImage = cachedFrames.peek().frame.video.getImage();
-                    paintImageOnScreen(currentScreen, currentImage);
-                }
-            }
-
-        }
-    }*/
-
-    private void paintImageOnScreen(VideoScreen screen, Image image) {
+    private static void paintImageOnScreen(VideoScreen screen, Image image) {
         Graphics2D g2d = (Graphics2D) screen.getGraphics();
+        paintImageOnScreen(g2d, screen, image);
+    }
 
+    public static void paintImageOnScreen(Graphics2D g2d, VideoScreen screen, Image image) {
         if (g2d != null) {
             if (image == null) {
                 paintBlackRectangle(screen, g2d);
             } else {
-                paintImage(currentScreen, g2d, image);
+                paintImage(screen, g2d, image);
             }
         }
     }
 
-    private void paintBlackRectangle(VideoScreen screen, Graphics g) {
+    private static void paintBlackRectangle(VideoScreen screen, Graphics g) {
         int x = 0;
         int y = 0;
         int width = screen.getWidth();
@@ -91,7 +78,7 @@ public class VideoRenderer extends Actor {
         g.fillRect(x, y, width, height);
     }
 
-    private void paintImage(VideoScreen screen, Graphics g, Image image) {
+    private static void paintImage(VideoScreen screen, Graphics g, Image image) {
         int x = 0;
         int y = 0;
         int width = screen.getWidth();

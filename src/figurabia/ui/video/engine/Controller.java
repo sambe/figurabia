@@ -67,6 +67,7 @@ public class Controller extends Actor {
         } else if (message instanceof SetPosition) {
             handleSetPosition((SetPosition) message);
         } else if (message instanceof CachedFrame) {
+            //System.out.println("Controller receiving frame " + ((CachedFrame) message).seqNum);
             handleCachedFrame((CachedFrame) message);
         } else if (message instanceof AudioSyncEvent) {
             handleAudioSyncEvent((AudioSyncEvent) message);
@@ -151,6 +152,7 @@ public class Controller extends Actor {
 
     private void handleSetPosition(SetPosition message) {
         long positionSeqNum = calculateSeqNum(message.position);
+        //System.out.println("positionSeqNum: " + positionSeqNum + " derived from " + message.position);
 
         if (timer.isRunning()) {
             // first flush everything
@@ -179,6 +181,8 @@ public class Controller extends Actor {
             queuedFrames.add(frame);
             audioRenderer.send(frame);
         } else {
+            // already recycle once because they're not sent to audio renderer
+            frame.recycle();
             videoRenderer.send(frame);
         }
     }

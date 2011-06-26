@@ -6,10 +6,12 @@ package figurabia.ui.video.experiment;
 
 import java.io.File;
 
+import javax.swing.JPanel;
+
+import net.miginfocom.swing.MigLayout;
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.engine.Controller;
 import figurabia.ui.video.engine.VideoRenderer;
-import figurabia.ui.video.engine.VideoScreen;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.CurrentScreen;
@@ -17,6 +19,8 @@ import figurabia.ui.video.engine.messages.MediaError;
 import figurabia.ui.video.engine.messages.NewVideo;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
+import figurabia.ui.video.engine.ui.ControlBar;
+import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class ActorMoviePlayer2 {
 
@@ -40,9 +44,14 @@ public class ActorMoviePlayer2 {
 
         VideoRenderer videoRenderer = controller.getVideoRenderer();
         VideoScreen screen = new VideoScreen(videoRenderer);
+        ControlBar controlBar = new ControlBar(controller);
+        JPanel panel = new JPanel();
+        panel.setLayout(new MigLayout("ins 0,gap 0", "[fill]", "[fill][20, fill]"));
+        panel.add(screen, "wrap,push");
+        panel.add(controlBar, "");
         int width = 640;
-        int height = 480;
-        SimplePanelFrame frame = new SimplePanelFrame(screen, width + 20, height + 20 + 65);
+        int height = 480 + 20;
+        SimplePanelFrame frame = new SimplePanelFrame(panel, width + 20, height + 20 + 65);
 
         videoRenderer.send(new CurrentScreen(screen));
 

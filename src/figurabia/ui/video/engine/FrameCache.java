@@ -84,7 +84,11 @@ public class FrameCache extends Actor {
         else if (message instanceof FetchFrames) {
             FetchFrames ff = (FetchFrames) message;
             for (CachedFrame cf : ff.frames) {
-                addUnusedToCache(cf);
+                if (cf.usageCount == 0) {
+                    addUnusedToCache(cf);
+                } else {
+                    cf.state = CachedFrameState.IN_USE;
+                }
             }
             processQueuedRequests(queuedRequests);
         }
@@ -101,28 +105,34 @@ public class FrameCache extends Actor {
         CachedFrame cachedFrame = framesBySeqNum.get(request.seqNum);
         // if cache contains frame, take it from cache
         if (cachedFrame != null) {
+            if (cachedFrame.state == CachedFrameState.CACHE) {
+                removeFromCache(cachedFrame);
+                cachedFrame.state = CachedFrameState.IN_USE;
+            }
+            cachedFrame.usageCount += request.usageCount;
             if (cachedFrame.state == CachedFrameState.FETCHING) {
                 // already fetching (just queue request for later reply)
                 queuedRequests.add(request);
             } else { // cachedFrame.state is either CACHE or IN_USE (or EMPTY)
-                replyFrameRequest(cachedFrame, request.usageCount, request.responseTo);
+                replyFrameRequest(cachedFrame, request.responseTo);
             }
         } else { // if cache does not contain frame, request at producer
-            requestFrameFromFetcher(request.seqNum);
+            requestFrameFromFetcher(request.seqNum, request.usageCount);
             // queue request for later answer
             queuedRequests.add(request);
         }
     }
 
-    private void requestFrameFromFetcher(long seqNum) {
+    private void requestFrameFromFetcher(long seqNum, int usageCount) {
         if (retrievalMode == RetrievalMode.SINGLE_FRAMES) {
-            CachedFrame cf = reuseAndPrepareFrame(seqNum);
+            CachedFrame cf = reuseAndPrepareFrame(seqNum, usageCount);
             frameFetcher.send(new FetchFrames(this, seqNum, Arrays.asList(cf)));
         } else if (retrievalMode == RetrievalMode.STREAM) {
             List<CachedFrame> frameBatch = new ArrayList<CachedFrame>();
             long baseSeqNum = seqNum / BATCH_SIZE * BATCH_SIZE;
             for (int i = 0; i < BATCH_SIZE; i++) {
-                CachedFrame cf = reuseAndPrepareFrame(baseSeqNum + i);
+                int uc = baseSeqNum + i == seqNum ? usageCount : 0;
+                CachedFrame cf = reuseAndPrepareFrame(baseSeqNum + i, uc);
                 frameBatch.add(cf);
             }
             frameFetcher.send(new FetchFrames(this, baseSeqNum, frameBatch));
@@ -131,7 +141,8 @@ public class FrameCache extends Actor {
 
     private void prefetchFrame(long seqNum) {
         if (!framesBySeqNum.containsKey(seqNum)) {
-            requestFrameFromFetcher(seqNum);
+            // usage count is set as zero, because this request just loads something into cache
+            requestFrameFromFetcher(seqNum, 0);
         }
     }
 
@@ -145,12 +156,8 @@ public class FrameCache extends Actor {
         }
     }
 
-    private void replyFrameRequest(CachedFrame cachedFrame, int usageCountToAdd, MessageSendable responseTo) {
-        if (cachedFrame.usageCount == 0) {
-            unusedLRU.remove(cachedFrame);
-            cachedFrame.state = CachedFrameState.IN_USE;
-        }
-        cachedFrame.usageCount += usageCountToAdd;
+    private void replyFrameRequest(CachedFrame cachedFrame, MessageSendable responseTo) {
+        cachedFrame.state = CachedFrameState.IN_USE;
         responseTo.send(cachedFrame);
     }
 
@@ -163,7 +170,7 @@ public class FrameCache extends Actor {
                         + fr.seqNum);
             }
             if (cf.state == CachedFrameState.CACHE || cf.state == CachedFrameState.IN_USE) {
-                replyFrameRequest(cf, fr.usageCount, fr.responseTo);
+                replyFrameRequest(cf, fr.responseTo);
                 queuedRequests.remove();
             } else {
                 // stop if a request cannot be answered yet,
@@ -173,12 +180,17 @@ public class FrameCache extends Actor {
         }
     }
 
-    private CachedFrame reuseAndPrepareFrame(long seqNum) {
+    private CachedFrame reuseAndPrepareFrame(long seqNum, int usageCount) {
         CachedFrame cf = getUnusedFromCache();
+        if (cf.usageCount != 0) {
+            throw new IllegalStateException("Frame must be unused right now (usageCount = " + cf.usageCount + ")");
+        }
         cf.state = CachedFrameState.FETCHING;
         framesBySeqNum.remove(cf.seqNum); // no longer representing the old seqNum
         cf.seqNum = seqNum;
-        framesBySeqNum.put(cf.seqNum, cf);
+        framesBySeqNum.put(seqNum, cf);
+        unusedLRU.remove(cf); // TODO probably this is redundant (already happens in getUnusedFromCache)
+        cf.usageCount += usageCount;
         return cf;
     }
 
@@ -200,14 +212,24 @@ public class FrameCache extends Actor {
                     + ", seq num " + cf.seqNum + ", state " + cf.state);
         }
         cf.state = CachedFrameState.CACHE;
+        cf.timestamp = System.currentTimeMillis();
         unusedLRU.add(cf);
+        //System.err.println("DEBUG: Returned frame to unused frames: " + unusedLRU.size() + " (usage count: "
+        //        + cf.usageCount + ") index: " + cf.index);
+    }
+
+    private void removeFromCache(CachedFrame cf) {
+        unusedLRU.remove(cf);
     }
 
     private CachedFrame getUnusedFromCache() {
-        //System.out.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+        System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
             throw new IllegalStateException("No frame available to reuse");
         }
-        return unusedLRU.poll();
+        CachedFrame cf = unusedLRU.poll();
+        //unusedLRU.remove(cf); // in case it was multiple times in here
+        //System.err.println("DEBUG: removed cached frame " + cf.index + ", usageCount: " + cf.usageCount);
+        return cf;
     }
 }

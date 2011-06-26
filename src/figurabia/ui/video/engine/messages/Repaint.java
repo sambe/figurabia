@@ -4,7 +4,7 @@
  */
 package figurabia.ui.video.engine.messages;
 
-import figurabia.ui.video.engine.VideoScreen;
+import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class Repaint {
 
