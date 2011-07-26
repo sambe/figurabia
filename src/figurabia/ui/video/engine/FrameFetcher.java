@@ -59,7 +59,7 @@ public class FrameFetcher extends Actor {
         } else {
             newPosition = mediaInputStream.getPosition();
         }
-        long startSeqNr = Math.round(newPosition * frameRate);
+        long startSeqNr = message.startSeqNr; //Math.round(newPosition * frameRate);
 
         // read frames from stream
         for (CachedFrame f : message.frames) {

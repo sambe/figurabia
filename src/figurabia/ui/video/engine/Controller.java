@@ -18,6 +18,7 @@ import figurabia.ui.video.engine.messages.FrameRequest;
 import figurabia.ui.video.engine.messages.MediaInfoRequest;
 import figurabia.ui.video.engine.messages.MediaInfoResponse;
 import figurabia.ui.video.engine.messages.NewVideo;
+import figurabia.ui.video.engine.messages.PositionUpdate;
 import figurabia.ui.video.engine.messages.RecyclingBag;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
@@ -130,9 +131,9 @@ public class Controller extends Actor {
                 state = State.PREPARING;
                 startingTimerPos = timer.getPosition();
                 long currentSeqNum = calculateSeqNum(startingTimerPos);
-                if (nextSeqNumExpected != currentSeqNum) {
-                    prefetch(currentSeqNum);
-                }
+                //if (nextSeqNumExpected != currentSeqNum) {
+                prefetch(currentSeqNum);
+                //}
                 audioRenderer.send(message);
                 timer.start();
                 // timer will be repositioned in handleAudioSyncEvent
@@ -143,6 +144,7 @@ public class Controller extends Actor {
                 state = State.STOPPED;
                 timer.stop();
                 audioRenderer.send(message);
+                audioRenderer.send(new ControlCommand(Command.FLUSH));
             }
             break;
         default:
@@ -151,36 +153,43 @@ public class Controller extends Actor {
     }
 
     private void handleSetPosition(SetPosition message) {
-        long positionSeqNum = calculateSeqNum(message.position);
+        startingTimerPos = message.position;
+        long positionSeqNum = calculateSeqNum(startingTimerPos);
         //System.out.println("positionSeqNum: " + positionSeqNum + " derived from " + message.position);
 
         if (timer.isRunning()) {
+            state = State.PREPARING;
             // first flush everything
+            audioRenderer.send(new ControlCommand(Command.STOP));
             audioRenderer.send(new ControlCommand(Command.FLUSH));
             clearQueuedFrames();
 
             // send fetching requests
             prefetch(positionSeqNum);
+            audioRenderer.send(new ControlCommand(Command.START));
         } else {
             sendFetchRequest(positionSeqNum, true);
             clearQueuedFrames();
         }
 
         // move timer
-        timer.setPosition(positionSeqNum);
+        timer.setPosition(startingTimerPos);
     }
 
     private void handleCachedFrame(CachedFrame frame) {
+        System.out.println("TRACE: " + frame.seqNum + ": received in state " + frame.state);
         if (state == State.PREPARING || state == State.PLAYING) {
             if (frame.seqNum != nextSeqNumExpected) {
+                System.out.println("DEBUG: dropping frame " + frame.seqNum + " because expected " + nextSeqNumExpected);
                 // silently drop (was too late, no longer needed)
                 recycle(frame, USAGE_COUNT);
                 return;
             }
             nextSeqNumExpected++;
+            System.out.println("TRACE: " + frame.seqNum + ": added to queued frames");
             queuedFrames.add(frame);
             audioRenderer.send(frame);
-        } else {
+        } else { // result of moving position in stopped state -> immediately display
             // already recycle once because they're not sent to audio renderer
             frame.recycle();
             videoRenderer.send(frame);
@@ -188,6 +197,7 @@ public class Controller extends Actor {
     }
 
     private void prefetch(long positionSeqNum) {
+        System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
         nextSeqNumExpected = positionSeqNum;
         for (int i = 0; i < PREFETCH_SIZE; i++) {
             sendFetchRequest(positionSeqNum + i, false);
@@ -221,12 +231,16 @@ public class Controller extends Actor {
         // rendering (TODO sound, probably immediately pass on)
         if (timer.isRunning() && !queuedFrames.isEmpty()) {
             // paint current frame if it changed
-            long currentSeqNum = calculateSeqNum(timer.getPosition());
+            long currentTime = timer.getPosition();
+            long currentSeqNum = calculateSeqNum(currentTime);
             long frameSeqNum = queuedFrames.peek().seqNum;
-            //System.out.println("currentSeqNum = " + currentSeqNum + "; frameSeqNum = " + frameSeqNum);
+            System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = " + currentTime
+                    + "); queuedFrames.peek().seqNum = " + frameSeqNum);
             if (frameSeqNum <= currentSeqNum) {
                 videoRenderer.send(queuedFrames.poll());
                 sendFetchRequest(frameSeqNum + PREFETCH_SIZE, false);
+                sendUpdate(new PositionUpdate(currentTime));
+                System.out.println("TRACE: " + (frameSeqNum + PREFETCH_SIZE) + ": sent fetch request");
             }
         }
     }

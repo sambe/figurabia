@@ -4,6 +4,10 @@
  */
 package figurabia.ui.video.engine.actorframework;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import figurabia.ui.video.engine.messages.MediaError;
@@ -15,10 +19,11 @@ import figurabia.ui.video.engine.messages.MediaError;
  */
 public abstract class Actor implements MessageSendable {
 
-    private Thread thread;
+    private final Thread thread;
     private volatile boolean stopped;
-    protected ConcurrentLinkedQueue<Object> queue;
-    private Actor errorHandler;
+    private final ConcurrentLinkedQueue<Object> queue;
+    private final Actor errorHandler;
+    private final Map<Class, List<MessageSendable>> updateReceivers;
 
     protected Actor(Actor errorHandler) {
         String className = this.getClass().getSimpleName();
@@ -28,6 +33,7 @@ public abstract class Actor implements MessageSendable {
         thread = new Thread(new ActorRunnable(), className);
         queue = new ConcurrentLinkedQueue<Object>();
         this.errorHandler = errorHandler;
+        updateReceivers = new HashMap<Class, List<MessageSendable>>();
     }
 
     private class ActorRunnable implements Runnable {
@@ -44,7 +50,11 @@ public abstract class Actor implements MessageSendable {
 
                 if (message != null) {
                     try {
-                        act(message);
+                        if (message instanceof RegisterForUpdates) {
+                            handleRegisterForUpdates((RegisterForUpdates) message);
+                        } else {
+                            act(message);
+                        }
                     } catch (RuntimeException e) {
                         handleException("Unhandled Exception when processing " + message, e);
                     }
@@ -128,5 +138,29 @@ public abstract class Actor implements MessageSendable {
      */
     public final void send(Object message) {
         queue.add(message);
+    }
+
+    /**
+     * Handles the registration for updates.
+     */
+    private void handleRegisterForUpdates(RegisterForUpdates message) {
+        List<MessageSendable> receivers = updateReceivers.get(message.messageType);
+        if (receivers == null) {
+            receivers = new ArrayList<MessageSendable>();
+            updateReceivers.put(message.messageType, receivers);
+        }
+        receivers.add(message.receiver);
+    }
+
+    /**
+     * Sends an update to the registered receivers.
+     * 
+     * @param message the message to send to the receivers
+     */
+    protected final void sendUpdate(Object message) {
+        Class messageType = message.getClass();
+        for (MessageSendable ms : updateReceivers.get(messageType)) {
+            ms.send(message);
+        }
     }
 }

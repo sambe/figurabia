@@ -11,10 +11,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.engine.actorframework.MessageSendable;
+import figurabia.ui.video.engine.actorframework.RegisterForUpdates;
 import figurabia.ui.video.engine.messages.ControlCommand;
+import figurabia.ui.video.engine.messages.PositionUpdate;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
@@ -29,7 +32,7 @@ public class ControlBar extends JComponent {
 
     private boolean running = false;
     private double barMinValue = 0.0;
-    private double barMaxValue = 90000.0;
+    private double barMaxValue = 90000.0; // TODO set this values according to the video
     private double barPositionValue = 0.0;
 
     private boolean draggingBarPosition = false;
@@ -41,6 +44,21 @@ public class ControlBar extends JComponent {
 
     public ControlBar(MessageSendable controller) {
         this.controller = controller;
+        controller.send(new RegisterForUpdates(PositionUpdate.class, new MessageSendable() {
+            @Override
+            public void send(Object message) {
+                final long newPosition = ((PositionUpdate) message).position;
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!draggingBarPosition) {
+                            barPositionValue = newPosition;
+                            repaint();
+                        }
+                    }
+                });
+            }
+        }));
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
 

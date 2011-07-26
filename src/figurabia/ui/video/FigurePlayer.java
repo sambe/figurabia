@@ -163,6 +163,7 @@ public class FigurePlayer extends JPanel {
     }
 
     private int findNearest(List<Long> values, long location) {
+        // cannot use java.util.Collections.binarySearch here because it returns -1 if the key is not found (but we need the next lower one)
         int l = 0, h = values.size() - 1;
         if (h < 0) {
             return -1;

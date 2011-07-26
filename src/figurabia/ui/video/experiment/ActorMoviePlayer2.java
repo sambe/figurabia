@@ -13,12 +13,10 @@ import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.engine.Controller;
 import figurabia.ui.video.engine.VideoRenderer;
 import figurabia.ui.video.engine.actorframework.Actor;
-import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.CurrentScreen;
 import figurabia.ui.video.engine.messages.MediaError;
 import figurabia.ui.video.engine.messages.NewVideo;
 import figurabia.ui.video.engine.messages.SetPosition;
-import figurabia.ui.video.engine.messages.ControlCommand.Command;
 import figurabia.ui.video.engine.ui.ControlBar;
 import figurabia.ui.video.engine.ui.VideoScreen;
 
@@ -58,6 +56,6 @@ public class ActorMoviePlayer2 {
         controller.send(new NewVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"), 0));
         controller.send(new SetPosition(0));
 
-        controller.send(new ControlCommand(Command.START));
+        //controller.send(new ControlCommand(Command.START));
     }
 }

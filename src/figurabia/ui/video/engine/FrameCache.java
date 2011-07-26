@@ -32,8 +32,8 @@ public class FrameCache extends Actor {
     // TODO do timing tests to find the optimal value
     private static final int BATCH_SIZE = 8;
     private static final int CACHE_SIZE = 96;
-    private static final int CACHE_MIN_RESERVE = 32;
-    private static final int CACHE_MAX_RESERVE = 80;
+    private static final int CACHE_MIN_RESERVE = 81;
+    private static final int CACHE_MAX_RESERVE = 82;
 
     private final FrameFetcher frameFetcher;
 
@@ -129,13 +129,18 @@ public class FrameCache extends Actor {
             if (cachedFrame.state == CachedFrameState.FETCHING) {
                 // already fetching (just queue request for later reply)
                 queuedRequests.add(request);
-            } else { // cachedFrame.state is either CACHE or IN_USE (or EMPTY)
+                System.err.println("TRACE: " + request.seqNum + ": 1) already fetching -> request queued");
+            } else if (cachedFrame.state == CachedFrameState.IN_USE) { // cachedFrame.state is IN_USE
                 replyFrameRequest(cachedFrame, request.responseTo);
+                System.err.println("TRACE: " + request.seqNum + ": 2) cached -> immediate reply");
+            } else {
+                throw new IllegalStateException("unexpected state of cachedFrame: " + cachedFrame.state);
             }
         } else { // if cache does not contain frame, request at producer
             if (request.onlyIfFreeResources && unusedLRU.size() < CACHE_MIN_RESERVE) {
                 // put on a special waiting slot, where it might be replaced by any later
                 requestForIdleProcessing = request;
+                System.err.println("TRACE: " + request.seqNum + ": 3) capacity full -> waiting bench");
             } else {
                 // if a onlyIfFreeResources request gets executed again, the previous must be outdated
                 if (request.onlyIfFreeResources) {
@@ -144,6 +149,7 @@ public class FrameCache extends Actor {
                 requestFrameFromFetcher(request.seqNum, request.usageCount);
                 // queue request for later answer
                 queuedRequests.add(request);
+                System.err.println("TRACE: " + request.seqNum + ": 4) now fetching -> request queued");
             }
         }
     }
@@ -157,6 +163,8 @@ public class FrameCache extends Actor {
             long baseSeqNum = seqNum / BATCH_SIZE * BATCH_SIZE;
             for (int i = 0; i < BATCH_SIZE; i++) {
                 int uc = baseSeqNum + i == seqNum ? usageCount : 0;
+                // TODO sometimes a few of the batch might still be cached.
+                //      better solution: only reuse whole cache blocks, one timestamp per block
                 CachedFrame cf = reuseAndPrepareFrame(baseSeqNum + i, uc);
                 frameBatch.add(cf);
             }
@@ -214,7 +222,6 @@ public class FrameCache extends Actor {
         framesBySeqNum.remove(cf.seqNum); // no longer representing the old seqNum
         cf.seqNum = seqNum;
         framesBySeqNum.put(seqNum, cf);
-        unusedLRU.remove(cf); // TODO probably this is redundant (already happens in getUnusedFromCache)
         cf.usageCount += usageCount;
         return cf;
     }
@@ -248,7 +255,7 @@ public class FrameCache extends Actor {
     }
 
     private CachedFrame getUnusedFromCache() {
-        System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+        //System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
             throw new IllegalStateException("No frame available to reuse");
         }
