@@ -9,6 +9,7 @@ import javax.media.format.VideoFormat;
 public class MediaFrame {
     public final AudioBuffer audio;
     public final VideoBuffer video;
+    boolean endOfMedia;
 
     public MediaFrame(AudioBuffer audio, VideoBuffer video) {
         this.audio = audio;
@@ -18,5 +19,9 @@ public class MediaFrame {
     public double getPositionInSeconds(long frameNumber) {
         VideoFormat vf = (VideoFormat) this.video.getBuffer().getFormat();
         return frameNumber / vf.getFrameRate();
+    }
+
+    public boolean isEndOfMedia() {
+        return endOfMedia;
     }
 }

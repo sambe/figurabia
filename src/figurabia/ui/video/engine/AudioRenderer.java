@@ -141,7 +141,11 @@ public class AudioRenderer extends Actor {
     }
 
     private void handleMediaFrame(CachedFrame frame) {
-        frameQueue.add(frame);
+        if (!frame.frame.isEndOfMedia()) {
+            frameQueue.add(frame);
+        } else {
+            frame.recycle();
+        }
     }
 
     @Override

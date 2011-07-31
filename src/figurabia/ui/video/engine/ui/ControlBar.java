@@ -19,6 +19,7 @@ import figurabia.ui.video.engine.actorframework.RegisterForUpdates;
 import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.PositionUpdate;
 import figurabia.ui.video.engine.messages.SetPosition;
+import figurabia.ui.video.engine.messages.StateUpdate;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
 @SuppressWarnings("serial")
@@ -32,7 +33,7 @@ public class ControlBar extends JComponent {
 
     private boolean running = false;
     private double barMinValue = 0.0;
-    private double barMaxValue = 90000.0; // TODO set this values according to the video
+    private double barMaxValue = 0.0;
     private double barPositionValue = 0.0;
 
     private boolean draggingBarPosition = false;
@@ -47,13 +48,43 @@ public class ControlBar extends JComponent {
         controller.send(new RegisterForUpdates(PositionUpdate.class, new MessageSendable() {
             @Override
             public void send(Object message) {
-                final long newPosition = ((PositionUpdate) message).position;
+                final PositionUpdate pu = (PositionUpdate) message;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         if (!draggingBarPosition) {
-                            barPositionValue = newPosition;
+                            barPositionValue = pu.position;
+                            barMinValue = pu.startPosition;
+                            barMaxValue = pu.endPosition;
                             repaint();
+                        }
+                    }
+                });
+            }
+        }));
+        controller.send(new RegisterForUpdates(StateUpdate.class, new MessageSendable() {
+            @Override
+            public void send(Object message) {
+                final StateUpdate su = (StateUpdate) message;
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        switch (su.state) {
+                        case PREPARING:
+                        case PLAYING:
+                            if (running == false) {
+                                running = true;
+                                repaint();
+                            }
+                            break;
+                        case STOPPED:
+                            if (running == true) {
+                                running = false;
+                                repaint();
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("unsupported state: " + su.state);
                         }
                     }
                 });
@@ -106,12 +137,9 @@ public class ControlBar extends JComponent {
     private void startOrStop() {
         if (running) {
             controller.send(new ControlCommand(Command.STOP));
-            running = false;
         } else {
             controller.send(new ControlCommand(Command.START));
-            running = true;
         }
-        repaint();
     }
 
     private void movePosition(int x) {

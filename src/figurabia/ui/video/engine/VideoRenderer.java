@@ -32,13 +32,18 @@ public class VideoRenderer extends Actor {
     @Override
     protected void act(Object message) {
         if (message instanceof CachedFrame) {
-            if (currentFrame != null) {
-                currentFrame.recycle();
-                currentFrame = null;
+            CachedFrame frame = (CachedFrame) message;
+            if (!frame.frame.isEndOfMedia()) {
+                if (currentFrame != null) {
+                    currentFrame.recycle();
+                    currentFrame = null;
+                }
+                currentFrame = frame;
+                currentImage = currentFrame.frame.video.getImage();
+                paintImageOnScreen(currentScreen, currentImage);
+            } else {
+                frame.recycle();
             }
-            currentFrame = (CachedFrame) message;
-            currentImage = currentFrame.frame.video.getImage();
-            paintImageOnScreen(currentScreen, currentImage);
         } else if (message instanceof CurrentScreen) {
             currentScreen = ((CurrentScreen) message).screen;
         } else if (message instanceof Repaint) {

@@ -39,6 +39,7 @@ public class MediaInputStream {
 
     private int audioBufferBytes;
     private int videoBufferInts;
+    private double audioBufferRestFrames;
 
     public MediaInputStream(File file) throws IOException {
         this.file = file;
@@ -102,7 +103,9 @@ public class MediaInputStream {
         //Buffer ab = frame.audio.getBuffer();
         /*audioBufferBytes = ab.getLength() - ab.getOffset();*/
         double targetAudioFrames = audioFormat.getSampleRate() / videoFormat.getFrameRate();
-        audioBufferBytes = (int) Math.ceil(targetAudioFrames) * audioFormat.getFrameSizeInBits() / 8;
+        int audioBufferFrames = (int) Math.floor(targetAudioFrames);
+        audioBufferRestFrames = targetAudioFrames - audioBufferFrames;
+        audioBufferBytes = audioBufferFrames * audioFormat.getFrameSizeInBits() / 8;
         System.out.println("audio buffer bytes: " + audioBufferBytes);
         Buffer vb = frame.video.getBuffer();
         videoBufferInts = vb.getLength() - vb.getOffset();
@@ -196,8 +199,18 @@ public class MediaInputStream {
     // TODO find a way to handle different frame rates (e.g. video 15 frames per second, audio 88200 frames per second)
 
     public void readFrame(MediaFrame frame) {
+
         Buffer decodedVideoFrame = frame.video.getBuffer();
+        videoFrame.setEOM(false);
         videoTrack.readFrame(videoFrame);
+
+        if (videoFrame.isEOM()) {
+            // TODO create real error flag in MediaFrame
+            frame.endOfMedia = true;
+            return; // don't continue if at end of media (EOM)
+        } else {
+            frame.endOfMedia = false;
+        }
 
         int videoResult = videoDecoder.process(videoFrame, decodedVideoFrame);
 
@@ -208,6 +221,7 @@ public class MediaInputStream {
         while (targetBuffer.getLength() < audioBufferBytes && audioResult == 0) {
             // if there are no bytes left for copying we fetch a new buffer of data
             if (decodedAudioFrameAvailable == 0) {
+                audioFrame.setEOM(false);
                 audioTrack.readFrame(audioFrame);
                 audioResult = audioDecoder.process(audioFrame, decodedAudioFrame);
                 decodedAudioFrameAvailable = decodedAudioFrame.getLength();
@@ -247,6 +261,10 @@ public class MediaInputStream {
 
     public double getPosition() {
         return parser.getMediaTime().getSeconds();
+    }
+
+    public double getDuration() {
+        return parser.getDuration().getSeconds();
     }
 
     public VideoFormat getVideoFormat() {

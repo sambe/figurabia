@@ -53,7 +53,7 @@ public class ActorMoviePlayer2 {
 
         videoRenderer.send(new CurrentScreen(screen));
 
-        controller.send(new NewVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"), 0));
+        controller.send(new NewVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"), 0, null, null));
         controller.send(new SetPosition(0));
 
         //controller.send(new ControlCommand(Command.START));
