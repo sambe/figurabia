@@ -28,7 +28,7 @@ public class Controller extends Actor {
 
     private static final int PREFETCH_SIZE = 5;
     private static final int USAGE_COUNT = 2;
-    private static final int SYNC_OFFSET = 250;
+    private static final int SYNC_OFFSET = 50; //250;
 
     public static enum State {
         STOPPED,
