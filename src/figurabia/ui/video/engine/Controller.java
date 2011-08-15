@@ -21,6 +21,7 @@ import figurabia.ui.video.engine.messages.NewVideo;
 import figurabia.ui.video.engine.messages.PositionUpdate;
 import figurabia.ui.video.engine.messages.RecyclingBag;
 import figurabia.ui.video.engine.messages.SetPosition;
+import figurabia.ui.video.engine.messages.SetSpeed;
 import figurabia.ui.video.engine.messages.StateUpdate;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
@@ -29,6 +30,7 @@ public class Controller extends Actor {
     private static final int PREFETCH_SIZE = 5;
     private static final int USAGE_COUNT = 2;
     private static final int SYNC_OFFSET = 50; //250;
+    private static final double MIN_VALID_SPEED = 1.0 / 40.0;
 
     public static enum State {
         STOPPED,
@@ -75,6 +77,8 @@ public class Controller extends Actor {
             handleControlCommand((ControlCommand) message);
         } else if (message instanceof SetPosition) {
             handleSetPosition((SetPosition) message);
+        } else if (message instanceof SetSpeed) {
+            handleSetSpeed((SetSpeed) message);
         } else if (message instanceof CachedFrame) {
             //System.out.println("Controller receiving frame " + ((CachedFrame) message).seqNum);
             handleCachedFrame((CachedFrame) message);
@@ -213,6 +217,35 @@ public class Controller extends Actor {
         setPosition(startingTimerPos);
     }
 
+    private void handleSetSpeed(SetSpeed message) {
+        if (Math.abs(message.newSpeed) < MIN_VALID_SPEED) {
+            // ignore, because this is not a valid speed
+            return;
+        }
+
+        boolean running = timer.isRunning();
+
+        if (running) {
+            setState(State.PREPARING);
+            // first flush everything
+            audioRenderer.send(new ControlCommand(Command.STOP));
+            audioRenderer.send(new ControlCommand(Command.FLUSH));
+            clearQueuedFrames();
+        }
+
+        startingTimerPos = timer.getPosition();
+        timer.setSpeed(message.newSpeed);
+        audioRenderer.send(message);
+
+        if (running) {
+            long currentTime = timer.getPosition();
+            long currentSeqNum = calculateSeqNum(currentTime);
+            // send fetching requests
+            prefetch(currentSeqNum);
+            audioRenderer.send(new ControlCommand(Command.START));
+        }
+    }
+
     private void handleCachedFrame(CachedFrame frame) {
         System.out.println("TRACE: " + frame.seqNum + ": received in state " + frame.state);
         if (state == State.PREPARING || state == State.PLAYING) {
@@ -320,15 +353,16 @@ public class Controller extends Actor {
         private boolean running = false;
         private long zeroPoint = -1;
         private long pos = 0;
+        private double speed = 1.0;
 
         private long getPositionWhileRunning() {
             long now = System.currentTimeMillis();
-            return now - zeroPoint;
+            return Math.round((now - zeroPoint) * speed);
         }
 
         private long getZeroPoint(long pos) {
             long now = System.currentTimeMillis();
-            return now - pos;
+            return now - Math.round(pos / speed);
         }
 
         public void start() {
@@ -365,6 +399,20 @@ public class Controller extends Actor {
 
         public boolean isRunning() {
             return running;
+        }
+
+        public double getSpeed() {
+            return speed;
+        }
+
+        public void setSpeed(double newSpeed) {
+            if (running) {
+                long position = getPositionWhileRunning();
+                speed = newSpeed;
+                zeroPoint = getZeroPoint(position);
+            } else {
+                speed = newSpeed;
+            }
         }
     }
 

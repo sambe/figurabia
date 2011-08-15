@@ -22,13 +22,19 @@ import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.messages.AudioSyncEvent;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
+import figurabia.ui.video.engine.messages.SetSpeed;
 
 public class AudioRenderer extends Actor {
+
+    private static final double MIN_SPEED = 0.25;
 
     private AudioFormat audioFormat;
     private SourceDataLine line;
     private final Queue<CachedFrame> frameQueue = new LinkedList<CachedFrame>();
     private int bufferPos = 0;
+    private double speed = 1.0;
+    private Buffer speedCorrectedBuffer = new Buffer();
+    private long speedCorrectedBufferSeqNum = -1;
 
     private final Actor syncTarget;
 
@@ -76,31 +82,36 @@ public class AudioRenderer extends Actor {
             //System.out.println("AudioRenderer: receiving media frame");
             handleMediaFrame((CachedFrame) message);
         } else if (message instanceof ControlCommand) {
-            ControlCommand c = (ControlCommand) message;
-            System.out.println("AudioRenderer: receiving ControlCommand: " + c.command);
-            switch (c.command) {
-            case START:
-                System.err.println("AudioRenderer: starting...");
-                line.start();
-                break;
-            case STOP:
-                line.stop();
-                break;
-            case FLUSH:
-                // recycle all frames in the queue
-                for (CachedFrame cf : frameQueue) {
-                    cf.recycle();
-                }
-                frameQueue.clear();
-                line.flush();
-                break;
-            case CLOSE:
-                // stops the actor (which will close the line)
-                stop();
-                break;
-            }
+            handleControlCommand((ControlCommand) message);
+        } else if (message instanceof SetSpeed) {
+            handleSetSpeed((SetSpeed) message);
         } else {
             throw new IllegalArgumentException("unknown type of message: " + message.getClass().getName());
+        }
+    }
+
+    private void handleControlCommand(ControlCommand c) {
+        System.out.println("AudioRenderer: receiving ControlCommand: " + c.command);
+        switch (c.command) {
+        case START:
+            System.err.println("AudioRenderer: starting...");
+            line.start();
+            break;
+        case STOP:
+            line.stop();
+            break;
+        case FLUSH:
+            // recycle all frames in the queue
+            for (CachedFrame cf : frameQueue) {
+                cf.recycle();
+            }
+            frameQueue.clear();
+            line.flush();
+            break;
+        case CLOSE:
+            // stops the actor (which will close the line)
+            stop();
+            break;
         }
     }
 
@@ -113,10 +124,56 @@ public class AudioRenderer extends Actor {
         super.idle();
     }
 
+    private void copyToSpeedScaledBuffer(Buffer inputBuffer, Buffer outputBuffer, long seqNum) {
+        byte[] idata = (byte[]) inputBuffer.getData();
+        byte[] odata = (byte[]) outputBuffer.getData();
+
+        // check if buffer has sufficient size, and extend if necessary
+        if (odata == null || odata.length < idata.length / speed) {
+            // calculating with the min possible speed, or lower if actual is lower
+            double minSpeed = Math.min(speed, MIN_SPEED);
+            int length = (int) Math.ceil(idata.length / minSpeed);
+            odata = new byte[length];
+            outputBuffer.setData(odata);
+        }
+
+        // determine length
+        int frameBytes = audioFormat.getFrameSize();
+        int inputFrames = inputBuffer.getLength() / frameBytes;
+        long start = (long) Math.floor(seqNum * inputFrames / speed);
+        long end = (long) Math.floor((seqNum + 1) * inputFrames / speed);
+        int outputFrames = (int) (end - start);
+        int outputBytes = outputFrames * frameBytes;
+
+        // scale
+        for (int i = 0; i < outputFrames; i++) {
+            // currently only picking nearest, could be linear or polynomial interpolation
+            int nearestInputFrame = i * inputFrames / outputFrames;
+            int ibase = nearestInputFrame * frameBytes;
+            int obase = i * frameBytes;
+            for (int j = 0; j < frameBytes; j++) {
+                odata[obase + j] = idata[ibase + j];
+            }
+        }
+        outputBuffer.setOffset(0);
+        outputBuffer.setLength(outputBytes);
+    }
+
     private void fillAudioBuffer() {
+        // TODO if speed != 1.0, we need to copy the data in a different fashion (approximation -> later offer different modes of approximation (e.g. nearest, average, polynomial)
         int available;
         if (frameQueue.peek() != null && (available = line.available()) != 0) {
             Buffer audioBuffer = frameQueue.peek().frame.audio.getBuffer();
+            // if speed != 1.0 replace with speed corrected buffer
+            if (speed != 1.0) {
+                long seqNum = frameQueue.peek().seqNum;
+                if (seqNum != speedCorrectedBufferSeqNum) {
+                    copyToSpeedScaledBuffer(audioBuffer, speedCorrectedBuffer, seqNum);
+                    speedCorrectedBufferSeqNum = seqNum;
+                }
+                audioBuffer = speedCorrectedBuffer;
+            }
+            // select part of buffer to write to line out
             int offset = audioBuffer.getOffset() + bufferPos;
             int length = audioBuffer.getLength() - bufferPos;
             if (length > available) {
@@ -127,7 +184,7 @@ public class AudioRenderer extends Actor {
             //System.out.println("AudioRenderer: before writing to line: available = " + available + "; length = "
             //        + length);
             int bytesWritten = line.write((byte[]) audioBuffer.getData(), offset, length);
-            //System.out.println("AudioRenderer: after writing to line: bytesWritten: " + bytesWritten);
+            //System.out.println("AudioRenderer: after else {writing to line: bytesWritten: " + bytesWritten);
             //System.out.println("written " + bytesWritten + " bytes to audio line");
 
             bufferPos += bytesWritten;
@@ -146,6 +203,10 @@ public class AudioRenderer extends Actor {
         } else {
             frame.recycle();
         }
+    }
+
+    private void handleSetSpeed(SetSpeed message) {
+        speed = message.newSpeed;
     }
 
     @Override
