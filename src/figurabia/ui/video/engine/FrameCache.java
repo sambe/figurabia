@@ -118,6 +118,10 @@ public class FrameCache extends Actor {
     }
 
     private void handleFrameRequest(FrameRequest request) {
+        if (request.seqNum < 0) {
+            throw new IllegalArgumentException("Request for invalid seq num: " + request.seqNum);
+        }
+
         CachedFrame cachedFrame = framesBySeqNum.get(request.seqNum);
         // if cache contains frame, take it from cache
         if (cachedFrame != null) {
@@ -255,7 +259,7 @@ public class FrameCache extends Actor {
     }
 
     private CachedFrame getUnusedFromCache() {
-        //System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+        System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
             throw new IllegalStateException("No frame available to reuse");
         }

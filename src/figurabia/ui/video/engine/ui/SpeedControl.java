@@ -21,11 +21,12 @@ public class SpeedControl extends JComponent {
     private static final int QUARTER = SIZE / 4;
     private static final int FIFTH = SIZE / 5;
 
-    private static final double[] SPEEDS = { 0.25, 1.0 / 3.0, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
+    private static final double[] SPEEDS = { -4.0, -3.0, -2.0, -1.5, -1.0, -0.75, -0.5, -1.0 / 3.0, -0.25, 0.25,
+            1.0 / 3.0, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
 
     private MessageSendable controller;
 
-    private static int speedIndex = 4;
+    private static int speedIndex = 13;
     private double currentSpeed = SPEEDS[speedIndex];
 
     public SpeedControl(MessageSendable controller) {

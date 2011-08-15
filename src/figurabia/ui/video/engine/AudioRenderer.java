@@ -128,10 +128,13 @@ public class AudioRenderer extends Actor {
         byte[] idata = (byte[]) inputBuffer.getData();
         byte[] odata = (byte[]) outputBuffer.getData();
 
+        boolean forward = speed > 0.0;
+        double absSpeed = Math.abs(speed);
+
         // check if buffer has sufficient size, and extend if necessary
-        if (odata == null || odata.length < idata.length / speed) {
+        if (odata == null || odata.length < idata.length / absSpeed) {
             // calculating with the min possible speed, or lower if actual is lower
-            double minSpeed = Math.min(speed, MIN_SPEED);
+            double minSpeed = Math.min(absSpeed, MIN_SPEED);
             int length = (int) Math.ceil(idata.length / minSpeed);
             odata = new byte[length];
             outputBuffer.setData(odata);
@@ -140,8 +143,8 @@ public class AudioRenderer extends Actor {
         // determine length
         int frameBytes = audioFormat.getFrameSize();
         int inputFrames = inputBuffer.getLength() / frameBytes;
-        long start = (long) Math.floor(seqNum * inputFrames / speed);
-        long end = (long) Math.floor((seqNum + 1) * inputFrames / speed);
+        long start = (long) Math.floor(seqNum * inputFrames / absSpeed);
+        long end = (long) Math.floor((seqNum + 1) * inputFrames / absSpeed);
         int outputFrames = (int) (end - start);
         int outputBytes = outputFrames * frameBytes;
 
@@ -150,7 +153,7 @@ public class AudioRenderer extends Actor {
             // currently only picking nearest, could be linear or polynomial interpolation
             int nearestInputFrame = i * inputFrames / outputFrames;
             int ibase = nearestInputFrame * frameBytes;
-            int obase = i * frameBytes;
+            int obase = forward ? i * frameBytes : (outputFrames - 1 - i) * frameBytes;
             for (int j = 0; j < frameBytes; j++) {
                 odata[obase + j] = idata[ibase + j];
             }

@@ -55,6 +55,7 @@ public class Controller extends Actor {
 
     private long timerMin = -1;
     private long timerMax = -1;
+    private long startFrameSeqNum = -1;
     private long endFrameSeqNum = -1;
 
     private boolean looping = false;
@@ -128,6 +129,7 @@ public class Controller extends Actor {
         } else {
             timerMax = Math.round(mir.duration * 1000.0);
         }
+        startFrameSeqNum = calculateSeqNum(timerMin);
         endFrameSeqNum = calculateSeqNum(timerMax);
 
         setState(State.STOPPED);
@@ -164,10 +166,12 @@ public class Controller extends Actor {
                 startingTimerPos = timer.getPosition();
                 long currentSeqNum = calculateSeqNum(startingTimerPos);
                 // if at end: start playing from beginning
-                if (currentSeqNum >= endFrameSeqNum) {
-                    timer.setPosition(timerMin);
-                    startingTimerPos = timerMin;
-                    currentSeqNum = calculateSeqNum(timerMin);
+                if (timer.isPlayingForward() && currentSeqNum >= endFrameSeqNum
+                        || !timer.isPlayingForward() && currentSeqNum <= startFrameSeqNum) {
+                    long resetPosition = timer.isPlayingForward() ? timerMin : timerMax;
+                    timer.setPosition(resetPosition);
+                    startingTimerPos = resetPosition;
+                    currentSeqNum = calculateSeqNum(resetPosition);
                 }
                 prefetch(currentSeqNum);
                 audioRenderer.send(message);
@@ -255,7 +259,7 @@ public class Controller extends Actor {
                 recycle(frame, USAGE_COUNT);
                 return;
             }
-            nextSeqNumExpected++;
+            nextSeqNumExpected += timer.getSpeedDirection();
             System.out.println("TRACE: " + frame.seqNum + ": added to queued frames");
             queuedFrames.add(frame);
             audioRenderer.send(frame);
@@ -281,8 +285,9 @@ public class Controller extends Actor {
     private void prefetch(long positionSeqNum) {
         System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
         nextSeqNumExpected = positionSeqNum;
+        long speedDirection = timer.getSpeedDirection();
         for (int i = 0; i < PREFETCH_SIZE; i++) {
-            sendFetchRequest(positionSeqNum + i, false);
+            sendFetchRequest(positionSeqNum + i * speedDirection, false);
         }
     }
 
@@ -316,25 +321,27 @@ public class Controller extends Actor {
             long currentTime = timer.getPosition();
             long currentSeqNum = calculateSeqNum(currentTime);
             if (queuedFrames.isEmpty()) {
-                if (currentSeqNum >= endFrameSeqNum) {
+                if (timer.isPlayingForward() && currentSeqNum >= endFrameSeqNum
+                        || !timer.isPlayingForward() && currentSeqNum <= startFrameSeqNum) { //
                     if (looping) {
-                        handleSetPosition(new SetPosition(timerMin));
+                        long resetPosition = timer.isPlayingForward() ? timerMin : timerMax;
+                        handleSetPosition(new SetPosition(resetPosition));
                     } else {
                         handleControlCommand(new ControlCommand(Command.STOP));
                     }
                 }
             } else {
                 long frameSeqNum = queuedFrames.peek().seqNum;
-                System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = "
-                        + currentTime
-                        + "); queuedFrames.peek().seqNum = " + frameSeqNum);
-                if (frameSeqNum <= currentSeqNum) {
+                //System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = "
+                //        + currentTime + "); queuedFrames.peek().seqNum = " + frameSeqNum);
+                if (timer.isFirstBeforeSecondOrEqual(frameSeqNum, currentSeqNum)) { // <= 
                     videoRenderer.send(queuedFrames.poll());
-                    if (frameSeqNum + PREFETCH_SIZE < endFrameSeqNum) {
-                        sendFetchRequest(frameSeqNum + PREFETCH_SIZE, false);
+                    long prefetchSeqNum = frameSeqNum + PREFETCH_SIZE * timer.getSpeedDirection();
+                    if (prefetchSeqNum >= startFrameSeqNum && prefetchSeqNum < endFrameSeqNum) {
+                        sendFetchRequest(prefetchSeqNum, false);
+                        System.out.println("TRACE: " + prefetchSeqNum + ": sent fetch request");
                     }
                     sendUpdate(new PositionUpdate(currentTime, timerMin, timerMax));
-                    System.out.println("TRACE: " + (frameSeqNum + PREFETCH_SIZE) + ": sent fetch request");
                 }
             }
         }
@@ -413,6 +420,30 @@ public class Controller extends Actor {
             } else {
                 speed = newSpeed;
             }
+        }
+
+        public boolean isPlayingForward() {
+            return speed > 0.0;
+        }
+
+        public boolean isFirstBeforeSecond(long a, long b) {
+            if (speed > 0.0) {
+                return a < b;
+            } else {
+                return a > b;
+            }
+        }
+
+        public boolean isFirstBeforeSecondOrEqual(long a, long b) {
+            if (speed > 0.0) {
+                return a <= b;
+            } else {
+                return a >= b;
+            }
+        }
+
+        public long getSpeedDirection() {
+            return (long) Math.signum(speed);
         }
     }
 
