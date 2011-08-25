@@ -41,6 +41,8 @@ public class MediaInputStream {
     private int videoBufferInts;
     private double audioBufferRestFrames;
 
+    private long currentSeqNum = 0;
+
     public MediaInputStream(File file) throws IOException {
         this.file = file;
         MediaLocator mediaLocator = new MediaLocator("file:" + file.getAbsolutePath());
@@ -97,17 +99,16 @@ public class MediaInputStream {
         audioFrame = new Buffer();
         decodedAudioFrame = new Buffer();
 
-        // retrieve one frame to get the buffer sizes
-        MediaFrame frame = new MediaFrame(new AudioBuffer(), new VideoBuffer());
-        readFrame(frame);
-        //Buffer ab = frame.audio.getBuffer();
-        /*audioBufferBytes = ab.getLength() - ab.getOffset();*/
+        // calculate audio buffer size
         double targetAudioFrames = audioFormat.getSampleRate() / videoFormat.getFrameRate();
-        int audioBufferFrames = (int) Math.floor(targetAudioFrames);
+        int audioBufferFrames = (int) Math.ceil(targetAudioFrames);
         audioBufferRestFrames = targetAudioFrames - audioBufferFrames;
         audioBufferBytes = audioBufferFrames * audioFormat.getFrameSizeInBits() / 8;
         System.out.println("audio buffer bytes: " + audioBufferBytes);
-        Buffer vb = frame.video.getBuffer();
+
+        // retrieve one video frame to get the buffer size
+        Buffer vb = new Buffer();
+        videoTrack.readFrame(vb);
         videoBufferInts = vb.getLength() - vb.getOffset();
         System.out.println("video buffer ints: " + videoBufferInts);
 
@@ -196,7 +197,14 @@ public class MediaInputStream {
         }
     }
 
-    // TODO find a way to handle different frame rates (e.g. video 15 frames per second, audio 88200 frames per second)
+    private long calculateBytePosition(long seqNum) {
+        long audioFramePosition = (long) Math.floor(seqNum * audioFormat.getSampleRate() / videoFormat.getFrameRate());
+        return audioFramePosition * audioFormat.getFrameSizeInBits() / 8;
+    }
+
+    private int calculateSpecificAudioBufferBytes(long seqNum) {
+        return (int) (calculateBytePosition(seqNum + 1) - calculateBytePosition(seqNum));
+    }
 
     public void readFrame(MediaFrame frame) {
 
@@ -205,7 +213,6 @@ public class MediaInputStream {
         videoTrack.readFrame(videoFrame);
 
         if (videoFrame.isEOM()) {
-            // TODO create real error flag in MediaFrame
             frame.endOfMedia = true;
             return; // don't continue if at end of media (EOM)
         } else {
@@ -218,7 +225,8 @@ public class MediaInputStream {
         targetBuffer.setLength(0);
         targetBuffer.setOffset(0);
         int audioResult = 0;
-        while (targetBuffer.getLength() < audioBufferBytes && audioResult == 0) {
+        int frameSpecificAudioBufferBytes = calculateSpecificAudioBufferBytes(currentSeqNum);
+        while (targetBuffer.getLength() < frameSpecificAudioBufferBytes && audioResult == 0) {
             // if there are no bytes left for copying we fetch a new buffer of data
             if (decodedAudioFrameAvailable == 0) {
                 audioFrame.setEOM(false);
@@ -230,7 +238,7 @@ public class MediaInputStream {
                     break;
                 }
             }
-            copySourceAudioFrame(targetBuffer);
+            copySourceAudioFrame(targetBuffer, frameSpecificAudioBufferBytes);
         }
 
         if (videoResult != 0 || audioResult != 0) {
@@ -242,20 +250,26 @@ public class MediaInputStream {
             printBufferInfo(frame.video.getBuffer(), "video");
             printBufferInfo(frame.audio.getBuffer(), "audio");
         }
+
+        currentSeqNum++;
     }
 
-    private void copySourceAudioFrame(Buffer targetBuffer) {
+    private void copySourceAudioFrame(Buffer targetBuffer, int targetBufferBytes) {
         byte[] data = (byte[]) targetBuffer.getData();
         int offset = targetBuffer.getLength();
-        int length = Math.min(decodedAudioFrameAvailable, audioBufferBytes - offset);
+        int length = Math.min(decodedAudioFrameAvailable, targetBufferBytes - offset);
         System.arraycopy(decodedAudioFrame.getData(), decodedAudioFrame.getOffset(), data, offset, length);
         targetBuffer.setLength(offset + length);
         decodedAudioFrameAvailable -= length;
     }
 
     public double setPosition(double seconds) {
+        parser.setPosition(new Time(3), 0); // just to reset
+        // modify position in a way that it won't go to the last frame by mistake
+        seconds = Math.floor(seconds * 1000) / 1000.0 + 0.001;
         Time actualPosition = parser.setPosition(new Time(seconds), 0);
         decodedAudioFrameAvailable = 0;
+        currentSeqNum = (long) Math.round(actualPosition.getSeconds() * videoFormat.getFrameRate());
         return actualPosition.getSeconds();
     }
 

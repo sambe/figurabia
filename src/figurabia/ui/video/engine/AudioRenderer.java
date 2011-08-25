@@ -194,6 +194,9 @@ public class AudioRenderer extends Actor {
             if (bufferPos == audioBuffer.getLength() + audioBuffer.getOffset()) {
                 //System.err.println("DEBUG: Finished playing audio for frame "
                 //        + frameQueue.peek().seqNum);
+                CachedFrame frame = frameQueue.peek();
+                System.out.println("TRACE: " + frame.seqNum + ": " + frame.frame.audio.getBuffer().getLength()
+                        + " bytes in audio buffer; video buffer eom?: " + frame.frame.isEndOfMedia());
                 frameQueue.poll().recycle();
                 bufferPos = 0;
             }

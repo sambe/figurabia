@@ -24,7 +24,7 @@ public class SoundViewer extends JPanel {
     private final static int MARGIN_BOTTOM = 20;
     private final static int MARGIN_TOP = 20;
 
-    private short[] values;
+    private short[][] values;
 
     private int fps = 0;
 
@@ -36,25 +36,28 @@ public class SoundViewer extends JPanel {
         g.setColor(Color.DARK_GRAY);
         g.drawLine(0, dim.height / 2, dim.width, dim.height / 2);
 
-        int n = values.length;
-        g.setColor(Color.BLACK);
-        for (int i = 1; i < n; i++) {
-            drawLine(g, i - 1, n, values[i - 1], values[i], dim);
-        }
-
-        if (fps != 0) {
-            // draw ruler
-            int rulerHeight = dim.height - MARGIN_BOTTOM;
-            //int rulerLength = dim.width - MARGIN_LEFT - MARGIN_RIGHT;
+        for (int k = 0; k < values.length; k++) {
+            short[] v = values[k];
+            int n = v.length;
             g.setColor(Color.BLACK);
-            g.drawLine(MARGIN_LEFT, rulerHeight, MARGIN_RIGHT, rulerHeight);
-            int second = 0;
-            for (int i = 0; i * fps < values.length; i++) {
-                int xi = nrToX(i * fps, values.length, dim.width);
-                g.drawLine(xi, MARGIN_TOP - 5, xi, rulerHeight + 5);
-                if (i % 5 == 0)
-                    g.drawString(Integer.toString(second), xi - 5, rulerHeight + 15);
-                second++;
+            for (int i = 1; i < n; i++) {
+                drawLine(g, i - 1, n, v[i - 1], v[i], dim);
+            }
+
+            if (fps != 0) {
+                // draw ruler
+                int rulerHeight = dim.height - MARGIN_BOTTOM;
+                //int rulerLength = dim.width - MARGIN_LEFT - MARGIN_RIGHT;
+                g.setColor(Color.BLACK);
+                g.drawLine(MARGIN_LEFT, rulerHeight, MARGIN_RIGHT, rulerHeight);
+                int second = 0;
+                for (int i = 0; i * fps < n; i++) {
+                    int xi = nrToX(i * fps, n, dim.width);
+                    g.drawLine(xi, MARGIN_TOP - 5, xi, rulerHeight + 5);
+                    if (i % 5 == 0)
+                        g.drawString(Integer.toString(second), xi - 5, rulerHeight + 15);
+                    second++;
+                }
             }
         }
     }
@@ -76,8 +79,12 @@ public class SoundViewer extends JPanel {
         return ((int) -value - Short.MIN_VALUE) * (height - MARGIN_TOP - MARGIN_BOTTOM) / (1 << 16) + MARGIN_TOP;
     }
 
-    public void setValues(short[] values) {
+    public void setValues(short[][] values) {
         this.values = values.clone();
+    }
+
+    public void setValues(short[] values) {
+        this.values = new short[][] { values.clone() };
     }
 
     private Object waitCondition = new Object();
@@ -102,9 +109,19 @@ public class SoundViewer extends JPanel {
         }
     }
 
-    public static void displayViewer(final short[] values) {
-        final SoundViewer viewer = new SoundViewer();
+    public static void displayViewer(short[][] values) {
+        SoundViewer viewer = new SoundViewer();
         viewer.setValues(values);
+        displayViewer(viewer);
+    }
+
+    public static void displayViewer(short[] values) {
+        SoundViewer viewer = new SoundViewer();
+        viewer.setValues(values);
+        displayViewer(viewer);
+    }
+
+    private static void displayViewer(final SoundViewer viewer) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {

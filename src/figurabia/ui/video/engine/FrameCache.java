@@ -259,7 +259,7 @@ public class FrameCache extends Actor {
     }
 
     private CachedFrame getUnusedFromCache() {
-        System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+        //System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
             throw new IllegalStateException("No frame available to reuse");
         }
