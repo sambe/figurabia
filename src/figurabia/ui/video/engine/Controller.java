@@ -27,7 +27,7 @@ import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
 public class Controller extends Actor {
 
-    private static final int PREFETCH_SIZE = 5;
+    private static final int DEFAULT_PREFETCH_SIZE = 5;
     private static final int USAGE_COUNT = 2;
     private static final int SYNC_OFFSET = 50; //250;
     private static final double MIN_VALID_SPEED = 1.0 / 40.0;
@@ -57,6 +57,7 @@ public class Controller extends Actor {
     private long timerMax = -1;
     private long startFrameSeqNum = -1;
     private long endFrameSeqNum = -1;
+    private int prefetchSize = DEFAULT_PREFETCH_SIZE;
 
     private boolean looping = false;
 
@@ -241,6 +242,12 @@ public class Controller extends Actor {
         timer.setSpeed(message.newSpeed);
         audioRenderer.send(message);
 
+        if (Math.abs(message.newSpeed) > 1.0) {
+            prefetchSize = (int) (DEFAULT_PREFETCH_SIZE * Math.abs(message.newSpeed));
+        } else {
+            prefetchSize = DEFAULT_PREFETCH_SIZE;
+        }
+
         if (running) {
             long currentTime = timer.getPosition();
             long currentSeqNum = calculateSeqNum(currentTime);
@@ -251,7 +258,7 @@ public class Controller extends Actor {
     }
 
     private void handleCachedFrame(CachedFrame frame) {
-        System.out.println("TRACE: " + frame.seqNum + ": received in state " + frame.state);
+        System.out.println("TRACE: " + frame.seqNum + " received in controller");
         if (state == State.PREPARING || state == State.PLAYING) {
             if (frame.seqNum != nextSeqNumExpected) {
                 System.out.println("DEBUG: dropping frame " + frame.seqNum + " because expected " + nextSeqNumExpected);
@@ -286,7 +293,7 @@ public class Controller extends Actor {
         System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
         nextSeqNumExpected = positionSeqNum;
         long speedDirection = timer.getSpeedDirection();
-        for (int i = 0; i < PREFETCH_SIZE; i++) {
+        for (int i = 0; i < prefetchSize; i++) {
             sendFetchRequest(positionSeqNum + i * speedDirection, false);
         }
     }
@@ -315,7 +322,7 @@ public class Controller extends Actor {
         // simpler first running version: no synchronization, just 5 frames ahead (the first 5 on setting position)
         // prefetching TODO (+ initial prefetching on position request & initialization, -> delayed start after the minimum has arrived, sent to sound and sound responded it started)
 
-        // rendering (TODO sound, probably immediately pass on)
+        // timing rendering of video frames
         if (timer.isRunning()) {
             // paint current frame if it changed
             long currentTime = timer.getPosition();
@@ -335,8 +342,17 @@ public class Controller extends Actor {
                 //System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = "
                 //        + currentTime + "); queuedFrames.peek().seqNum = " + frameSeqNum);
                 if (timer.isFirstBeforeSecondOrEqual(frameSeqNum, currentSeqNum)) { // <= 
-                    videoRenderer.send(queuedFrames.poll());
-                    long prefetchSeqNum = frameSeqNum + PREFETCH_SIZE * timer.getSpeedDirection();
+                    CachedFrame frame = queuedFrames.poll();
+                    // if speed 2 or above, only display every second frame, 4 or above only display every 4th
+                    if (timer.getSpeed() < 2.0 ||
+                            timer.getSpeed() < 3.0 && frame.seqNum % 2 == 0 ||
+                            timer.getSpeed() < 4.0 && frame.seqNum % 3 == 0 ||
+                            frame.seqNum % 4 == 0) {
+                        videoRenderer.send(frame);
+                    } else {
+                        frame.recycle();
+                    }
+                    long prefetchSeqNum = frameSeqNum + prefetchSize * timer.getSpeedDirection();
                     if (prefetchSeqNum >= startFrameSeqNum && prefetchSeqNum < endFrameSeqNum) {
                         sendFetchRequest(prefetchSeqNum, false);
                         System.out.println("TRACE: " + prefetchSeqNum + ": sent fetch request");

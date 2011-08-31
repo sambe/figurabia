@@ -11,11 +11,11 @@ import javax.sound.sampled.AudioFormat;
 
 import figurabia.ui.video.access.MediaInputStream;
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.messages.CacheBlock;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.FetchFrames;
 import figurabia.ui.video.engine.messages.MediaInfoRequest;
 import figurabia.ui.video.engine.messages.MediaInfoResponse;
-import figurabia.ui.video.engine.messages.CachedFrame.CachedFrameState;
 
 public class FrameFetcher extends Actor {
 
@@ -51,22 +51,22 @@ public class FrameFetcher extends Actor {
     }
 
     private void handleFetchFrames(FetchFrames message) {
+        CacheBlock block = message.block;
         // set position and find seq nr
-        double position = message.startSeqNr / frameRate;
+        double position = block.baseSeqNum / frameRate;
         mediaInputStream.setPosition(position);
-        long startSeqNr = message.startSeqNr; //Math.round(newPosition * frameRate);
+        long startSeqNr = block.baseSeqNum; //Math.round(newPosition * frameRate);
 
         // read frames from stream
-        for (CachedFrame f : message.frames) {
+        for (CachedFrame f : block.frames) {
             // allocating a buffer if the cachedFrame does not bring one already
             if (f.frame == null) {
                 f.frame = mediaInputStream.createFrameBuffer();
             }
-            f.state = CachedFrameState.FETCHING;
             mediaInputStream.readFrame(f.frame);
             f.seqNum = startSeqNr++;
         }
-        message.responseTo.send(message);
+        message.responseTo.send(block);
     }
 
     private void handleMediaInfoRequest(MediaInfoRequest message) {

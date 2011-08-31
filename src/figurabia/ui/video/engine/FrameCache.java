@@ -4,17 +4,15 @@
  */
 package figurabia.ui.video.engine;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 import figurabia.ui.video.engine.actorframework.Actor;
-import figurabia.ui.video.engine.actorframework.MessageSendable;
+import figurabia.ui.video.engine.messages.CacheBlock;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.FetchFrames;
 import figurabia.ui.video.engine.messages.FrameRequest;
@@ -24,27 +22,20 @@ import figurabia.ui.video.engine.messages.CachedFrame.CachedFrameState;
 
 public class FrameCache extends Actor {
 
-    private static enum RetrievalMode {
-        STREAM,
-        SINGLE_FRAMES;
-    }
-
     // TODO do timing tests to find the optimal value
-    private static final int BATCH_SIZE = 8;
-    private static final int CACHE_SIZE = 96;
-    private static final int CACHE_MIN_RESERVE = 81;
-    private static final int CACHE_MAX_RESERVE = 82;
+    private static final int BLOCK_SIZE = 8;
+    private static final int N_CACHE_BLOCKS = 12;
+    private static final int CACHE_MIN_RESERVE = 10;
+    private static final int CACHE_MAX_RESERVE = 10;
 
     private final FrameFetcher frameFetcher;
 
-    private final CachedFrame[] frames;
-    private final Map<Long, CachedFrame> framesBySeqNum = new HashMap<Long, CachedFrame>();
-    private final PriorityQueue<CachedFrame> unusedLRU = new PriorityQueue<CachedFrame>();
+    private final CacheBlock[] cacheBlocks;
+    private final Map<Long, CacheBlock> blockByBaseSeqNum = new HashMap<Long, CacheBlock>();
+    private final PriorityQueue<CacheBlock> unusedLRU = new PriorityQueue<CacheBlock>();
 
     private final Queue<FrameRequest> queuedRequests = new LinkedList<FrameRequest>();
     private FrameRequest requestForIdleProcessing = null;
-
-    private RetrievalMode retrievalMode = RetrievalMode.STREAM;
 
     // actor responsibilities
     // 1) answer requests for frames (by number/?)
@@ -57,17 +48,24 @@ public class FrameCache extends Actor {
         super(errorHandler);
         this.frameFetcher = frameFetcher;
 
-        frames = new CachedFrame[CACHE_SIZE];
-        for (int i = 0; i < frames.length; i++) {
-            frames[i] = new CachedFrame(i, this);
-            frames[i].seqNum = -1;
-            frames[i].timestamp = 0;
-            frames[i].frame = null;
-            frames[i].usageCount = 0;
+        cacheBlocks = new CacheBlock[N_CACHE_BLOCKS];
+        for (int i = 0; i < cacheBlocks.length; i++) {
+            CachedFrame[] frames = new CachedFrame[BLOCK_SIZE];
+            for (int j = 0; j < frames.length; j++) {
+                frames[j] = new CachedFrame(i, this);
+                frames[j].seqNum = -1;
+                frames[j].frame = null;
+
+            }
+            cacheBlocks[i] = new CacheBlock(i, frames);
+            cacheBlocks[i].baseSeqNum = -1;
+            cacheBlocks[i].timestamp = 0L;
+            cacheBlocks[i].usageCount = 0;
+            cacheBlocks[i].state = CachedFrameState.EMPTY;
         }
 
         // adding them, so they are available for use
-        unusedLRU.addAll(Arrays.asList(frames));
+        unusedLRU.addAll(Arrays.asList(cacheBlocks));
     }
 
     @Override
@@ -79,19 +77,17 @@ public class FrameCache extends Actor {
         if (message instanceof FrameRequest) {
             handleFrameRequest((FrameRequest) message);
         } else if (message instanceof PrefetchRequest) {
-            handlePrefetchRequest((PrefetchRequest) message);
+            prefetchFrame(((PrefetchRequest) message).baseSeqNum);
         }
 
         // response from frame fetcher
         //   - mark in cache and send to requester
-        else if (message instanceof FetchFrames) {
-            FetchFrames ff = (FetchFrames) message;
-            for (CachedFrame cf : ff.frames) {
-                if (cf.usageCount == 0) {
-                    addUnusedToCache(cf);
-                } else {
-                    cf.state = CachedFrameState.IN_USE;
-                }
+        else if (message instanceof CacheBlock) {
+            CacheBlock block = (CacheBlock) message;
+            if (block.usageCount == 0) {
+                addUnusedToCache(block);
+            } else {
+                block.state = CachedFrameState.IN_USE;
             }
             processQueuedRequests(queuedRequests);
         }
@@ -122,92 +118,75 @@ public class FrameCache extends Actor {
             throw new IllegalArgumentException("Request for invalid seq num: " + request.seqNum);
         }
 
-        CachedFrame cachedFrame = framesBySeqNum.get(request.seqNum);
+        long seqNumOffset = request.seqNum % BLOCK_SIZE;
+        long baseSeqNum = request.seqNum - seqNumOffset;
+        CacheBlock block = blockByBaseSeqNum.get(baseSeqNum);
         // if cache contains frame, take it from cache
-        if (cachedFrame != null) {
-            if (cachedFrame.state == CachedFrameState.CACHE) {
-                removeFromCache(cachedFrame);
-                cachedFrame.state = CachedFrameState.IN_USE;
+        if (block != null) {
+            if (block.state == CachedFrameState.CACHE) {
+                removeFromCache(block);
+                block.state = CachedFrameState.IN_USE;
             }
-            cachedFrame.usageCount += request.usageCount;
-            if (cachedFrame.state == CachedFrameState.FETCHING) {
+            block.usageCount += request.usageCount;
+            if (block.state == CachedFrameState.FETCHING) {
                 // already fetching (just queue request for later reply)
                 queuedRequests.add(request);
                 System.err.println("TRACE: " + request.seqNum + ": 1) already fetching -> request queued");
-            } else if (cachedFrame.state == CachedFrameState.IN_USE) { // cachedFrame.state is IN_USE
-                replyFrameRequest(cachedFrame, request.responseTo);
+            } else if (block.state == CachedFrameState.IN_USE) {
+                CachedFrame cachedFrame = block.frames[(int) seqNumOffset];
+                request.responseTo.send(cachedFrame);
                 System.err.println("TRACE: " + request.seqNum + ": 2) cached -> immediate reply");
             } else {
-                throw new IllegalStateException("unexpected state of cachedFrame: " + cachedFrame.state);
+                throw new IllegalStateException("unexpected state of cachedFrame: " + block.state);
             }
         } else { // if cache does not contain frame, request at producer
             if (request.onlyIfFreeResources && unusedLRU.size() < CACHE_MIN_RESERVE) {
                 // put on a special waiting slot, where it might be replaced by any later
                 requestForIdleProcessing = request;
-                System.err.println("TRACE: " + request.seqNum + ": 3) capacity full -> waiting bench");
+                System.err.println("TRACE: " + baseSeqNum + ": 3) capacity full -> waiting bench");
             } else {
                 // if a onlyIfFreeResources request gets executed again, the previous must be outdated
                 if (request.onlyIfFreeResources) {
                     requestForIdleProcessing = null;
                 }
-                requestFrameFromFetcher(request.seqNum, request.usageCount);
+                requestFramesFromFetcher(baseSeqNum, request.usageCount);
                 // queue request for later answer
                 queuedRequests.add(request);
-                System.err.println("TRACE: " + request.seqNum + ": 4) now fetching -> request queued");
+                System.err.println("TRACE: " + baseSeqNum + ": 4) now fetching -> request queued");
             }
         }
     }
 
-    private void requestFrameFromFetcher(long seqNum, int usageCount) {
-        if (retrievalMode == RetrievalMode.SINGLE_FRAMES) {
-            CachedFrame cf = reuseAndPrepareFrame(seqNum, usageCount);
-            frameFetcher.send(new FetchFrames(this, seqNum, Arrays.asList(cf)));
-        } else if (retrievalMode == RetrievalMode.STREAM) {
-            List<CachedFrame> frameBatch = new ArrayList<CachedFrame>();
-            long baseSeqNum = seqNum / BATCH_SIZE * BATCH_SIZE;
-            for (int i = 0; i < BATCH_SIZE; i++) {
-                int uc = baseSeqNum + i == seqNum ? usageCount : 0;
-                // TODO sometimes a few of the batch might still be cached.
-                //      better solution: only reuse whole cache blocks, one timestamp per block
-                CachedFrame cf = reuseAndPrepareFrame(baseSeqNum + i, uc);
-                frameBatch.add(cf);
-            }
-            frameFetcher.send(new FetchFrames(this, baseSeqNum, frameBatch));
-        }
+    private void requestFramesFromFetcher(long baseSeqNum, int usageCount) {
+        CacheBlock block = reuseAndPrepareBlock(baseSeqNum, usageCount);
+        frameFetcher.send(new FetchFrames(this, block));
     }
 
-    private void prefetchFrame(long seqNum) {
-        if (!framesBySeqNum.containsKey(seqNum)) {
+    private void prefetchFrame(long baseSeqNum) {
+        if (baseSeqNum % BLOCK_SIZE != 0) {
+            throw new IllegalArgumentException("not a base seq num, has offset: " + baseSeqNum);
+        }
+        if (!blockByBaseSeqNum.containsKey(baseSeqNum)) {
             // usage count is set as zero, because this request just loads something into cache
-            requestFrameFromFetcher(seqNum, 0);
+            requestFramesFromFetcher(baseSeqNum, 0);
         }
-    }
-
-    private void handlePrefetchRequest(PrefetchRequest request) {
-        if (request.startSeqNum > request.endSeqNum) {
-            throw new IllegalArgumentException("start seq before end seq: " + request.startSeqNum + " "
-                    + request.endSeqNum);
-        }
-        for (long seqNum = request.startSeqNum; seqNum < request.endSeqNum; seqNum++) {
-            prefetchFrame(seqNum);
-        }
-    }
-
-    private void replyFrameRequest(CachedFrame cachedFrame, MessageSendable responseTo) {
-        cachedFrame.state = CachedFrameState.IN_USE;
-        responseTo.send(cachedFrame);
     }
 
     private void processQueuedRequests(Queue<FrameRequest> queuedRequests) {
         while (!queuedRequests.isEmpty()) {
             FrameRequest fr = queuedRequests.peek();
-            CachedFrame cf = framesBySeqNum.get(fr.seqNum);
-            if (cf == null) {
-                throw new IllegalStateException("Request in queue for which there is no CachedFrame waiting: seq num "
+            int seqNumOffset = (int) (fr.seqNum % BLOCK_SIZE);
+            long baseSeqNum = fr.seqNum - seqNumOffset;
+            CacheBlock block = blockByBaseSeqNum.get(baseSeqNum);
+            if (block == null) {
+                throw new IllegalStateException("Request in queue for which there is no cache block found: seq num "
                         + fr.seqNum);
             }
-            if (cf.state == CachedFrameState.CACHE || cf.state == CachedFrameState.IN_USE) {
-                replyFrameRequest(cf, fr.responseTo);
+            if (block.state == CachedFrameState.CACHE || block.state == CachedFrameState.IN_USE) {
+                // send reply
+                block.state = CachedFrameState.IN_USE;
+                CachedFrame cf = block.frames[seqNumOffset];
+                fr.responseTo.send(cf);
                 queuedRequests.remove();
             } else {
                 // stop if a request cannot be answered yet,
@@ -217,55 +196,57 @@ public class FrameCache extends Actor {
         }
     }
 
-    private CachedFrame reuseAndPrepareFrame(long seqNum, int usageCount) {
-        CachedFrame cf = getUnusedFromCache();
-        if (cf.usageCount != 0) {
-            throw new IllegalStateException("Frame must be unused right now (usageCount = " + cf.usageCount + ")");
+    private CacheBlock reuseAndPrepareBlock(long baseSeqNum, int usageCount) {
+        CacheBlock block = getUnusedFromCache();
+        if (block.usageCount != 0) {
+            throw new IllegalStateException("Cache block must be unused right now (usageCount = " + block.usageCount
+                    + ")");
         }
-        cf.state = CachedFrameState.FETCHING;
-        framesBySeqNum.remove(cf.seqNum); // no longer representing the old seqNum
-        cf.seqNum = seqNum;
-        framesBySeqNum.put(seqNum, cf);
-        cf.usageCount += usageCount;
-        return cf;
+        block.state = CachedFrameState.FETCHING;
+        blockByBaseSeqNum.remove(block.baseSeqNum); // no longer representing the old baseSeqNum
+        block.baseSeqNum = baseSeqNum;
+        blockByBaseSeqNum.put(baseSeqNum, block);
+        block.usageCount += usageCount;
+        return block;
     }
 
     private void recycleFrame(CachedFrame cf) {
-        if (cf.usageCount == 0) {
-            System.err.println("WARN: received a frame for recycling that was already fully returned for recycling. "
-                    + cf.seqNum + " at cache index " + cf.index);
+        CacheBlock block = cacheBlocks[cf.index];
+        if (block.usageCount == 0) {
+            System.err.println("WARN: received a frame for recycling that whose block was already fully returned for recycling. "
+                    + cf.seqNum + " at block index " + block.index);
             return;
         }
-        cf.usageCount--;
-        if (cf.usageCount == 0) {
-            addUnusedToCache(cf);
+        block.usageCount--;
+        if (block.usageCount == 0) {
+            addUnusedToCache(block);
         }
     }
 
-    private void addUnusedToCache(CachedFrame cf) {
-        if (cf.usageCount != 0) {
-            throw new IllegalStateException("Tried adding a frame to the cache that is in use: cache index " + cf.index
-                    + ", seq num " + cf.seqNum + ", state " + cf.state);
+    private void addUnusedToCache(CacheBlock block) {
+        if (block.usageCount != 0) {
+            throw new IllegalStateException("Tried adding a cache block to the cache that is in use: cache index "
+                    + block.index
+                    + ", seq num " + block.baseSeqNum + ", state " + block.state);
         }
-        cf.state = CachedFrameState.CACHE;
-        cf.timestamp = System.currentTimeMillis();
-        unusedLRU.add(cf);
-        //System.err.println("DEBUG: Returned frame to unused frames: " + unusedLRU.size() + " (usage count: "
-        //        + cf.usageCount + ") index: " + cf.index);
+        block.state = CachedFrameState.CACHE;
+        block.timestamp = System.currentTimeMillis();
+        unusedLRU.add(block);
+        //System.err.println("DEBUG: Returned block to unused blocks: " + unusedLRU.size() + " (usage count: "
+        //        + block.usageCount + ") index: " + block.index);
     }
 
-    private void removeFromCache(CachedFrame cf) {
-        unusedLRU.remove(cf);
+    private void removeFromCache(CacheBlock block) {
+        unusedLRU.remove(block);
     }
 
-    private CachedFrame getUnusedFromCache() {
-        //System.err.println("DEBUG: Unused cache frames available: " + unusedLRU.size());
+    private CacheBlock getUnusedFromCache() {
+        //System.err.println("DEBUG: Unused cache blocks available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
-            throw new IllegalStateException("No frame available to reuse");
+            throw new IllegalStateException("No cache block available to reuse");
         }
-        CachedFrame cf = unusedLRU.poll();
-        //unusedLRU.remove(cf); // in case it was multiple times in here
-        //System.err.println("DEBUG: removed cached frame " + cf.index + ", usageCount: " + cf.usageCount);
-        return cf;
+        CacheBlock block = unusedLRU.poll();
+        //System.err.println("DEBUG: removed cache block " + block.index + ", usageCount: " + block.usageCount);
+        return block;
     }
 }

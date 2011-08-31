@@ -6,6 +6,7 @@ package figurabia.ui.video.engine.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -65,7 +66,7 @@ public class SpeedControl extends JComponent {
         g.fillRect(0, 0, SIZE, SIZE);
 
         g.setColor(Color.LIGHT_GRAY);
-        // TODO make font smaller
-        g.drawString(Double.toString(currentSpeed), 0, SIZE - QUARTER);
+        g.setFont(new Font("Dialog", Font.PLAIN, 10));
+        g.drawString(Double.toString(currentSpeed), 0, SIZE - SIZE / 3);
     }
 }

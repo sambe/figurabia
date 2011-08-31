@@ -7,7 +7,7 @@ package figurabia.ui.video.engine.messages;
 import figurabia.ui.video.access.MediaFrame;
 import figurabia.ui.video.engine.FrameCache;
 
-public class CachedFrame implements Comparable<CachedFrame> {
+public class CachedFrame {
 
     public CachedFrame(int index, FrameCache cache) {
         this.index = index;
@@ -33,15 +33,17 @@ public class CachedFrame implements Comparable<CachedFrame> {
         IN_USE;
     }
 
-    public final int index;
+    public final FrameCache cache;
+    public final int index; // index of CacheBlock it is part of
+
     public long seqNum;
     public MediaFrame frame;
-    public long timestamp;
-    public int usageCount;
-    public CachedFrameState state = CachedFrameState.EMPTY;
-    public final FrameCache cache;
 
-    @Override
+    //public long timestamp;
+    //public int usageCount;
+    //public CachedFrameState state = CachedFrameState.EMPTY;
+
+    /*@Override
     public int compareTo(CachedFrame o) {
         long diff = timestamp - o.timestamp;
         if (diff < 0) {
@@ -51,7 +53,7 @@ public class CachedFrame implements Comparable<CachedFrame> {
         } else {
             return 0;
         }
-    }
+    }*/
 
     public void recycle() {
         cache.send(new RecyclingBag(this));

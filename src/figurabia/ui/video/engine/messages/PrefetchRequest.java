@@ -5,12 +5,10 @@
 package figurabia.ui.video.engine.messages;
 
 public class PrefetchRequest {
-    public final long startSeqNum;
-    public final long endSeqNum;
+    public final long baseSeqNum;
 
-    public PrefetchRequest(long startSeqNum, long endSeqNum) {
+    public PrefetchRequest(long baseSeqNum) {
         super();
-        this.startSeqNum = startSeqNum;
-        this.endSeqNum = endSeqNum;
+        this.baseSeqNum = baseSeqNum;
     }
 }

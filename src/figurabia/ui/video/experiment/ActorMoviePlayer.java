@@ -107,7 +107,7 @@ public class ActorMoviePlayer {
             List<CachedFrame> requestedFrames = frameReceiver.waitForAllMessages(CachedFrame.class);
 
             // prefetch next batch of frames
-            frameCache.send(new PrefetchRequest(seqnum - FRAME_BATCH, seqnum));
+            frameCache.send(new PrefetchRequest(seqnum));
 
             // preprocess frames
             for (int j = 0; j < FRAME_BATCH; j++) {

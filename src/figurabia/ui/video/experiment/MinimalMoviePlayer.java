@@ -185,7 +185,7 @@ public class MinimalMoviePlayer {
             }
         }
 
-        // TODO was checking out how this would work inside (to estimate if it is expensive to call it often)
+        // was checking out how this would work inside (to estimate if it is expensive to call it often)
         //parser.setPosition(new Time(5.0), 0);
         // other goals: trying to find out, what kind of data is passed around and in what amounts (to find a suitable caching strategy)
 
