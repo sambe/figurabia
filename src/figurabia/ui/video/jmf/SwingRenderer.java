@@ -17,7 +17,7 @@ import com.sun.media.renderer.video.Blitter;
 import com.sun.media.renderer.video.Java2DRenderer;
 import com.sun.media.util.Arch;
 
-import figurabia.ui.video.VideoScreen;
+import figurabia.ui.video.old.VideoScreen;
 
 public class SwingRenderer extends BasicVideoRenderer {
     /*************************************************************************

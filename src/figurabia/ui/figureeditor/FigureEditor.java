@@ -8,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.swing.JPanel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -26,6 +25,7 @@ import figurabia.service.FigureCreationService;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.framework.PositionListener;
 import figurabia.ui.positionviewer.PositionDialogEditor;
+import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureEditor extends JPanel {

@@ -17,12 +17,13 @@ import figurabia.ui.video.engine.messages.CurrentScreen;
 import figurabia.ui.video.engine.messages.MediaError;
 import figurabia.ui.video.engine.messages.NewVideo;
 import figurabia.ui.video.engine.messages.SetPosition;
+import figurabia.ui.video.engine.messages.StatusRequest;
 import figurabia.ui.video.engine.ui.ControlBar;
 import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class ActorMoviePlayer2 {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Actor errorHandler = new Actor(null) {
             @Override
             protected void act(Object message) {
@@ -41,6 +42,23 @@ public class ActorMoviePlayer2 {
         controller.start();
 
         VideoRenderer videoRenderer = controller.getVideoRenderer();
+        VideoScreen screen = createVideoScreen(controller, videoRenderer);
+        VideoScreen screen2 = createVideoScreen(controller, videoRenderer);
+
+        videoRenderer.send(new CurrentScreen(screen));
+
+        controller.send(new NewVideo(new File("/home/sberner/Desktop/10-21.04.09.flv")));
+        controller.send(new SetPosition(0));
+
+        Thread.sleep(20000);
+
+        controller.send(new StatusRequest(5000L, 15000L, null));
+        videoRenderer.send(new CurrentScreen(screen2));
+
+        //controller.send(new ControlCommand(Command.START));
+    }
+
+    private static VideoScreen createVideoScreen(Controller controller, VideoRenderer videoRenderer) {
         VideoScreen screen = new VideoScreen(videoRenderer);
         ControlBar controlBar = new ControlBar(controller);
         JPanel panel = new JPanel();
@@ -50,12 +68,6 @@ public class ActorMoviePlayer2 {
         int width = 640;
         int height = 480 + 20;
         SimplePanelFrame frame = new SimplePanelFrame(panel, width + 20, height + 20 + 65);
-
-        videoRenderer.send(new CurrentScreen(screen));
-
-        controller.send(new NewVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"), 0, null, null));
-        controller.send(new SetPosition(0));
-
-        //controller.send(new ControlCommand(Command.START));
+        return screen;
     }
 }

@@ -9,11 +9,23 @@ import java.io.File;
 public class NewVideo {
 
     public final File videoFile;
-    public final long initialPosition; // in milliseconds
+    public final Long initialPosition; // in milliseconds
     public final Long positionMin;
     public final Long positionMax;
 
-    public NewVideo(File mediaFile, long initialPosition, Long positionMin, Long positionMax) {
+    public NewVideo(File mediaFile) {
+        this(mediaFile, null);
+    }
+
+    public NewVideo(File mediaFile, Long initialPosition) {
+        this(mediaFile, initialPosition, null, null);
+    }
+
+    public NewVideo(File mediaFile, Long positionMin, Long positionMax) {
+        this(mediaFile, null, positionMin, positionMax);
+    }
+
+    public NewVideo(File mediaFile, Long initialPosition, Long positionMin, Long positionMax) {
         this.videoFile = mediaFile;
         this.initialPosition = initialPosition;
         this.positionMin = positionMin;

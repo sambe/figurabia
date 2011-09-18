@@ -62,7 +62,7 @@ import javax.media.renderer.VideoRenderer;
 
 import com.omnividea.FobsConfiguration;
 
-import figurabia.ui.video.VideoScreen;
+import figurabia.ui.video.old.VideoScreen;
 
 public class Java2DRenderer implements VideoRenderer, FrameGrabbingControl {
 

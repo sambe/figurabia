@@ -5,11 +5,8 @@
 package figurabia.ui.video;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -20,29 +17,20 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.media.Buffer;
-import javax.media.Controller;
-import javax.media.ControllerEvent;
-import javax.media.ControllerListener;
-import javax.media.RealizeCompleteEvent;
-import javax.media.StartEvent;
-import javax.media.StopEvent;
-import javax.media.Time;
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.media.format.VideoFormat;
-import javax.media.util.BufferToImage;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 import net.miginfocom.swing.MigLayout;
-
-import com.omnividea.media.renderer.video.Java2DRenderer;
-
 import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
 import figurabia.framework.Workspace;
 import figurabia.ui.framework.PlayerListener;
+import figurabia.ui.video.engine.MediaPlayer;
+import figurabia.ui.video.engine.PositionListener;
+import figurabia.ui.video.engine.messages.CachedFrame;
+import figurabia.ui.video.engine.messages.PositionUpdate;
+import figurabia.ui.video.engine.ui.ControlBar;
+import figurabia.ui.video.engine.ui.VideoScreen;
 
 @SuppressWarnings("serial")
 public class FigurePlayer extends JPanel {
@@ -51,31 +39,71 @@ public class FigurePlayer extends JPanel {
     private FigureModel figureModel;
 
     private MediaPlayer mediaPlayer;
-    private Component playerControl;
     private VideoScreen videoScreen;
+    private ControlBar controlBar;
 
-    private int positionToSwitchToAfterStart = -1;
+    // TODO remove
+    //private int positionToSwitchToAfterStart = -1;
 
     private List<PlayerListener> playerListeners = new ArrayList<PlayerListener>();
 
     private int currentlyActivePosition = -1;
 
-    private boolean repeatFigureOnly = false;
+    // TODO remove this later: should now use the available min/max of the player
+    //private boolean repeatFigureOnly = false;
 
     private boolean inSetter = false;
 
     private boolean active = false;
+
+    private long currentTime = 0;
 
     public FigurePlayer(Workspace workspace, MediaPlayer player, FigureModel figureModel_) {
         //this.workspace = workspace;
         this.figureModel = figureModel_;
 
         mediaPlayer = player;
-        mediaPlayer.setFixedAspectRatio(true); //TODO move this to where the player is created
-        videoScreen = new VideoScreen();
+        videoScreen = player.createScreen();
+        controlBar = player.createControlBar();
 
+        mediaPlayer.addPositionListener(new PositionListener() {
+            private boolean previouslyActive = false;
+
+            @Override
+            public void receive(PositionUpdate update) {
+                Figure figure = figureModel.getCurrentFigure();
+                //System.out.println("DEBUG: FigurePlayer " + this + " figure = " + figure);
+                if (figure == null || figure.getPositions().size() == 0)
+                    return;
+                if (active) {
+                    currentTime = update.position * 1000000L;
+                    List<Long> videoPos = figure.getVideoPositions();
+                    // find the newest position
+                    int newActive = findNearest(videoPos, currentTime);
+                    // only send notifier update if the currently active really changed or the view was just activated
+                    if (currentlyActivePosition != newActive || !previouslyActive) {
+                        previouslyActive = true;
+                        //System.out.println("DEBUG: new position: " + newActive + " (time = " + time + ")");
+                        currentlyActivePosition = newActive;
+                        notifyPlayerListeners(figure, currentlyActivePosition);
+                    }
+
+                    // TODO remove this later (no longer needed, because new player can loop itself
+                    //if (repeatFigureOnly && currentTime > videoPos.get(videoPos.size() - 1)) {
+                    //    setPosition(0);
+                    //}
+                } else {
+                    if (previouslyActive == true) {
+                        System.out.println("DEBUG: Switching previously active to false " + FigurePlayer.this);
+                    }
+                    previouslyActive = false;
+                }
+            }
+        });
+
+        // TODO remove later (was replaced with the positionListener above)
         // add polling to repeatedly find out whether the position has changed
-        Timer playerProgressPollingTimer = new Timer(50, new ActionListener() {
+        /*Timer playerProgressPollingTimer = new Timer(50, new ActionListener() {
             private boolean previouslyActive = false;
 
             @Override
@@ -85,7 +113,7 @@ public class FigurePlayer extends JPanel {
                 if (figure == null || figure.getPositions().size() == 0)
                     return;
                 if (active) {
-                    long currentTime = mediaPlayer.getMediaNanoseconds();
+                    long currentTime = mediaPlayer.getPosition() * 1000000L;
                     List<Long> videoPos = figure.getVideoPositions();
                     // find the newest position
                     /*int newActive = -1;
@@ -98,7 +126,7 @@ public class FigurePlayer extends JPanel {
                     // if player is past the last position
                     if (newActive == -1 && videoPos.get(videoPos.size() - 1) <= currentTime) {
                         newActive = videoPos.size() - 1;
-                    }*/
+                    }* /
                     int newActive = findNearest(videoPos, currentTime);
                     // only send notifier update if the currently active really changed or the view was just activated
                     if (currentlyActivePosition != newActive || !previouslyActive) {
@@ -119,18 +147,12 @@ public class FigurePlayer extends JPanel {
                 }
             }
         });
-        playerProgressPollingTimer.start();
+        playerProgressPollingTimer.start();*/
 
-        mediaPlayer.addControllerListener(new ControllerListener() {
+        // TODO this whole block can probably be removed, because delayed setting of position should no longer be necessary (with the new player)
+        /*mediaPlayer.addControllerListener(new ControllerListener() {
             @Override
             public void controllerUpdate(ControllerEvent event) {
-                if (event instanceof StartEvent) {
-                    videoScreen.setRunning(true);
-                }
-                else if (event instanceof StopEvent) {
-                    videoScreen.setRunning(false);
-                }
-
                 if (!active)
                     return;
                 //System.out.println("DEBUG: state = " + event.getSourceController().getState()
@@ -153,13 +175,14 @@ public class FigurePlayer extends JPanel {
                 }
 
             }
-        });
+        });*/
 
         setBackground(Color.BLACK);
         setOpaque(true);
 
         setLayout(new MigLayout("ins 0,gap 0", "[fill]", "[fill][22]"));
         add(videoScreen, "push, wrap");
+        add(controlBar);
     }
 
     private int findNearest(List<Long> values, long location) {
@@ -195,11 +218,12 @@ public class FigurePlayer extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
     }
 
+    // TODO this method must be removed later
     public void setPositionWhenReady(int i) {
         // cannot change the position right here because otherwise the player will
         // not be prefetched yet and will throw an exception
         if (i != -1) {
-            positionToSwitchToAfterStart = i;
+            setPosition(i);
         }
     }
 
@@ -249,44 +273,19 @@ public class FigurePlayer extends JPanel {
      */
     public void setVideoTime(long nanos) {
         //System.out.println("DEBUG: explicitly setting the video time to " + nanos);
-
-        int state = mediaPlayer.getPlayer().getState();
-        if (state == Controller.Unrealized || state == Controller.Realizing) {
-            System.err.println("ERROR: setVideoTime: player is in unrealized state (" + state + ").");
-            return;
-        }
-
-        // first stop the
-        boolean wasRunning = false;
-        if (mediaPlayer.getPlayer().getState() == Controller.Started) {
-            //System.out.println("DEBUG: explicitly stopping now...");
-            mediaPlayer.stop();
-            wasRunning = true;
-        }
-
-        // TODO currently this is not working reliably, because of interference
-        //      between list selection and video positioning
-        /*// if time to set is less than 2 seconds ahead, let the player run to it
-        if (!wasRunning) {
-            long currentNanos = mediaPlayer.getMediaNanoseconds();
-            if (currentNanos < nanos && nanos - currentNanos < 3000000000L) {
-                System.out.println("DEBUG: trying to make the video play to the position");
-                //mediaPlayer.getPlayer().setStopTime(Player.RESET);
-                mediaPlayer.getPlayer().setStopTime(new Time(nanos));
-                mediaPlayer.start();
-                return;
-            }
-        }*/
-
-        mediaPlayer.setMediaTime(new Time(nanos));
-        if (wasRunning) {
-            //System.out.println("DEBUG: explicitly restarting now...");
-            mediaPlayer.start();
-        }
+        mediaPlayer.setPosition(nanos / 1000000L);
     }
 
     public void setRepeatFigureOnly(boolean figureOnly) {
-        repeatFigureOnly = figureOnly;
+        if (figureOnly) {
+            Figure f = figureModel.getCurrentFigure();
+            List<Long> videoPositions = f.getVideoPositions();
+            long first = videoPositions.get(0) / 1000000L;
+            long last = videoPositions.get(videoPositions.size() - 1) / 1000000L;
+            mediaPlayer.restrictPositionRange(first, last);
+        } else {
+            mediaPlayer.restrictPositionRange(null, null);
+        }
     }
 
     /**
@@ -306,7 +305,8 @@ public class FigurePlayer extends JPanel {
     }
 
     private void activate() {
-        Java2DRenderer renderer = Java2DRenderer.getNewestInstance();
+        mediaPlayer.setActiveScreen(videoScreen);
+        /*Java2DRenderer renderer = Java2DRenderer.getNewestInstance();
         //SwingRenderer renderer = SwingRenderer.getNewestInstance();
         if (renderer == null)
             return;
@@ -315,41 +315,53 @@ public class FigurePlayer extends JPanel {
         if (playerControl != null) {
             remove(playerControl);
         }
-        playerControl = mediaPlayer.getPlayer().getControlPanelComponent();
+        playerControl = mediaPlayer.createControlBar(); //getPlayer().getControlPanelComponent();
         add(playerControl);
-        validate();
+        validate();*/
     }
 
     public long getVideoNanoseconds() {
-        return mediaPlayer.getMediaNanoseconds();
+        return currentTime;
     }
 
-    public void setPositionAndCaptureImage(long time, File pictureDir, int figureId, int bar, int beat) {
+    /*public void setPositionAndCaptureImage(long time, File pictureDir, int figureId, int bar, int beat) {
         mediaPlayer.setMediaTime(new Time(time));
         mediaPlayer.prefetch();
         mediaPlayer.waitForState(Controller.Prefetched);
 
         captureCurrentImage(pictureDir, figureId, bar, beat);
-    }
+    }*/
 
-    public void captureCurrentImage(File pictureDir, int figureId, int bar, int beat) {
+    public void captureCurrentImage(File pictureDir, int figureId, int bar, int beat, long videoNanoseconds) {
         String pictureName = String.format("%03d-%d.jpg", bar, beat);
-        captureImage(new File(pictureDir.getAbsolutePath() + File.separator + figureId + File.separator + pictureName));
+        captureImage(videoNanoseconds, new File(pictureDir.getAbsolutePath() + File.separator + figureId
+                + File.separator + pictureName));
     }
 
-    private void captureImage(File targetFile) {
-        Buffer frame = videoScreen.getFrameGrabbingControl().grabFrame();
+    private void captureImage(long videoNanoseconds, File targetFile) {
+        long mediaTime = videoNanoseconds / 1000000L;
+        // TODO retrieve real frame rate from VideoFormat (also needed below)
+        long frameSeqNum = mediaTime * 24 / 1000;
+        CachedFrame frame = mediaPlayer.getFrame(frameSeqNum);
+        if (frame.frame.isEndOfMedia()) {
+            System.out.println("ERROR: Capturing frame: end of media.");
+            return;
+        }
+        Image img = frame.frame.video.getImage();
+
+        /*Buffer frame = videoScreen.getFrameGrabbingControl().grabFrame();
         if (frame == null) {
             System.out.println("ERROR: Capturing frame: no frame received.");
             return;
         }
         VideoFormat format = (VideoFormat) frame.getFormat();
         BufferToImage b2i = new BufferToImage(format);
-        Image img = b2i.createImage(frame);
+        Image img = b2i.createImage(frame);*/
 
         // code for creating the image and storing it to disk
         // maybe for this purpose: do not even save them, just reference
         try {
+            VideoFormat format = mediaPlayer.getVideoFormat();
             BufferedImage outImage = new BufferedImage(format.getSize().width, format.getSize().height,
                     BufferedImage.TYPE_INT_RGB);
             Graphics og = outImage.getGraphics();
@@ -367,8 +379,10 @@ public class FigurePlayer extends JPanel {
             ios.close();
         } catch (IOException e) {
             System.out.println("ERROR: An IO problem occured during saving of the picture: "
-                    + frame.getSequenceNumber() + ".jpg");
+                    + targetFile);
             e.printStackTrace();
+        } finally {
+            frame.recycle();
         }
     }
 }

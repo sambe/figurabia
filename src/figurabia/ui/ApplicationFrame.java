@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.swing.ButtonGroup;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -45,6 +44,7 @@ import figurabia.ui.figureeditor.FigureEditPerspective;
 import figurabia.ui.figureexplorer.FigureExplorerPerspective;
 import figurabia.ui.figuremapper.FigureMapperPerspective;
 import figurabia.ui.framework.Perspective;
+import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class ApplicationFrame extends JFrame {
@@ -96,11 +96,9 @@ public class ApplicationFrame extends JFrame {
         figureModel.addFigureListener(new FigureListener() {
             @Override
             public void update(ChangeType type, Figure figure) {
-                // set media location
-                String location = "file:" + workspace.getVideoDir().getAbsoluteFile() + "/" + figure.getVideoName();
-                player.setMediaLocation(location);
-                player.prefetch();
-                //mediaPlayer.start();
+                // set video of figure
+                File videoFile = new File(workspace.getVideoDir().getAbsoluteFile() + "/" + figure.getVideoName());
+                player.openVideo(videoFile);
             }
         });
 

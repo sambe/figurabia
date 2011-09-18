@@ -23,6 +23,8 @@ import figurabia.ui.video.engine.messages.RecyclingBag;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.SetSpeed;
 import figurabia.ui.video.engine.messages.StateUpdate;
+import figurabia.ui.video.engine.messages.StatusRequest;
+import figurabia.ui.video.engine.messages.StatusResponse;
 import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
 public class Controller extends Actor {
@@ -53,6 +55,7 @@ public class Controller extends Actor {
     private long startingTimerPos = 0;
     private SetPosition anotherPosSetDuringPreparing = null;
 
+    private long duration = -1;
     private long timerMin = -1;
     private long timerMax = -1;
     private long startFrameSeqNum = -1;
@@ -86,6 +89,13 @@ public class Controller extends Actor {
             handleCachedFrame((CachedFrame) message);
         } else if (message instanceof AudioSyncEvent) {
             handleAudioSyncEvent((AudioSyncEvent) message);
+        } else if (message instanceof StatusRequest) {
+            handleStatusRequest((StatusRequest) message);
+        } else if (message instanceof MediaInfoRequest) {
+            // has to be here, otherwise it would be handled by the old frame fetcher
+            frameFetcher.send(message);
+        } else if (message instanceof FrameRequest) {
+            frameCache.send(message);
         } else {
             throw new IllegalStateException("unknown type of message: " + message.getClass());
         }
@@ -103,7 +113,7 @@ public class Controller extends Actor {
             audioRenderer.send(new ControlCommand(Command.FLUSH));
             timer.stop();
 
-            audioRenderer.start();
+            audioRenderer.stop();
         }
 
         frameFetcher = new FrameFetcher(errorHandler, message.videoFile);
@@ -120,6 +130,7 @@ public class Controller extends Actor {
         audioRenderer.start();
         videoFormat = mir.videoFormat;
 
+        duration = mir.duration;
         if (message.positionMin != null) {
             timerMin = message.positionMin;
         } else {
@@ -128,13 +139,19 @@ public class Controller extends Actor {
         if (message.positionMax != null) {
             timerMax = message.positionMax;
         } else {
-            timerMax = Math.round(mir.duration * 1000.0);
+            timerMax = duration;
         }
         startFrameSeqNum = calculateSeqNum(timerMin);
         endFrameSeqNum = calculateSeqNum(timerMax);
 
         setState(State.STOPPED);
-        setPosition(message.initialPosition);
+        long timerInitial;
+        if (message.initialPosition != null) {
+            timerInitial = message.initialPosition;
+        } else {
+            timerInitial = timerMin;
+        }
+        setPosition(timerInitial);
     }
 
     private void handleAudioSyncEvent(AudioSyncEvent message) {
@@ -174,8 +191,7 @@ public class Controller extends Actor {
                     startingTimerPos = resetPosition;
                     currentSeqNum = calculateSeqNum(resetPosition);
                 }
-                prefetch(currentSeqNum);
-                audioRenderer.send(message);
+                startFetching(currentSeqNum);
                 timer.start();
                 // timer will be repositioned in handleAudioSyncEvent
             }
@@ -184,8 +200,7 @@ public class Controller extends Actor {
             if (timer.isRunning()) {
                 setState(State.STOPPED);
                 timer.stop();
-                audioRenderer.send(message);
-                audioRenderer.send(new ControlCommand(Command.FLUSH));
+                resetFetching();
             }
             break;
         default:
@@ -205,17 +220,13 @@ public class Controller extends Actor {
             } else {
                 setState(State.PREPARING);
                 // first flush everything
-                audioRenderer.send(new ControlCommand(Command.STOP));
-                audioRenderer.send(new ControlCommand(Command.FLUSH));
-                clearQueuedFrames();
+                resetFetching();
 
                 // send fetching requests
-                prefetch(positionSeqNum);
-                audioRenderer.send(new ControlCommand(Command.START));
+                startFetching(positionSeqNum);
             }
         } else {
             sendFetchRequest(positionSeqNum, true);
-            clearQueuedFrames();
         }
 
         // move timer
@@ -229,19 +240,16 @@ public class Controller extends Actor {
         }
 
         boolean running = timer.isRunning();
-
         if (running) {
             setState(State.PREPARING);
             // first flush everything
-            audioRenderer.send(new ControlCommand(Command.STOP));
-            audioRenderer.send(new ControlCommand(Command.FLUSH));
-            clearQueuedFrames();
+            resetFetching();
         }
 
-        startingTimerPos = timer.getPosition();
         timer.setSpeed(message.newSpeed);
         audioRenderer.send(message);
 
+        // extending prefetch size for new speed (only for speeds above 1.0)
         if (Math.abs(message.newSpeed) > 1.0) {
             prefetchSize = (int) (DEFAULT_PREFETCH_SIZE * Math.abs(message.newSpeed));
         } else {
@@ -249,11 +257,10 @@ public class Controller extends Actor {
         }
 
         if (running) {
-            long currentTime = timer.getPosition();
-            long currentSeqNum = calculateSeqNum(currentTime);
+            startingTimerPos = timer.getPosition();
+            long currentSeqNum = calculateSeqNum(startingTimerPos);
             // send fetching requests
-            prefetch(currentSeqNum);
-            audioRenderer.send(new ControlCommand(Command.START));
+            startFetching(currentSeqNum);
         }
     }
 
@@ -277,6 +284,58 @@ public class Controller extends Actor {
         }
     }
 
+    private void handleStatusRequest(StatusRequest request) {
+        if (request.speed != null) {
+            throw new IllegalStateException("not yet supported");
+        }
+        boolean needsRestartOfPlayback = false;
+        boolean needsPositionUpdate = false;
+        long newPosition;
+        if (request.position != null) {
+            newPosition = request.position._;
+            timer.setPosition(newPosition);
+            needsRestartOfPlayback = timer.isRunning();
+            needsPositionUpdate = true;
+        } else {
+            newPosition = timer.getPosition();
+        }
+        if (request.positionMin != null) {
+            // null means reset here
+            if (request.positionMin._ == null) {
+                timerMin = 0;
+            } else {
+                timerMin = request.positionMin._;
+            }
+            startFrameSeqNum = calculateSeqNum(timerMin);
+            needsPositionUpdate = true;
+        }
+        if (request.positionMax != null) {
+            // null means reset here
+            if (request.positionMax._ == null) {
+                timerMax = duration;
+            } else {
+                timerMax = request.positionMax._;
+            }
+            endFrameSeqNum = calculateSeqNum(timerMax);
+            needsPositionUpdate = true;
+        }
+
+        if (needsRestartOfPlayback) {
+            resetFetching();
+
+            long positionSeqNum = calculateSeqNum(newPosition);
+            startFetching(positionSeqNum);
+        }
+
+        if (request.responseTo != null) {
+            request.responseTo.send(new StatusResponse(timer.getPosition(), timerMin, timerMax, timer.getSpeed()));
+        }
+
+        if (needsPositionUpdate) {
+            sendUpdate(new PositionUpdate(newPosition, timerMin, timerMax));
+        }
+    }
+
     private void setState(State state) {
         if (this.state != state) {
             this.state = state;
@@ -287,6 +346,11 @@ public class Controller extends Actor {
     private void setPosition(long newPosition) {
         timer.setPosition(newPosition);
         sendUpdate(new PositionUpdate(newPosition, timerMin, timerMax));
+    }
+
+    private void startFetching(long positionSeqNum) {
+        prefetch(positionSeqNum);
+        audioRenderer.send(new ControlCommand(Command.START));
     }
 
     private void prefetch(long positionSeqNum) {
@@ -300,6 +364,12 @@ public class Controller extends Actor {
 
     private void sendFetchRequest(long seqNum, boolean onlyIfFreeResources) {
         frameCache.send(new FrameRequest(seqNum, USAGE_COUNT, onlyIfFreeResources, this));
+    }
+
+    private void resetFetching() {
+        audioRenderer.send(new ControlCommand(Command.STOP));
+        audioRenderer.send(new ControlCommand(Command.FLUSH));
+        clearQueuedFrames();
     }
 
     private void clearQueuedFrames() {

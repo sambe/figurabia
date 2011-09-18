@@ -11,9 +11,9 @@ public class MediaInfoResponse {
 
     public final VideoFormat videoFormat;
     public final AudioFormat audioFormat;
-    public final double duration;
+    public final long duration;
 
-    public MediaInfoResponse(VideoFormat videoFormat, AudioFormat audioFormat, double duration) {
+    public MediaInfoResponse(VideoFormat videoFormat, AudioFormat audioFormat, long duration) {
         this.videoFormat = videoFormat;
         this.audioFormat = audioFormat;
         this.duration = duration;

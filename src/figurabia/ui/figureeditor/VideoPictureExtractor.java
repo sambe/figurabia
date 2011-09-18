@@ -7,7 +7,6 @@ package figurabia.ui.figureeditor;
 import java.awt.event.ActionListener;
 import java.util.List;
 
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
@@ -22,6 +21,7 @@ import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.video.FigurePlayer;
+import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class VideoPictureExtractor extends JPanel {
@@ -125,7 +125,7 @@ public class VideoPictureExtractor extends JPanel {
         figure.getPositions().add(pos, newPosition);
 
         // add picture
-        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), newBarId, beat);
+        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), newBarId, beat, videoTime);
     }
 
     public void correctSelectedPosition() {
@@ -135,7 +135,7 @@ public class VideoPictureExtractor extends JPanel {
         figure.getVideoPositions().set(index, time);
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
-        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), bar, beat);
+        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), bar, beat, time);
     }
 
     public void setPositionWhenReady(int pos) {

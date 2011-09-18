@@ -9,7 +9,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
@@ -26,6 +25,7 @@ import figurabia.framework.simpleimpl.SimpleWorkspace;
 import figurabia.persistence.XStreamPersistenceProvider;
 import figurabia.ui.framework.Perspective;
 import figurabia.ui.util.SimplePanelFrame;
+import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureEditPerspective extends JPanel implements Perspective {

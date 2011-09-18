@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
-import javax.media.bean.playerbean.MediaPlayer;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -33,6 +32,7 @@ import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.framework.PositionListener;
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.FigurePlayer;
+import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureExplorerPerspective extends JPanel implements Perspective {
@@ -75,7 +75,6 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
                 }
             }
         });
-        player.setRepeatFigureOnly(true);
 
         positionChooser.addPositionListener(new PositionListener() {
             @Override
@@ -100,6 +99,8 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
                 if (figure != figureModel.getCurrentFigure()) {
                     figureModel.setCurrentFigure(figure);
                     player.setPositionWhenReady(index);
+                    // TODO this is only a rough fix: setting the restricted position range
+                    player.setRepeatFigureOnly(true);
                 } else {
                     player.setPosition(index);
                 }
@@ -116,6 +117,7 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
     public void updateOnPerspectiveSwitch(boolean active) {
         System.out.println("DEBUG: FigureExplorerPerspective active = " + active);
         player.setActive(active);
+        player.setRepeatFigureOnly(active);
         if (active)
             possibilitiesView.updateIndex();
     }

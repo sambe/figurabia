@@ -159,8 +159,11 @@ public abstract class Actor implements MessageSendable {
      */
     protected final void sendUpdate(Object message) {
         Class messageType = message.getClass();
-        for (MessageSendable ms : updateReceivers.get(messageType)) {
-            ms.send(message);
+        List<MessageSendable> receivers = updateReceivers.get(messageType);
+        if (receivers != null) {
+            for (MessageSendable ms : receivers) {
+                ms.send(message);
+            }
         }
     }
 }

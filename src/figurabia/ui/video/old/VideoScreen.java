@@ -2,7 +2,7 @@
  * Copyright (c) 2010 by Samuel Berner (samuel.berner@gmail.com), all rights reserved
  * Created on 14.02.2010
  */
-package figurabia.ui.video;
+package figurabia.ui.video.old;
 
 import java.awt.Color;
 import java.awt.Graphics;

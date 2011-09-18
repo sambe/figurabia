@@ -72,7 +72,7 @@ public class FrameFetcher extends Actor {
     private void handleMediaInfoRequest(MediaInfoRequest message) {
         VideoFormat videoFormat = mediaInputStream.getVideoFormat();
         AudioFormat audioFormat = mediaInputStream.getAudioFormat();
-        double duration = mediaInputStream.getDuration();
+        long duration = Math.round(mediaInputStream.getDuration() * 1000.0);
         MediaInfoResponse response = new MediaInfoResponse(videoFormat, audioFormat, duration);
         message.responseTo.send(response);
     }
