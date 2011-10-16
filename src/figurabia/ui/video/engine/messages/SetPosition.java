@@ -7,9 +7,14 @@ package figurabia.ui.video.engine.messages;
 public class SetPosition {
 
     public final long position;
+    public final boolean animated;
 
     public SetPosition(long position) {
-        this.position = position;
+        this(position, false);
     }
 
+    public SetPosition(long position, boolean animated) {
+        this.position = position;
+        this.animated = animated;
+    }
 }

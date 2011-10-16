@@ -45,7 +45,7 @@ public class ActorMoviePlayer {
      */
     public static void main(String[] args) throws Exception {
 
-        Actor errorHandler = new Actor(null) {
+        Actor errorHandler = new Actor(null, 200) {
             @Override
             protected void act(Object message) {
                 if (message instanceof MediaError) {

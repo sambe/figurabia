@@ -33,8 +33,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import figurabia.domain.Figure;
-import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.framework.simpleimpl.SimpleWorkspace;
@@ -93,9 +93,9 @@ public class ApplicationFrame extends JFrame {
 
         final MediaPlayer player = new MediaPlayer();
         figureModel = new FigureModel();
-        figureModel.addFigureListener(new FigureListener() {
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
-            public void update(ChangeType type, Figure figure) {
+            public void update(Figure figure, int index) {
                 // set video of figure
                 File videoFile = new File(workspace.getVideoDir().getAbsoluteFile() + "/" + figure.getVideoName());
                 player.openVideo(videoFile);
@@ -231,7 +231,7 @@ public class ApplicationFrame extends JFrame {
 
         // select the new figure
         if (figure != null) {
-            figureModel.setCurrentFigure(figure);
+            figureModel.setCurrentFigure(figure, -1);
         }
     }
 

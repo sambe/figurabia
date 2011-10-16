@@ -25,7 +25,9 @@ public abstract class Actor implements MessageSendable {
     private final Actor errorHandler;
     private final Map<Class, List<MessageSendable>> updateReceivers;
 
-    protected Actor(Actor errorHandler) {
+    private final int idleMillis;
+
+    protected Actor(Actor errorHandler, int idleMillis) {
         String className = this.getClass().getSimpleName();
         if (className.equals("")) {
             className = "Anonymous Actor";
@@ -34,6 +36,7 @@ public abstract class Actor implements MessageSendable {
         queue = new ConcurrentLinkedQueue<Object>();
         this.errorHandler = errorHandler;
         updateReceivers = new HashMap<Class, List<MessageSendable>>();
+        this.idleMillis = idleMillis;
     }
 
     private class ActorRunnable implements Runnable {
@@ -87,7 +90,7 @@ public abstract class Actor implements MessageSendable {
      */
     protected void idle() {
         try {
-            Thread.sleep(10);
+            Thread.sleep(idleMillis);
         } catch (InterruptedException e) {
             // stop sleeping here
         }

@@ -8,36 +8,36 @@ import java.util.LinkedList;
 import java.util.List;
 
 import figurabia.domain.Figure;
-import figurabia.framework.FigureListener.ChangeType;
 
 public class FigureModel {
 
     private Figure currentFigure;
-    private List<FigureListener> figureListeners = new LinkedList<FigureListener>();
+    private List<FigurePositionListener> figureListeners = new LinkedList<FigurePositionListener>();
 
-    public void addFigureListener(FigureListener l) {
+    public void addFigurePositionListener(FigurePositionListener l) {
         figureListeners.add(l);
     }
 
-    public void removeFigureListener(FigureListener l) {
+    public void removeFigurePositionListener(FigureListener l) {
         figureListeners.remove(l);
     }
 
-    protected void notifyFigureListeners(ChangeType type, Figure f) {
-        for (FigureListener l : figureListeners) {
+    protected void notifyFigurePositionListeners(Figure f, int position) {
+        for (FigurePositionListener l : figureListeners) {
             try {
-                l.update(type, f);
+                l.update(f, position);
             } catch (RuntimeException e) {
-                System.err.println("ERROR: RuntimeException thrown from FigureListener with (" + type + "," + f + ")");
+                System.err.println("ERROR: RuntimeException thrown from FigurePositionListener with (" + f + ","
+                        + position + ")");
                 e.printStackTrace();
             }
         }
     }
 
-    public void setCurrentFigure(Figure f) {
+    public void setCurrentFigure(Figure f, int position) {
         if (f != currentFigure) {
             currentFigure = f;
-            notifyFigureListeners(ChangeType.FIGURE_CHANGED, currentFigure);
+            notifyFigurePositionListeners(currentFigure, position);
         }
     }
 

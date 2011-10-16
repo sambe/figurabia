@@ -4,8 +4,8 @@
  */
 package figurabia.ui.video.engine;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 
 import javax.media.format.VideoFormat;
 
@@ -30,14 +30,22 @@ import figurabia.ui.video.engine.messages.ControlCommand.Command;
 public class Controller extends Actor {
 
     private static final int DEFAULT_PREFETCH_SIZE = 5;
+    private static final int MAX_EXPECTED_PREFETCH_SIZE = DEFAULT_PREFETCH_SIZE * 4;
     private static final int USAGE_COUNT = 2;
     private static final int SYNC_OFFSET = 50; //250;
     private static final double MIN_VALID_SPEED = 1.0 / 40.0;
+    private static final double ANIMATION_SPEED = 2.0;
 
     public static enum State {
-        STOPPED,
-        PREPARING,
-        PLAYING;
+        STOPPED(false),
+        PREPARING(true),
+        PLAYING(true);
+
+        public final boolean running;
+
+        private State(boolean running) {
+            this.running = running;
+        }
     }
 
     private Actor errorHandler;
@@ -46,28 +54,75 @@ public class Controller extends Actor {
     private AudioRenderer audioRenderer;
     private final VideoRenderer videoRenderer;
 
+    // neutral parts (only depending on video)
     private VideoFormat videoFormat;
-
-    private Queue<CachedFrame> queuedFrames = new LinkedList<CachedFrame>();
-    private Timer timer = new Timer();
-
-    private long nextSeqNumExpected = -1;
-    private long startingTimerPos = 0;
-    private SetPosition anotherPosSetDuringPreparing = null;
-
     private long duration = -1;
-    private long timerMin = -1;
-    private long timerMax = -1;
-    private long startFrameSeqNum = -1;
-    private long endFrameSeqNum = -1;
-    private int prefetchSize = DEFAULT_PREFETCH_SIZE;
 
-    private boolean looping = false;
+    private Engine engine = new Engine();
+
+    // TODO this block should go into the PlayConstraints
+    private class PlayConstraints {
+        boolean running = false;
+        long timerMin = -1;
+        long timerMax = -1;
+        long startFrameSeqNum = -1; // dependent on timerMin
+        long endFrameSeqNum = -1; // dependent on timerMax
+        double playerSpeed = 1.0;
+        int prefetchSize = DEFAULT_PREFETCH_SIZE; // dependent on playerSpeed
+        boolean looping = false;
+        boolean mute = false;
+
+        void setTimerMin(Long value) {
+            if (value == null) {
+                timerMin = 0;
+            } else {
+                timerMin = value;
+            }
+            startFrameSeqNum = calculateSeqNum(timerMin);
+        }
+
+        void setTimerMax(Long value) {
+            if (value == null) {
+                timerMax = duration;
+            } else {
+                timerMax = value;
+            }
+            endFrameSeqNum = calculateSeqNum(timerMax);
+        }
+
+        void setSpeed(double speed) {
+            if (Math.abs(speed) < MIN_VALID_SPEED) {
+                // ignore, because this is not a valid speed
+                return;
+            }
+            playerSpeed = speed;
+            double absSpeed = Math.abs(playerSpeed);
+            if (absSpeed > 1.0) {
+                prefetchSize = (int) (DEFAULT_PREFETCH_SIZE * absSpeed);
+            } else {
+                prefetchSize = DEFAULT_PREFETCH_SIZE;
+            }
+        }
+
+        void copyFrom(PlayConstraints pc) {
+            running = pc.running;
+            looping = pc.looping;
+            mute = pc.mute;
+            timerMin = pc.timerMin;
+            timerMax = pc.timerMax;
+            startFrameSeqNum = pc.startFrameSeqNum;
+            endFrameSeqNum = pc.endFrameSeqNum;
+            prefetchSize = pc.prefetchSize;
+            playerSpeed = pc.playerSpeed;
+        }
+    }
+
+    private PlayConstraints controlCons = new PlayConstraints();
 
     private State state;
 
     public Controller(Actor errorHandler) {
-        super(errorHandler);
+        super(errorHandler, 10);
         this.errorHandler = errorHandler;
 
         videoRenderer = new VideoRenderer(errorHandler);
@@ -86,7 +141,7 @@ public class Controller extends Actor {
             handleSetSpeed((SetSpeed) message);
         } else if (message instanceof CachedFrame) {
             //System.out.println("Controller receiving frame " + ((CachedFrame) message).seqNum);
-            handleCachedFrame((CachedFrame) message);
+            engine.handleCachedFrame((CachedFrame) message);
         } else if (message instanceof AudioSyncEvent) {
             handleAudioSyncEvent((AudioSyncEvent) message);
         } else if (message instanceof StatusRequest) {
@@ -103,15 +158,12 @@ public class Controller extends Actor {
 
     private void loadVideo(NewVideo message) {
         if (frameFetcher != null) {
-            nextSeqNumExpected = -1;
-            clearQueuedFrames();
+            engine.reset();
 
             frameFetcher.stop();
             frameCache.stop();
 
-            audioRenderer.send(new ControlCommand(Command.STOP));
-            audioRenderer.send(new ControlCommand(Command.FLUSH));
-            timer.stop();
+            engine.stop();
 
             audioRenderer.stop();
         }
@@ -131,42 +183,24 @@ public class Controller extends Actor {
         videoFormat = mir.videoFormat;
 
         duration = mir.duration;
-        if (message.positionMin != null) {
-            timerMin = message.positionMin;
-        } else {
-            timerMin = 0;
-        }
-        if (message.positionMax != null) {
-            timerMax = message.positionMax;
-        } else {
-            timerMax = duration;
-        }
-        startFrameSeqNum = calculateSeqNum(timerMin);
-        endFrameSeqNum = calculateSeqNum(timerMax);
+        controlCons.setTimerMin(message.positionMin);
+        controlCons.setTimerMax(message.positionMax);
+        engine.setPlayConstraints(controlCons, null);
 
         setState(State.STOPPED);
         long timerInitial;
         if (message.initialPosition != null) {
             timerInitial = message.initialPosition;
         } else {
-            timerInitial = timerMin;
+            timerInitial = controlCons.timerMin;
         }
-        setPosition(timerInitial);
+        engine.setPosition(timerInitial);
     }
 
     private void handleAudioSyncEvent(AudioSyncEvent message) {
         switch (message.type) {
         case START:
-            setState(State.PLAYING);
-            if (anotherPosSetDuringPreparing != null) {
-                // handle SetPosition that was queued, instead of syncing (will change anyway)
-                SetPosition messageToSend = anotherPosSetDuringPreparing;
-                anotherPosSetDuringPreparing = null;
-                handleSetPosition(messageToSend);
-            } else {
-                // sync video to sound
-                timer.setPosition(startingTimerPos + SYNC_OFFSET);
-            }
+            engine.synchronize();
             break;
         case STOP:
             break;
@@ -178,30 +212,19 @@ public class Controller extends Actor {
     private void handleControlCommand(ControlCommand message) {
         switch (message.command) {
         case START:
-            // TODO maybe has to wait until frames are available (cachedFrames non empty)
-            if (!timer.isRunning()) {
-                setState(State.PREPARING);
-                startingTimerPos = timer.getPosition();
-                long currentSeqNum = calculateSeqNum(startingTimerPos);
-                // if at end: start playing from beginning
-                if (timer.isPlayingForward() && currentSeqNum >= endFrameSeqNum
-                        || !timer.isPlayingForward() && currentSeqNum <= startFrameSeqNum) {
-                    long resetPosition = timer.isPlayingForward() ? timerMin : timerMax;
-                    timer.setPosition(resetPosition);
-                    startingTimerPos = resetPosition;
-                    currentSeqNum = calculateSeqNum(resetPosition);
-                }
-                startFetching(currentSeqNum);
-                timer.start();
-                // timer will be repositioned in handleAudioSyncEvent
+            // TODO regard controlCons.running, separate between inner (engine) and outer (control)
+            if (!controlCons.running) {
+                controlCons.running = true;
+                setState(State.PLAYING);
             }
+            engine.setPlayConstraints(controlCons, null);
             break;
         case STOP:
-            if (timer.isRunning()) {
+            if (controlCons.running) {
+                controlCons.running = false;
                 setState(State.STOPPED);
-                timer.stop();
-                resetFetching();
             }
+            engine.setPlayConstraints(controlCons, null);
             break;
         default:
             throw new IllegalArgumentException("controller only supports start and stop");
@@ -209,130 +232,37 @@ public class Controller extends Actor {
     }
 
     private void handleSetPosition(SetPosition message) {
-        startingTimerPos = message.position;
-        long positionSeqNum = calculateSeqNum(startingTimerPos);
-        //System.out.println("positionSeqNum: " + positionSeqNum + " derived from " + message.position);
-
-        if (timer.isRunning()) {
-            if (state == State.PREPARING) {
-                // if already in PREPARING: remember for later to avoid running out of buffers (due to overload)
-                anotherPosSetDuringPreparing = message;
-            } else {
-                setState(State.PREPARING);
-                // first flush everything
-                resetFetching();
-
-                // send fetching requests
-                startFetching(positionSeqNum);
-            }
+        if (message.animated && !engine.isRunning()) {
+            engine.setPositionAnimated(message.position);
         } else {
-            sendFetchRequest(positionSeqNum, true);
+            engine.setPosition(message.position);
         }
-
-        // move timer
-        setPosition(startingTimerPos);
     }
 
     private void handleSetSpeed(SetSpeed message) {
-        if (Math.abs(message.newSpeed) < MIN_VALID_SPEED) {
-            // ignore, because this is not a valid speed
-            return;
-        }
-
-        boolean running = timer.isRunning();
-        if (running) {
-            setState(State.PREPARING);
-            // first flush everything
-            resetFetching();
-        }
-
-        timer.setSpeed(message.newSpeed);
-        audioRenderer.send(message);
-
-        // extending prefetch size for new speed (only for speeds above 1.0)
-        if (Math.abs(message.newSpeed) > 1.0) {
-            prefetchSize = (int) (DEFAULT_PREFETCH_SIZE * Math.abs(message.newSpeed));
-        } else {
-            prefetchSize = DEFAULT_PREFETCH_SIZE;
-        }
-
-        if (running) {
-            startingTimerPos = timer.getPosition();
-            long currentSeqNum = calculateSeqNum(startingTimerPos);
-            // send fetching requests
-            startFetching(currentSeqNum);
-        }
+        controlCons.setSpeed(message.newSpeed);
+        engine.setPlayConstraints(controlCons, null);
     }
 
-    private void handleCachedFrame(CachedFrame frame) {
-        System.out.println("TRACE: " + frame.seqNum + " received in controller");
-        if (state == State.PREPARING || state == State.PLAYING) {
-            if (frame.seqNum != nextSeqNumExpected) {
-                System.out.println("DEBUG: dropping frame " + frame.seqNum + " because expected " + nextSeqNumExpected);
-                // silently drop (was too late, no longer needed)
-                recycle(frame, USAGE_COUNT);
-                return;
-            }
-            nextSeqNumExpected += timer.getSpeedDirection();
-            System.out.println("TRACE: " + frame.seqNum + ": added to queued frames");
-            queuedFrames.add(frame);
-            audioRenderer.send(frame);
-        } else { // result of moving position in stopped state -> immediately display
-            // already recycle once because they're not sent to audio renderer
-            frame.recycle();
-            videoRenderer.send(frame);
+    private void handleStatusRequest(StatusRequest message) {
+        Long position = null;
+        if (message.position != null) {
+            position = message.position._;
         }
-    }
-
-    private void handleStatusRequest(StatusRequest request) {
-        if (request.speed != null) {
-            throw new IllegalStateException("not yet supported");
+        if (message.positionMin != null) {
+            controlCons.setTimerMin(message.positionMin._);
         }
-        boolean needsRestartOfPlayback = false;
-        boolean needsPositionUpdate = false;
-        long newPosition;
-        if (request.position != null) {
-            newPosition = request.position._;
-            timer.setPosition(newPosition);
-            needsRestartOfPlayback = timer.isRunning();
-            needsPositionUpdate = true;
-        } else {
-            newPosition = timer.getPosition();
+        if (message.positionMax != null) {
+            controlCons.setTimerMax(message.positionMax._);
         }
-        if (request.positionMin != null) {
-            // null means reset here
-            if (request.positionMin._ == null) {
-                timerMin = 0;
-            } else {
-                timerMin = request.positionMin._;
-            }
-            startFrameSeqNum = calculateSeqNum(timerMin);
-            needsPositionUpdate = true;
+        if (message.speed != null) {
+            controlCons.setSpeed(message.speed._);
         }
-        if (request.positionMax != null) {
-            // null means reset here
-            if (request.positionMax._ == null) {
-                timerMax = duration;
-            } else {
-                timerMax = request.positionMax._;
-            }
-            endFrameSeqNum = calculateSeqNum(timerMax);
-            needsPositionUpdate = true;
-        }
-
-        if (needsRestartOfPlayback) {
-            resetFetching();
-
-            long positionSeqNum = calculateSeqNum(newPosition);
-            startFetching(positionSeqNum);
-        }
-
-        if (request.responseTo != null) {
-            request.responseTo.send(new StatusResponse(timer.getPosition(), timerMin, timerMax, timer.getSpeed()));
-        }
-
-        if (needsPositionUpdate) {
-            sendUpdate(new PositionUpdate(newPosition, timerMin, timerMax));
+        engine.setPlayConstraints(controlCons, position);
+        if (message.responseTo != null) {
+            position = engine.getPosition();
+            message.responseTo.send(new StatusResponse(position, controlCons.timerMin, controlCons.timerMax,
+                    controlCons.playerSpeed));
         }
     }
 
@@ -343,48 +273,6 @@ public class Controller extends Actor {
         }
     }
 
-    private void setPosition(long newPosition) {
-        timer.setPosition(newPosition);
-        sendUpdate(new PositionUpdate(newPosition, timerMin, timerMax));
-    }
-
-    private void startFetching(long positionSeqNum) {
-        prefetch(positionSeqNum);
-        audioRenderer.send(new ControlCommand(Command.START));
-    }
-
-    private void prefetch(long positionSeqNum) {
-        System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
-        nextSeqNumExpected = positionSeqNum;
-        long speedDirection = timer.getSpeedDirection();
-        for (int i = 0; i < prefetchSize; i++) {
-            sendFetchRequest(positionSeqNum + i * speedDirection, false);
-        }
-    }
-
-    private void sendFetchRequest(long seqNum, boolean onlyIfFreeResources) {
-        frameCache.send(new FrameRequest(seqNum, USAGE_COUNT, onlyIfFreeResources, this));
-    }
-
-    private void resetFetching() {
-        audioRenderer.send(new ControlCommand(Command.STOP));
-        audioRenderer.send(new ControlCommand(Command.FLUSH));
-        clearQueuedFrames();
-    }
-
-    private void clearQueuedFrames() {
-        for (CachedFrame cf : queuedFrames) {
-            recycle(cf, 1);
-        }
-        queuedFrames.clear();
-    }
-
-    private void recycle(CachedFrame cf, int times) {
-        for (int i = 0; i < times; i++) {
-            frameCache.send(new RecyclingBag(cf));
-        }
-    }
-
     @Override
     protected void idle() {
         super.idle();
@@ -392,42 +280,315 @@ public class Controller extends Actor {
         // simpler first running version: no synchronization, just 5 frames ahead (the first 5 on setting position)
         // prefetching TODO (+ initial prefetching on position request & initialization, -> delayed start after the minimum has arrived, sent to sound and sound responded it started)
 
-        // timing rendering of video frames
-        if (timer.isRunning()) {
-            // paint current frame if it changed
-            long currentTime = timer.getPosition();
-            long currentSeqNum = calculateSeqNum(currentTime);
-            if (queuedFrames.isEmpty()) {
-                if (timer.isPlayingForward() && currentSeqNum >= endFrameSeqNum
-                        || !timer.isPlayingForward() && currentSeqNum <= startFrameSeqNum) { //
-                    if (looping) {
-                        long resetPosition = timer.isPlayingForward() ? timerMin : timerMax;
-                        handleSetPosition(new SetPosition(resetPosition));
-                    } else {
-                        handleControlCommand(new ControlCommand(Command.STOP));
-                    }
+        engine.updateFrameInScreenIfTimeHasCome();
+    }
+
+    /**
+     * The engine knows exactly what's happening to the screen. For animations this can be independent of the player
+     * control. This class does everything related to shipping around frames.
+     */
+    private class Engine {
+        private Comparator<CachedFrame> cachedFrameComparator = new Comparator<CachedFrame>() {
+            @Override
+            public int compare(CachedFrame o1, CachedFrame o2) {
+                if (timer.speed > 0.0) {
+                    return o1.seqNum < o2.seqNum ? -1 : 1;
+                } else {
+                    return o2.seqNum < o1.seqNum ? -1 : 1;
+                }
+            }
+        };
+        private PriorityQueue<CachedFrame> queuedFrames = new PriorityQueue<CachedFrame>(MAX_EXPECTED_PREFETCH_SIZE,
+                cachedFrameComparator);
+        private Timer timer = new Timer();
+        private long nextSeqNumExpected = -1;
+        private long startingTimerPos = 0;
+        private Long anotherPosSetDuringPreparing = null;
+
+        private PlayConstraints engineCons = new PlayConstraints();
+
+        private State state = State.STOPPED;
+
+        public void start() {
+            // TODO maybe has to wait until frames are available (cachedFrames non empty)
+            if (!timer.isRunning()) {
+                setState(State.PREPARING);
+                startingTimerPos = timer.getPosition();
+                long currentSeqNum = calculateSeqNum(startingTimerPos);
+                // if at end: start playing from beginning
+                if (timer.isPlayingForward() && currentSeqNum >= controlCons.endFrameSeqNum
+                        || !timer.isPlayingForward() && currentSeqNum <= controlCons.startFrameSeqNum) {
+                    long resetPosition = timer.isPlayingForward() ? controlCons.timerMin : controlCons.timerMax;
+                    timer.setPosition(resetPosition);
+                    startingTimerPos = resetPosition;
+                    currentSeqNum = calculateSeqNum(resetPosition);
+                }
+                timer.setSpeed(engineCons.playerSpeed);
+                startFetching(currentSeqNum);
+                timer.start();
+                // timer will be repositioned in handleAudioSyncEvent
+            }
+        }
+
+        public void stop() {
+            if (timer.isRunning()) {
+                setState(State.STOPPED);
+                timer.stop();
+                resetFetching();
+            }
+        }
+
+        private void restart(Long newPosition) {
+            resetFetching();
+
+            long position;
+            if (newPosition != null)
+                position = newPosition;
+            else
+                position = timer.getPosition();
+            startingTimerPos = position;
+            long positionSeqNum = calculateSeqNum(position);
+            startFetching(positionSeqNum);
+        }
+
+        public void synchronize() {
+            setState(State.PLAYING);
+            if (anotherPosSetDuringPreparing != null) {
+                // handle SetPosition that was queued, instead of syncing (will change anyway)
+                long newPosition = anotherPosSetDuringPreparing;
+                anotherPosSetDuringPreparing = null;
+                setPosition(newPosition);
+            } else {
+                // sync video to sound
+                timer.setPosition(startingTimerPos + SYNC_OFFSET);
+            }
+        }
+
+        private long getPosition() {
+            return timer.getPosition();
+        }
+
+        public void setPosition(long newPosition) {
+            startingTimerPos = newPosition;
+            long positionSeqNum = calculateSeqNum(startingTimerPos);
+            //System.out.println("positionSeqNum: " + positionSeqNum + " derived from " + message.position);
+
+            if (timer.isRunning()) {
+                if (state == State.PREPARING) {
+                    // if already in PREPARING: remember for later to avoid running out of buffers (due to overload)
+                    anotherPosSetDuringPreparing = newPosition;
+                } else {
+                    setState(State.PREPARING);
+                    // first flush everything
+                    resetFetching();
+
+                    // send fetching requests
+                    startFetching(positionSeqNum);
                 }
             } else {
-                long frameSeqNum = queuedFrames.peek().seqNum;
-                //System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = "
-                //        + currentTime + "); queuedFrames.peek().seqNum = " + frameSeqNum);
-                if (timer.isFirstBeforeSecondOrEqual(frameSeqNum, currentSeqNum)) { // <= 
-                    CachedFrame frame = queuedFrames.poll();
-                    // if speed 2 or above, only display every second frame, 4 or above only display every 4th
-                    if (timer.getSpeed() < 2.0 ||
-                            timer.getSpeed() < 3.0 && frame.seqNum % 2 == 0 ||
-                            timer.getSpeed() < 4.0 && frame.seqNum % 3 == 0 ||
-                            frame.seqNum % 4 == 0) {
-                        videoRenderer.send(frame);
-                    } else {
-                        frame.recycle();
+                sendFetchRequest(positionSeqNum, true);
+            }
+
+            // move timer
+            timer.setPosition(startingTimerPos);
+            sendUpdate(new PositionUpdate(startingTimerPos, controlCons.timerMin, controlCons.timerMax));
+        }
+
+        private void sendFetchRequest(long seqNum, boolean onlyIfFreeResources) {
+            frameCache.send(new FrameRequest(seqNum, USAGE_COUNT, onlyIfFreeResources, Controller.this));
+        }
+
+        public void setPositionAnimated(long newPosition) {
+            long position = getPosition();
+            double speed = (position < newPosition) ? ANIMATION_SPEED : -ANIMATION_SPEED;
+            PlayConstraints cons = new PlayConstraints();
+            cons.running = true;
+            cons.looping = false;
+            cons.mute = true;
+            cons.setSpeed(speed);
+            if (position < newPosition) {
+                cons.setTimerMin(null);
+                cons.setTimerMax(newPosition);
+            } else {
+                cons.setTimerMin(newPosition);
+                cons.setTimerMax(null);
+            }
+            setPlayConstraints(cons, null);
+        }
+
+        private void setState(State state) {
+            if (this.state != state) {
+                this.state = state;
+            }
+        }
+
+        public boolean isRunning() {
+            return timer.isRunning();
+        }
+
+        public void setPlayConstraints(PlayConstraints cons, Long position) {
+            // TODO decide if restart, etc. is necessary and apply constraints
+            boolean runningStateChanged = cons.running != timer.isRunning();
+            boolean restartNeeded = false;
+            // a range update is not really needed here, because the update is only for controllers, so it has to be sent on a higher level
+            boolean rangeUpdateNeeded = false;
+            boolean positionUpdateNeeded = position != null;
+
+            // apply all attributes (and decide if restart is needed)
+            if (timer.getSpeed() != cons.playerSpeed) {
+                timer.setSpeed(cons.playerSpeed);
+                restartNeeded = timer.isRunning();
+            }
+            if (engineCons.timerMin != cons.timerMin) {
+                rangeUpdateNeeded = true;
+            }
+            if (engineCons.timerMax != cons.timerMax) {
+                rangeUpdateNeeded = true;
+            }
+
+            engineCons.copyFrom(cons);
+
+            if (runningStateChanged) {
+                if (cons.running) {
+                    if (position != null) {
+                        timer.setPosition(position);
                     }
-                    long prefetchSeqNum = frameSeqNum + prefetchSize * timer.getSpeedDirection();
-                    if (prefetchSeqNum >= startFrameSeqNum && prefetchSeqNum < endFrameSeqNum) {
-                        sendFetchRequest(prefetchSeqNum, false);
-                        System.out.println("TRACE: " + prefetchSeqNum + ": sent fetch request");
+                    start();
+                } else {
+                    stop();
+                    if (position != null) {
+                        timer.setPosition(position);
                     }
-                    sendUpdate(new PositionUpdate(currentTime, timerMin, timerMax));
+                }
+            } else if (restartNeeded) {
+                restart(position);
+            } else {
+                if (position != null) {
+                    setPosition(position);
+                }
+            }
+        }
+
+        private void handleCachedFrame(CachedFrame frame) {
+            System.out.println("TRACE: " + frame.seqNum + " received in controller");
+            if (state == State.PREPARING || state == State.PLAYING) {
+                if (timer.speed > 0.0
+                        && (frame.seqNum < nextSeqNumExpected || frame.seqNum > nextSeqNumExpected
+                                + engineCons.prefetchSize)
+                        || timer.speed < 0.0
+                        && (frame.seqNum > nextSeqNumExpected || frame.seqNum < nextSeqNumExpected
+                                - engineCons.prefetchSize)) {
+                    System.out.println("DEBUG: dropping frame " + frame.seqNum + " because expected "
+                            + nextSeqNumExpected);
+                    // silently drop (was too late, no longer needed)
+                    recycle(frame, USAGE_COUNT);
+                    return;
+                }
+                nextSeqNumExpected += timer.getSpeedDirection();
+                System.out.println("TRACE: " + frame.seqNum + ": added to queued frames");
+                queuedFrames.add(frame);
+                if (!engineCons.mute) {
+                    audioRenderer.send(frame);
+                } else {
+                    frame.recycle();
+                }
+            } else { // result of moving position in stopped state -> immediately display
+                // already recycle once because they're not sent to audio renderer
+                frame.recycle();
+                videoRenderer.send(frame);
+            }
+        }
+
+        private void startFetching(long positionSeqNum) {
+            prefetch(positionSeqNum);
+            if (!engineCons.mute) {
+                audioRenderer.send(new SetSpeed(engineCons.playerSpeed));
+                audioRenderer.send(new ControlCommand(Command.START));
+            }
+        }
+
+        public void prefetch(long positionSeqNum) {
+            System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
+            nextSeqNumExpected = positionSeqNum;
+            long speedDirection = timer.getSpeedDirection();
+            for (int i = 0; i < engineCons.prefetchSize; i++) {
+                sendFetchRequest(positionSeqNum + i * speedDirection, false);
+            }
+        }
+
+        public void reset() {
+            nextSeqNumExpected = -1;
+            clearQueuedFrames();
+
+        }
+
+        public void resetFetching() {
+            if (!engineCons.mute) {
+                audioRenderer.send(new ControlCommand(Command.STOP));
+                audioRenderer.send(new ControlCommand(Command.FLUSH));
+            }
+            clearQueuedFrames();
+        }
+
+        public void clearQueuedFrames() {
+            for (CachedFrame cf : queuedFrames) {
+                recycle(cf, 1);
+            }
+            queuedFrames.clear();
+        }
+
+        private void recycle(CachedFrame cf, int times) {
+            for (int i = 0; i < times; i++) {
+                frameCache.send(new RecyclingBag(cf));
+            }
+        }
+
+        public void updateFrameInScreenIfTimeHasCome() {
+
+            // timing rendering of video frames
+            if (timer.isRunning()) {
+                // paint current frame if it changed
+                long currentTime = timer.getPosition();
+                long currentSeqNum = calculateSeqNum(currentTime);
+                if (queuedFrames.isEmpty()) {
+                    if (timer.isPlayingForward() && currentSeqNum >= engineCons.endFrameSeqNum
+                            || !timer.isPlayingForward() && currentSeqNum <= engineCons.startFrameSeqNum) { //
+                        if (engineCons.looping) {
+                            long resetPosition = timer.isPlayingForward() ? engineCons.timerMin : engineCons.timerMax;
+                            //handleSetPosition(new SetPosition(resetPosition));
+                            restart(resetPosition);
+                        } else {
+                            //handleControlCommand(new ControlCommand(Command.STOP));
+                            engineCons.running = false;
+                            stop();
+                            // also stopping outer control state
+                            controlCons.running = false;
+                            Controller.this.setState(State.STOPPED);
+                        }
+                    }
+                } else {
+                    long frameSeqNum = queuedFrames.peek().seqNum;
+                    //System.out.println("TRACE: currentSeqNum = " + currentSeqNum + " (based on current time = "
+                    //        + currentTime + "); queuedFrames.peek().seqNum = " + frameSeqNum);
+                    if (timer.isFirstBeforeSecondOrEqual(frameSeqNum, currentSeqNum)) { // <= 
+                        CachedFrame frame = queuedFrames.poll();
+                        // if speed 2 or above, only display every second frame, 4 or above only display every 4th
+                        if (timer.getSpeed() < 2.0 ||
+                                timer.getSpeed() < 3.0 && frame.seqNum % 2 == 0 ||
+                                timer.getSpeed() < 4.0 && frame.seqNum % 3 == 0 ||
+                                frame.seqNum % 4 == 0) {
+                            videoRenderer.send(frame);
+                        } else {
+                            frame.recycle();
+                        }
+                        long prefetchSeqNum = frameSeqNum + engineCons.prefetchSize * timer.getSpeedDirection();
+                        if (prefetchSeqNum >= engineCons.startFrameSeqNum && prefetchSeqNum < engineCons.endFrameSeqNum) {
+                            sendFetchRequest(prefetchSeqNum, false);
+                            System.out.println("TRACE: " + prefetchSeqNum + ": sent fetch request");
+                        }
+                        // event must be sent with min and max of control (user is not aware of inner timerMin and timerMax)
+                        sendUpdate(new PositionUpdate(currentTime, controlCons.timerMin, controlCons.timerMax));
+                    }
                 }
             }
         }

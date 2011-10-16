@@ -39,7 +39,7 @@ public class AudioRenderer extends Actor {
     private final Actor syncTarget;
 
     public AudioRenderer(Actor errorHandler, AudioFormat audioFormat, Actor syncTarget) {
-        super(errorHandler);
+        super(errorHandler, 50);
         this.audioFormat = audioFormat;
         this.syncTarget = syncTarget;
     }

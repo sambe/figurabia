@@ -24,7 +24,7 @@ public class FrameFetcher extends Actor {
     private double frameRate = 0;
 
     public FrameFetcher(Actor errorHandler, File mediaFile) {
-        super(errorHandler);
+        super(errorHandler, 50);
         this.mediaFile = mediaFile;
     }
 
@@ -54,7 +54,9 @@ public class FrameFetcher extends Actor {
         CacheBlock block = message.block;
         // set position and find seq nr
         double position = block.baseSeqNum / frameRate;
-        mediaInputStream.setPosition(position);
+        double actualPosition = mediaInputStream.setPosition(position);
+        System.out.println("TRACE: " + block.baseSeqNum + ": fetching at position " + position
+                + " was positionioned at " + actualPosition + " (difference " + (actualPosition - position) + ")");
         long startSeqNr = block.baseSeqNum; //Math.round(newPosition * frameRate);
 
         // read frames from stream

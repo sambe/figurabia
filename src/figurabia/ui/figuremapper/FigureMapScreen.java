@@ -10,6 +10,8 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,6 +42,9 @@ public class FigureMapScreen extends JComponent {
     private Map<Figure, Color> colors;
 
     private PuertoPosition selectedPosition;
+    private Point originalPoint;
+
+    private AffineTransform transform = new AffineTransform();
 
     public FigureMapScreen(PersistenceProvider pp) {
         persistenceProvider = pp;
@@ -56,12 +61,14 @@ public class FigureMapScreen extends JComponent {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent event) {
-                Point mp = event.getPoint();
+                Point eventPoint = event.getPoint();
+                Point2D mp = inverseTransform(new Point2D.Double(eventPoint.x, eventPoint.y));
+                originalPoint = eventPoint;
                 // select position by coordinates (CAUTION: if multiple are in range, the last wins!)
                 for (Entry<PuertoPosition, Point2D> e : coordinates.entrySet()) {
                     Point2D pp = e.getValue();
-                    if (pp.getX() + WIDTH > mp.x && pp.getX() - WIDTH < mp.x && pp.getY() + WIDTH > mp.y
-                            && pp.getY() - WIDTH < mp.y) {
+                    if (pp.getX() + WIDTH > mp.getX() && pp.getX() - WIDTH < mp.getX() && pp.getY() + WIDTH > mp.getY()
+                            && pp.getY() - WIDTH < mp.getY()) {
                         selectedPosition = e.getKey();
                     }
                 }
@@ -69,14 +76,42 @@ public class FigureMapScreen extends JComponent {
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                // reset on double click
+                if (e.getClickCount() == 2) {
+                    transform = new AffineTransform();
+                    selectedPosition = null;
+                    return;
+                }
                 // only if one was selected
                 if (selectedPosition != null) {
                     // set new coordinates of position
                     Point mp = e.getPoint();
-                    coordinates.put(selectedPosition, new Point2D.Double(mp.x, mp.y));
+                    Point2D ptDst = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                    coordinates.put(selectedPosition, ptDst);
                     selectedPosition = null;
                     paintImmediately(-50000, -50000, 100000, 100000);
+                } else {
+                    int oldX = originalPoint.x;
+                    int oldY = originalPoint.y;
+                    Point mp = e.getPoint();
+                    int newX = mp.x;
+                    int newY = mp.y;
+                    int dX = newX - oldX;
+                    int dY = newY - oldY;
+                    transform.translate(dX, dY);
+                    paintImmediately(-50000, -50000, 100000, 100000);
                 }
+            }
+
+            private Point2D inverseTransform(Point2D ptSrc) {
+                Point2D ptDst = new Point2D.Double();
+                try {
+                    transform.inverseTransform(ptSrc, ptDst);
+                } catch (NoninvertibleTransformException ex) {
+                    throw new IllegalStateException("should never happen", ex);
+                }
+                System.out.println("DEBUG: position original: " + ptSrc + "; position destination: " + ptDst);
+                return ptDst;
             }
         });
     }
@@ -105,6 +140,9 @@ public class FigureMapScreen extends JComponent {
     protected void paintComponent(Graphics g) {
         // draw background
         g.clearRect(0, 0, getWidth(), getHeight());
+
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setTransform(transform);
 
         // 1) draw all positions
         PositionPainter pp = new PositionPainter();
@@ -136,5 +174,4 @@ public class FigureMapScreen extends JComponent {
             }
         }
     }
-
 }

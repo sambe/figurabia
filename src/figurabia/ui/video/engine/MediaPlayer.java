@@ -35,7 +35,7 @@ import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class MediaPlayer {
 
-    private Actor errorHandler = new Actor(null) {
+    private Actor errorHandler = new Actor(null, 200) {
         @Override
         protected void act(Object message) {
             if (message instanceof MediaError) {
@@ -115,6 +115,10 @@ public class MediaPlayer {
 
     public void setPosition(long position) {
         controller.send(new SetPosition(position));
+    }
+
+    public void setPositionAnimated(long position) {
+        controller.send(new SetPosition(position, true));
     }
 
     public void start() {

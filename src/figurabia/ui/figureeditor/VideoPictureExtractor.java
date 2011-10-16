@@ -17,6 +17,7 @@ import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.ui.framework.PlayerListener;
@@ -69,9 +70,9 @@ public class VideoPictureExtractor extends JPanel {
         });
 
         // when the selected figure changes
-        figureModel.addFigureListener(new FigureListener() {
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
-            public void update(ChangeType type, Figure figure) {
+            public void update(Figure figure, int position) {
                 updateButtonsEnabled(figure);
             }
         });
@@ -136,10 +137,6 @@ public class VideoPictureExtractor extends JPanel {
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
         figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), bar, beat, time);
-    }
-
-    public void setPositionWhenReady(int pos) {
-        figurePlayer.setPositionWhenReady(pos);
     }
 
     public void setPosition(int pos) {

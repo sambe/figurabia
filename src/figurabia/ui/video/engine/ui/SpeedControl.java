@@ -28,7 +28,7 @@ public class SpeedControl extends JComponent {
     private MessageSendable controller;
 
     private static int speedIndex = 13;
-    private double currentSpeed = SPEEDS[speedIndex];
+    private static double currentSpeed = SPEEDS[speedIndex];
 
     public SpeedControl(MessageSendable controller) {
         this.controller = controller;

@@ -19,6 +19,7 @@ import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.service.FigureCreationService;
@@ -137,9 +138,10 @@ public class FigureEditor extends JPanel {
             public void positionActive(Figure f, int position) {
                 // the figure can only change when the perspective was switched (other than from outside i.e. the figure list)
                 if (figureModel.getCurrentFigure() != f) {
-                    figureModel.setCurrentFigure(f);
+                    figureModel.setCurrentFigure(f, position);
+                } else {
+                    setPositionIndex(position);
                 }
-                setPositionIndex(position);
             }
         });
 
@@ -153,12 +155,14 @@ public class FigureEditor extends JPanel {
             }
         });
 
-        figureModel.addFigureListener(new FigureListener() {
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
-            public void update(ChangeType type, Figure figure) {
+            public void update(Figure figure, int position) {
                 figureCreationService.prepareFigure(figure); // TODO move this to the appropriate place (creation)
                 positionList.setFigure(figure);
-                pictureExtractor.setPositionWhenReady(0); // TODO here is probably not an intuitive place to have this
+                if (position != -1) {
+                    pictureExtractor.setPosition(position); // TODO here is probably not an intuitive place to have this
+                }
             }
         });
 

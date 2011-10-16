@@ -17,8 +17,8 @@ import javax.swing.event.ListSelectionListener;
 
 import net.miginfocom.swing.MigLayout;
 import figurabia.domain.Figure;
-import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.framework.simpleimpl.SimpleWorkspace;
@@ -45,20 +45,23 @@ public class FigureEditPerspective extends JPanel implements Perspective {
         splitPane.setDividerSize(8);
         splitPane.setDividerLocation(0.2);
         add(splitPane, "push");
-        //add(figureEditor, "push");
-        //add(figureList, "west");
 
         figureList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (figureList.getSelectedFigure() != null)
-                    figureModel.setCurrentFigure(figureList.getSelectedFigure());
+                Figure selectedFigure = figureList.getSelectedFigure();
+                if (selectedFigure != null) {
+                    int initialPosition = -1;
+                    if (selectedFigure.getVideoPositions().size() > 0)
+                        initialPosition = 0;
+                    figureModel.setCurrentFigure(selectedFigure, initialPosition);
+                }
             }
         });
 
-        figureModel.addFigureListener(new FigureListener() {
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
-            public void update(ChangeType type, Figure figure) {
+            public void update(Figure figure, int position) {
                 figureList.setSelectedFigure(figure);
             }
         });

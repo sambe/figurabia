@@ -9892,10 +9892,10 @@
             <manDir>OPPOSITE</manDir>
             <frontOffset>10</frontOffset>
             <sideOffset>0</sideOffset>
-            <handsJoined>RIGHT_JOINED</handsJoined>
+            <handsJoined>LEFT_JOINED</handsJoined>
             <handsTwist>0</handsTwist>
             <leftHandHeight>NORMAL</leftHandHeight>
-            <rightHandHeight>ON_SHOULDER</rightHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
             <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
             <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
             <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>

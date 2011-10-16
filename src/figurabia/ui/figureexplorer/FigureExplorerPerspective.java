@@ -97,8 +97,7 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
             @Override
             public void linkActivated(Figure figure, int index) {
                 if (figure != figureModel.getCurrentFigure()) {
-                    figureModel.setCurrentFigure(figure);
-                    player.setPositionWhenReady(index);
+                    figureModel.setCurrentFigure(figure, index);
                     // TODO this is only a rough fix: setting the restricted position range
                     player.setRepeatFigureOnly(true);
                 } else {
@@ -161,6 +160,6 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         //it.next();
         //it.next();
         Figure f = it.next();
-        figureModel.setCurrentFigure(f);
+        figureModel.setCurrentFigure(f, 0);
     }
 }

@@ -42,15 +42,9 @@ public class FigurePlayer extends JPanel {
     private VideoScreen videoScreen;
     private ControlBar controlBar;
 
-    // TODO remove
-    //private int positionToSwitchToAfterStart = -1;
-
     private List<PlayerListener> playerListeners = new ArrayList<PlayerListener>();
 
     private int currentlyActivePosition = -1;
-
-    // TODO remove this later: should now use the available min/max of the player
-    //private boolean repeatFigureOnly = false;
 
     private boolean inSetter = false;
 
@@ -87,11 +81,6 @@ public class FigurePlayer extends JPanel {
                         currentlyActivePosition = newActive;
                         notifyPlayerListeners(figure, currentlyActivePosition);
                     }
-
-                    // TODO remove this later (no longer needed, because new player can loop itself
-                    //if (repeatFigureOnly && currentTime > videoPos.get(videoPos.size() - 1)) {
-                    //    setPosition(0);
-                    //}
                 } else {
                     if (previouslyActive == true) {
                         System.out.println("DEBUG: Switching previously active to false " + FigurePlayer.this);
@@ -100,82 +89,6 @@ public class FigurePlayer extends JPanel {
                 }
             }
         });
-
-        // TODO remove later (was replaced with the positionListener above)
-        // add polling to repeatedly find out whether the position has changed
-        /*Timer playerProgressPollingTimer = new Timer(50, new ActionListener() {
-            private boolean previouslyActive = false;
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Figure figure = figureModel.getCurrentFigure();
-                //System.out.println("DEBUG: FigurePlayer " + this + " figure = " + figure);
-                if (figure == null || figure.getPositions().size() == 0)
-                    return;
-                if (active) {
-                    long currentTime = mediaPlayer.getPosition() * 1000000L;
-                    List<Long> videoPos = figure.getVideoPositions();
-                    // find the newest position
-                    /*int newActive = -1;
-                    for (int i = 0; i < videoPos.size(); i++) {
-                        if (videoPos.get(i) > currentTime) {
-                            newActive = i - 1;
-                            break;
-                        }
-                    }
-                    // if player is past the last position
-                    if (newActive == -1 && videoPos.get(videoPos.size() - 1) <= currentTime) {
-                        newActive = videoPos.size() - 1;
-                    }* /
-                    int newActive = findNearest(videoPos, currentTime);
-                    // only send notifier update if the currently active really changed or the view was just activated
-                    if (currentlyActivePosition != newActive || !previouslyActive) {
-                        previouslyActive = true;
-                        //System.out.println("DEBUG: new position: " + newActive + " (time = " + time + ")");
-                        currentlyActivePosition = newActive;
-                        notifyPlayerListeners(figure, currentlyActivePosition);
-                    }
-
-                    if (repeatFigureOnly && currentTime > videoPos.get(videoPos.size() - 1)) {
-                        setPosition(0);
-                    }
-                } else {
-                    if (previouslyActive == true) {
-                        System.out.println("DEBUG: Switching previously active to false " + FigurePlayer.this);
-                    }
-                    previouslyActive = false;
-                }
-            }
-        });
-        playerProgressPollingTimer.start();*/
-
-        // TODO this whole block can probably be removed, because delayed setting of position should no longer be necessary (with the new player)
-        /*mediaPlayer.addControllerListener(new ControllerListener() {
-            @Override
-            public void controllerUpdate(ControllerEvent event) {
-                if (!active)
-                    return;
-                //System.out.println("DEBUG: state = " + event.getSourceController().getState()
-                //        + "  positionToSwitchTo = " + positionToSwitchToAfterStart);
-                if (event instanceof RealizeCompleteEvent && positionToSwitchToAfterStart != -1) {
-                    System.out.println("DEBUG: changing position now to " + positionToSwitchToAfterStart);
-                    final int newPosition = positionToSwitchToAfterStart;
-                    positionToSwitchToAfterStart = -1;
-                    // invoked asynchronously, because I'm unsure if this is the Swing Dispatch Thread
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            activate();
-
-                            if (newPosition < figureModel.getCurrentFigure().getPositions().size()) {
-                                setPosition(newPosition);
-                            }
-                        }
-                    });
-                }
-
-            }
-        });*/
 
         setBackground(Color.BLACK);
         setOpaque(true);
@@ -218,22 +131,22 @@ public class FigurePlayer extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
     }
 
-    // TODO this method must be removed later
-    public void setPositionWhenReady(int i) {
-        // cannot change the position right here because otherwise the player will
-        // not be prefetched yet and will throw an exception
-        if (i != -1) {
-            setPosition(i);
-        }
+    public void setPosition(int i) {
+        boolean animated = currentlyActivePosition != -1 && Math.abs(i - currentlyActivePosition) == 1;
+        setPosition(i, animated);
     }
 
-    public void setPosition(int i) {
+    public void setPosition(int i, boolean animated) {
         if (inSetter) // prevent recursive setting of the position (would result in multiple times repositioning the video)
             return;
 
         // set media player to the correct position
         Figure figure = figureModel.getCurrentFigure();
-        setVideoTime(figure.getVideoPositions().get(i));
+        long videoTime = figure.getVideoPositions().get(i);
+        if (animated)
+            setVideoTimeAnimated(videoTime);
+        else
+            setVideoTime(videoTime);
         currentlyActivePosition = i;
 
         // explicit call still necessary because the normal timer will only notify the next change
@@ -276,6 +189,10 @@ public class FigurePlayer extends JPanel {
         mediaPlayer.setPosition(nanos / 1000000L);
     }
 
+    private void setVideoTimeAnimated(long nanos) {
+        mediaPlayer.setPositionAnimated(nanos / 1000000L);
+    }
+
     public void setRepeatFigureOnly(boolean figureOnly) {
         if (figureOnly) {
             Figure f = figureModel.getCurrentFigure();
@@ -306,31 +223,11 @@ public class FigurePlayer extends JPanel {
 
     private void activate() {
         mediaPlayer.setActiveScreen(videoScreen);
-        /*Java2DRenderer renderer = Java2DRenderer.getNewestInstance();
-        //SwingRenderer renderer = SwingRenderer.getNewestInstance();
-        if (renderer == null)
-            return;
-        videoScreen.setJava2DRenderer(renderer);
-        //videoScreen.setSwingRenderer(renderer);
-        if (playerControl != null) {
-            remove(playerControl);
-        }
-        playerControl = mediaPlayer.createControlBar(); //getPlayer().getControlPanelComponent();
-        add(playerControl);
-        validate();*/
     }
 
     public long getVideoNanoseconds() {
         return currentTime;
     }
-
-    /*public void setPositionAndCaptureImage(long time, File pictureDir, int figureId, int bar, int beat) {
-        mediaPlayer.setMediaTime(new Time(time));
-        mediaPlayer.prefetch();
-        mediaPlayer.waitForState(Controller.Prefetched);
-
-        captureCurrentImage(pictureDir, figureId, bar, beat);
-    }*/
 
     public void captureCurrentImage(File pictureDir, int figureId, int bar, int beat, long videoNanoseconds) {
         String pictureName = String.format("%03d-%d.jpg", bar, beat);
@@ -340,8 +237,9 @@ public class FigurePlayer extends JPanel {
 
     private void captureImage(long videoNanoseconds, File targetFile) {
         long mediaTime = videoNanoseconds / 1000000L;
-        // TODO retrieve real frame rate from VideoFormat (also needed below)
-        long frameSeqNum = mediaTime * 24 / 1000;
+        VideoFormat format = mediaPlayer.getVideoFormat();
+        double frameRate = format.getFrameRate();
+        long frameSeqNum = (long) Math.floor(mediaTime * frameRate / 1000);
         CachedFrame frame = mediaPlayer.getFrame(frameSeqNum);
         if (frame.frame.isEndOfMedia()) {
             System.out.println("ERROR: Capturing frame: end of media.");
@@ -349,19 +247,9 @@ public class FigurePlayer extends JPanel {
         }
         Image img = frame.frame.video.getImage();
 
-        /*Buffer frame = videoScreen.getFrameGrabbingControl().grabFrame();
-        if (frame == null) {
-            System.out.println("ERROR: Capturing frame: no frame received.");
-            return;
-        }
-        VideoFormat format = (VideoFormat) frame.getFormat();
-        BufferToImage b2i = new BufferToImage(format);
-        Image img = b2i.createImage(frame);*/
-
         // code for creating the image and storing it to disk
         // maybe for this purpose: do not even save them, just reference
         try {
-            VideoFormat format = mediaPlayer.getVideoFormat();
             BufferedImage outImage = new BufferedImage(format.getSize().width, format.getSize().height,
                     BufferedImage.TYPE_INT_RGB);
             Graphics og = outImage.getGraphics();
