@@ -194,8 +194,10 @@ public class FigurePlayer extends JPanel {
     }
 
     public void setRepeatFigureOnly(boolean figureOnly) {
+        Figure f = figureModel.getCurrentFigure();
+        if (f == null)
+            return;
         if (figureOnly) {
-            Figure f = figureModel.getCurrentFigure();
             List<Long> videoPositions = f.getVideoPositions();
             long first = videoPositions.get(0) / 1000000L;
             long last = videoPositions.get(videoPositions.size() - 1) / 1000000L;

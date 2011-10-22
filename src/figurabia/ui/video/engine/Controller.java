@@ -71,6 +71,7 @@ public class Controller extends Actor {
         int prefetchSize = DEFAULT_PREFETCH_SIZE; // dependent on playerSpeed
         boolean looping = false;
         boolean mute = false;
+        boolean positionUpdates = true;
 
         void setTimerMin(Long value) {
             if (value == null) {
@@ -106,14 +107,15 @@ public class Controller extends Actor {
 
         void copyFrom(PlayConstraints pc) {
             running = pc.running;
-            looping = pc.looping;
-            mute = pc.mute;
             timerMin = pc.timerMin;
             timerMax = pc.timerMax;
             startFrameSeqNum = pc.startFrameSeqNum;
             endFrameSeqNum = pc.endFrameSeqNum;
-            prefetchSize = pc.prefetchSize;
             playerSpeed = pc.playerSpeed;
+            prefetchSize = pc.prefetchSize;
+            positionUpdates = pc.positionUpdates;
+            looping = pc.looping;
+            mute = pc.mute;
         }
     }
 
@@ -232,10 +234,15 @@ public class Controller extends Actor {
     }
 
     private void handleSetPosition(SetPosition message) {
-        if (message.animated && !engine.isRunning()) {
+        if (message.animated && !controlCons.running) {
             engine.setPositionAnimated(message.position);
         } else {
-            engine.setPosition(message.position);
+            if (controlCons.running == false && engine.isRunning()) {
+                // if setting position while animation is still running, it needs to be stopped first
+                engine.setPlayConstraints(controlCons, message.position);
+            } else {
+                engine.setPosition(message.position);
+            }
         }
     }
 
@@ -413,7 +420,10 @@ public class Controller extends Actor {
                 cons.setTimerMin(newPosition);
                 cons.setTimerMax(null);
             }
+            cons.positionUpdates = false;
             setPlayConstraints(cons, null);
+            // sending update here, instead of normal updates
+            sendUpdate(new PositionUpdate(newPosition, controlCons.timerMin, controlCons.timerMax));
         }
 
         private void setState(State state) {
@@ -429,7 +439,7 @@ public class Controller extends Actor {
         public void setPlayConstraints(PlayConstraints cons, Long position) {
             // TODO decide if restart, etc. is necessary and apply constraints
             boolean runningStateChanged = cons.running != timer.isRunning();
-            boolean restartNeeded = false;
+            boolean restartNeeded = cons.running && position != null;
             // a range update is not really needed here, because the update is only for controllers, so it has to be sent on a higher level
             boolean rangeUpdateNeeded = false;
             boolean positionUpdateNeeded = position != null;
@@ -437,14 +447,19 @@ public class Controller extends Actor {
             // apply all attributes (and decide if restart is needed)
             if (timer.getSpeed() != cons.playerSpeed) {
                 timer.setSpeed(cons.playerSpeed);
-                restartNeeded = timer.isRunning();
+                restartNeeded = restartNeeded || cons.running;
             }
             if (engineCons.timerMin != cons.timerMin) {
                 rangeUpdateNeeded = true;
+                restartNeeded = restartNeeded || cons.running;
             }
             if (engineCons.timerMax != cons.timerMax) {
                 rangeUpdateNeeded = true;
+                restartNeeded = restartNeeded || cons.running;
             }
+
+            System.out.println("DEBUG: runningStateChanged = " + runningStateChanged + "; restartNeeded = "
+                    + restartNeeded + "; already running = " + timer.isRunning());
 
             engineCons.copyFrom(cons);
 
@@ -457,7 +472,7 @@ public class Controller extends Actor {
                 } else {
                     stop();
                     if (position != null) {
-                        timer.setPosition(position);
+                        setPosition(position);
                     }
                 }
             } else if (restartNeeded) {
@@ -484,7 +499,23 @@ public class Controller extends Actor {
                     recycle(frame, USAGE_COUNT);
                     return;
                 }
-                nextSeqNumExpected += timer.getSpeedDirection();
+                if (frame.seqNum == nextSeqNumExpected) {
+                    long newSeqNum = nextSeqNumExpected;
+                    // find next seq num that hasn't been received yet
+                    while (true) {
+                        newSeqNum = newSeqNum + timer.getSpeedDirection();
+                        boolean alreadyReceived = false;
+                        for (CachedFrame f : queuedFrames) {
+                            if (f.seqNum == newSeqNum) {
+                                alreadyReceived = true;
+                                break;
+                            }
+                        }
+                        if (!alreadyReceived)
+                            break;
+                    }
+                    nextSeqNumExpected = newSeqNum;
+                }
                 System.out.println("TRACE: " + frame.seqNum + ": added to queued frames");
                 queuedFrames.add(frame);
                 if (!engineCons.mute) {
@@ -511,7 +542,14 @@ public class Controller extends Actor {
             System.out.println("DEBUG: " + positionSeqNum + ": prefetching");
             nextSeqNumExpected = positionSeqNum;
             long speedDirection = timer.getSpeedDirection();
-            for (int i = 0; i < engineCons.prefetchSize; i++) {
+            int maxN;
+            if (speedDirection > 0 && positionSeqNum + engineCons.prefetchSize > engineCons.endFrameSeqNum)
+                maxN = (int) (engineCons.endFrameSeqNum - positionSeqNum + 1);
+            else if (speedDirection < 0 && positionSeqNum - engineCons.prefetchSize < engineCons.startFrameSeqNum)
+                maxN = (int) (positionSeqNum - engineCons.startFrameSeqNum + 1);
+            else
+                maxN = engineCons.prefetchSize;
+            for (int i = 0; i < maxN; i++) {
                 sendFetchRequest(positionSeqNum + i * speedDirection, false);
             }
         }
@@ -582,12 +620,15 @@ public class Controller extends Actor {
                             frame.recycle();
                         }
                         long prefetchSeqNum = frameSeqNum + engineCons.prefetchSize * timer.getSpeedDirection();
-                        if (prefetchSeqNum >= engineCons.startFrameSeqNum && prefetchSeqNum < engineCons.endFrameSeqNum) {
+                        if (prefetchSeqNum >= engineCons.startFrameSeqNum
+                                && prefetchSeqNum <= engineCons.endFrameSeqNum) {
                             sendFetchRequest(prefetchSeqNum, false);
                             System.out.println("TRACE: " + prefetchSeqNum + ": sent fetch request");
                         }
                         // event must be sent with min and max of control (user is not aware of inner timerMin and timerMax)
-                        sendUpdate(new PositionUpdate(currentTime, controlCons.timerMin, controlCons.timerMax));
+                        if (engineCons.positionUpdates) {
+                            sendUpdate(new PositionUpdate(currentTime, controlCons.timerMin, controlCons.timerMax));
+                        }
                     }
                 }
             }
