@@ -117,6 +117,7 @@ public class FrameCache extends Actor {
         if (request.seqNum < 0) {
             throw new IllegalArgumentException("Request for invalid seq num: " + request.seqNum);
         }
+        //DEBUG_cacheCounter.lend(request.seqNum, request.usageCount);
 
         long seqNumOffset = request.seqNum % BLOCK_SIZE;
         long baseSeqNum = request.seqNum - seqNumOffset;
@@ -218,9 +219,14 @@ public class FrameCache extends Actor {
             return;
         }
         block.usageCount--;
+        if (block.usageCount < 0) {
+            System.err.println("ILLEGAL_STATE: block.usageCount is negative (" + block.usageCount + ") for block "
+                    + block.index);
+        }
         if (block.usageCount == 0) {
             addUnusedToCache(block);
         }
+        //DEBUG_cacheCounter.giveBack(cf.seqNum);
     }
 
     private void addUnusedToCache(CacheBlock block) {
@@ -241,12 +247,47 @@ public class FrameCache extends Actor {
     }
 
     private CacheBlock getUnusedFromCache() {
-        //System.err.println("DEBUG: Unused cache blocks available: " + unusedLRU.size());
+        System.err.println("DEBUG: Unused cache blocks available: " + unusedLRU.size());
         if (unusedLRU.isEmpty()) {
+            //DEBUG_cacheCounter.printStatistics();
             throw new IllegalStateException("No cache block available to reuse");
         }
         CacheBlock block = unusedLRU.poll();
         //System.err.println("DEBUG: removed cache block " + block.index + ", usageCount: " + block.usageCount);
         return block;
     }
+
+    /*private CacheCounter DEBUG_cacheCounter = new CacheCounter();
+
+    private class CacheCounter {
+        private Map<Long, Integer> cacheCounter = new TreeMap<Long, Integer>();
+
+        public void lend(Long seqNum, int count) {
+            Integer prevCount = cacheCounter.get(seqNum);
+            if (prevCount == null) {
+                prevCount = 0;
+            }
+            cacheCounter.put(seqNum, prevCount + count);
+        }
+
+        public void giveBack(Long seqNum) {
+            Integer prevCount = cacheCounter.get(seqNum);
+            if (prevCount == null) {
+                System.err.println("FAILED ASSERTION: returned seqNum " + seqNum + ", but was not registered");
+                prevCount = 0;
+            }
+            int newCount = prevCount - 1;
+            if (newCount < 0)
+                System.err.println("FAILED ASSERTION: return seqNum " + seqNum + " once too often");
+            cacheCounter.put(seqNum, newCount);
+        }
+
+        public void printStatistics() {
+            for (Entry<Long, Integer> e : cacheCounter.entrySet()) {
+                if (e.getValue() != 0) {
+                    System.err.println("STAT: seqNum: " + e.getKey() + "; count: " + e.getValue());
+                }
+            }
+        }
+    }*/
 }

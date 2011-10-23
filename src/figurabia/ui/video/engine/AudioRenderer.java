@@ -165,7 +165,7 @@ public class AudioRenderer extends Actor {
     private void fillAudioBuffer() {
         // TODO if speed != 1.0, we need to copy the data in a different fashion (approximation -> later offer different modes of approximation (e.g. nearest, average, polynomial)
         int available;
-        if (frameQueue.peek() != null && (available = line.available()) != 0) {
+        while (frameQueue.peek() != null && (available = line.available()) != 0) {
             Buffer audioBuffer = frameQueue.peek().frame.audio.getBuffer();
             // if speed != 1.0 replace with speed corrected buffer
             if (speed != 1.0) {

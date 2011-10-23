@@ -19,7 +19,6 @@ import figurabia.ui.video.engine.messages.MediaInfoRequest;
 import figurabia.ui.video.engine.messages.MediaInfoResponse;
 import figurabia.ui.video.engine.messages.NewVideo;
 import figurabia.ui.video.engine.messages.PositionUpdate;
-import figurabia.ui.video.engine.messages.RecyclingBag;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.SetSpeed;
 import figurabia.ui.video.engine.messages.StateUpdate;
@@ -570,14 +569,14 @@ public class Controller extends Actor {
 
         public void clearQueuedFrames() {
             for (CachedFrame cf : queuedFrames) {
-                recycle(cf, 1);
+                cf.recycle();
             }
             queuedFrames.clear();
         }
 
         private void recycle(CachedFrame cf, int times) {
             for (int i = 0; i < times; i++) {
-                frameCache.send(new RecyclingBag(cf));
+                cf.recycle();
             }
         }
 
