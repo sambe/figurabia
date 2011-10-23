@@ -264,6 +264,9 @@ public class Controller extends Actor {
         if (message.speed != null) {
             controlCons.setSpeed(message.speed._);
         }
+        if (message.mute != null) {
+            controlCons.mute = message.mute._;
+        }
         engine.setPlayConstraints(controlCons, position);
         if (message.responseTo != null) {
             position = engine.getPosition();
@@ -454,6 +457,9 @@ public class Controller extends Actor {
             }
             if (engineCons.timerMax != cons.timerMax) {
                 rangeUpdateNeeded = true;
+                restartNeeded = restartNeeded || cons.running;
+            }
+            if (engineCons.mute != cons.mute) {
                 restartNeeded = restartNeeded || cons.running;
             }
 

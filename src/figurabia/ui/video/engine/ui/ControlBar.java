@@ -28,6 +28,7 @@ public class ControlBar extends JPanel {
     private StartStopButton startStopButton;
     private SpeedControl speedControl;
     private MovieProgressBar movieProgressBar;
+    private SoundMuteButton soundMuteButton;
 
     private MessageSendable controller;
 
@@ -39,11 +40,13 @@ public class ControlBar extends JPanel {
         startStopButton = new StartStopButton(controller);
         speedControl = new SpeedControl(controller);
         movieProgressBar = new MovieProgressBar(controller);
+        soundMuteButton = new SoundMuteButton(controller);
 
-        setLayout(new MigLayout("ins 0,gap 0", "[fill][fill][fill]", "[fill]"));
+        setLayout(new MigLayout("ins 0,gap 0", "[fill][fill][fill][fill]", "[fill]"));
         add(startStopButton, "");
         add(speedControl, "");
         add(movieProgressBar, "push");
+        add(soundMuteButton, "");
 
         controller.send(new RegisterForUpdates(PositionUpdate.class, new MessageSendable() {
             @Override
