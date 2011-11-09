@@ -160,9 +160,9 @@ public class FigureEditor extends JPanel {
             public void update(Figure figure, int position) {
                 figureCreationService.prepareFigure(figure); // TODO move this to the appropriate place (creation)
                 positionList.setFigure(figure);
-                if (position != -1) {
+                /*if (position != -1) {
                     pictureExtractor.setPosition(position); // TODO here is probably not an intuitive place to have this
-                }
+                }*/
             }
         });
 

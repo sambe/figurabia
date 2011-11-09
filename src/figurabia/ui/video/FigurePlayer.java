@@ -49,6 +49,8 @@ public class FigurePlayer extends JPanel {
     private boolean inSetter = false;
 
     private boolean active = false;
+    private boolean previouslyActive = false;
+    private long lastUpdatedPosition = 0;
 
     private long currentTime = 0;
 
@@ -61,32 +63,9 @@ public class FigurePlayer extends JPanel {
         controlBar = player.createControlBar();
 
         mediaPlayer.addPositionListener(new PositionListener() {
-            private boolean previouslyActive = false;
-
             @Override
             public void receive(PositionUpdate update) {
-                Figure figure = figureModel.getCurrentFigure();
-                //System.out.println("DEBUG: FigurePlayer " + this + " figure = " + figure);
-                if (figure == null || figure.getPositions().size() == 0)
-                    return;
-                if (active) {
-                    currentTime = update.position * 1000000L;
-                    List<Long> videoPos = figure.getVideoPositions();
-                    // find the newest position
-                    int newActive = findNearest(videoPos, currentTime);
-                    // only send notifier update if the currently active really changed or the view was just activated
-                    if (currentlyActivePosition != newActive || !previouslyActive) {
-                        previouslyActive = true;
-                        //System.out.println("DEBUG: new position: " + newActive + " (time = " + time + ")");
-                        currentlyActivePosition = newActive;
-                        notifyPlayerListeners(figure, currentlyActivePosition);
-                    }
-                } else {
-                    if (previouslyActive == true) {
-                        System.out.println("DEBUG: Switching previously active to false " + FigurePlayer.this);
-                    }
-                    previouslyActive = false;
-                }
+                onPositionUpdate(update.position);
             }
         });
 
@@ -96,6 +75,32 @@ public class FigurePlayer extends JPanel {
         setLayout(new MigLayout("ins 0,gap 0", "[fill]", "[fill][22]"));
         add(videoScreen, "push, wrap");
         add(controlBar);
+    }
+
+    private void onPositionUpdate(long position) {
+        lastUpdatedPosition = position;
+        Figure figure = figureModel.getCurrentFigure();
+        //System.out.println("DEBUG: FigurePlayer " + this + " figure = " + figure);
+        if (figure == null || figure.getPositions().size() == 0)
+            return;
+        if (active) {
+            currentTime = position * 1000000L;
+            List<Long> videoPos = figure.getVideoPositions();
+            // find the newest position
+            int newActive = findNearest(videoPos, currentTime);
+            // only send notifier update if the currently active really changed or the view was just activated
+            if (currentlyActivePosition != newActive || !previouslyActive) {
+                previouslyActive = true;
+                //System.out.println("DEBUG: new position: " + newActive + " (time = " + time + ")");
+                currentlyActivePosition = newActive;
+                notifyPlayerListeners(figure, currentlyActivePosition);
+            }
+        } else {
+            if (previouslyActive == true) {
+                System.out.println("DEBUG: Switching previously active to false " + FigurePlayer.this);
+            }
+            previouslyActive = false;
+        }
     }
 
     private int findNearest(List<Long> values, long location) {
@@ -225,6 +230,7 @@ public class FigurePlayer extends JPanel {
 
     private void activate() {
         mediaPlayer.setActiveScreen(videoScreen);
+        onPositionUpdate(lastUpdatedPosition);
     }
 
     public long getVideoNanoseconds() {

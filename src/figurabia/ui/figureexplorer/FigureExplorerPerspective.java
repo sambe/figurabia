@@ -117,8 +117,10 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         System.out.println("DEBUG: FigureExplorerPerspective active = " + active);
         player.setActive(active);
         player.setRepeatFigureOnly(active);
-        if (active)
+        if (active) {
+            positionsView.setPosition(figureModel.getCurrentFigure(), figureModel.getCurrentPosition());
             possibilitiesView.updateIndex();
+        }
     }
 
     @Override

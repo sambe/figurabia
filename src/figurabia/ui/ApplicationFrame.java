@@ -98,7 +98,11 @@ public class ApplicationFrame extends JFrame {
             public void update(Figure figure, int index) {
                 // set video of figure
                 File videoFile = new File(workspace.getVideoDir().getAbsoluteFile() + "/" + figure.getVideoName());
-                player.openVideo(videoFile);
+                long initialPosition = 0;
+                if (index != -1) {
+                    initialPosition = figure.getVideoPositions().get(index) / 1000000L;
+                }
+                player.openVideo(videoFile, initialPosition);
             }
         });
 

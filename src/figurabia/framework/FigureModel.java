@@ -12,6 +12,7 @@ import figurabia.domain.Figure;
 public class FigureModel {
 
     private Figure currentFigure;
+    private int currentPosition;
     private List<FigurePositionListener> figureListeners = new LinkedList<FigurePositionListener>();
 
     public void addFigurePositionListener(FigurePositionListener l) {
@@ -34,7 +35,16 @@ public class FigureModel {
         }
     }
 
+    public void setCurrentPosition(int position) {
+        if (position != currentPosition) {
+            currentPosition = position;
+        }
+    }
+
     public void setCurrentFigure(Figure f, int position) {
+        if (position != currentPosition) {
+            currentPosition = position;
+        }
         if (f != currentFigure) {
             currentFigure = f;
             notifyFigurePositionListeners(currentFigure, position);
@@ -43,5 +53,9 @@ public class FigureModel {
 
     public Figure getCurrentFigure() {
         return currentFigure;
+    }
+
+    public int getCurrentPosition() {
+        return currentPosition;
     }
 }
