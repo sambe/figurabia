@@ -35,7 +35,7 @@ import figurabia.ui.video.engine.ui.VideoScreen;
 
 public class MediaPlayer {
 
-    private Actor errorHandler = new Actor(null, 200) {
+    private Actor errorHandler = new Actor(null, -1) {
         @Override
         protected void act(Object message) {
             if (message instanceof MediaError) {

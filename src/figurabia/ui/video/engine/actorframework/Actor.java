@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 
 import figurabia.ui.video.engine.messages.MediaError;
 
@@ -25,9 +26,9 @@ public abstract class Actor implements MessageSendable {
     private final Actor errorHandler;
     private final Map<Class, List<MessageSendable>> updateReceivers;
 
-    private final int idleMillis;
+    private final int idleNanos;
 
-    protected Actor(Actor errorHandler, int idleMillis) {
+    protected Actor(Actor errorHandler, int idleNanos) {
         String className = this.getClass().getSimpleName();
         if (className.equals("")) {
             className = "Anonymous Actor";
@@ -36,7 +37,7 @@ public abstract class Actor implements MessageSendable {
         queue = new ConcurrentLinkedQueue<Object>();
         this.errorHandler = errorHandler;
         updateReceivers = new HashMap<Class, List<MessageSendable>>();
-        this.idleMillis = idleMillis;
+        this.idleNanos = idleNanos;
     }
 
     private class ActorRunnable implements Runnable {
@@ -89,11 +90,10 @@ public abstract class Actor implements MessageSendable {
      * processing during the waiting
      */
     protected void idle() {
-        try {
-            Thread.sleep(idleMillis);
-        } catch (InterruptedException e) {
-            // stop sleeping here
-        }
+        if (idleNanos == -1)
+            LockSupport.park();
+        else
+            LockSupport.parkNanos(idleNanos);
     }
 
     /**
@@ -132,6 +132,7 @@ public abstract class Actor implements MessageSendable {
      */
     public final void stop() {
         stopped = true;
+        LockSupport.unpark(thread);
     }
 
     /**
@@ -141,6 +142,7 @@ public abstract class Actor implements MessageSendable {
      */
     public final void send(Object message) {
         queue.add(message);
+        LockSupport.unpark(thread);
     }
 
     /**

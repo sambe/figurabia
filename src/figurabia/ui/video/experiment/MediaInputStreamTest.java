@@ -55,7 +55,7 @@ public class MediaInputStreamTest {
         final SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
         line.open(audioFormat);
         line.start();*/
-        Actor errorHandler = new Actor(null, 200) {
+        Actor errorHandler = new Actor(null, -1) {
             @Override
             protected void act(Object message) {
                 if (message instanceof MediaError) {
@@ -68,7 +68,7 @@ public class MediaInputStreamTest {
             }
         };
         errorHandler.start();
-        Actor recycler = new Actor(errorHandler, 200) {
+        Actor recycler = new Actor(errorHandler, -1) {
             @Override
             protected void act(Object message) {
                 // do nothing

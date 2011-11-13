@@ -123,7 +123,7 @@ public class Controller extends Actor {
     private State state;
 
     public Controller(Actor errorHandler) {
-        super(errorHandler, 10);
+        super(errorHandler, 10000000);
         this.errorHandler = errorHandler;
 
         videoRenderer = new VideoRenderer(errorHandler);
@@ -188,7 +188,10 @@ public class Controller extends Actor {
         controlCons.setTimerMax(message.positionMax);
         engine.setPlayConstraints(controlCons, null);
 
-        setState(State.STOPPED);
+        if (controlCons.running)
+            setState(State.PLAYING);
+        else
+            setState(State.STOPPED);
         long timerInitial;
         if (message.initialPosition != null) {
             timerInitial = message.initialPosition;

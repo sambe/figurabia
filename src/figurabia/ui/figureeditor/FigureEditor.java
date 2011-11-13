@@ -71,6 +71,10 @@ public class FigureEditor extends JPanel {
             @Override
             public void valueChanged(ListSelectionEvent e) {
 
+                // only process the final value change, not intermediate events
+                if (e.getValueIsAdjusting())
+                    return;
+
                 dialogEditor.startCollectingUpdates();
 
                 try {

@@ -22,6 +22,7 @@ import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.Workspace;
 import figurabia.framework.simpleimpl.SimpleWorkspace;
@@ -103,6 +104,13 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
                 } else {
                     player.setPosition(index);
                 }
+            }
+        });
+
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
+            @Override
+            public void update(Figure f, int position) {
+                positionsView.setPosition(f, position);
             }
         });
 
