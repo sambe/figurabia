@@ -12,8 +12,8 @@ import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 
 import net.miginfocom.swing.MigLayout;
 import figurabia.domain.Figure;
@@ -46,9 +46,10 @@ public class FigureEditPerspective extends JPanel implements Perspective {
         splitPane.setDividerLocation(0.2);
         add(splitPane, "push");
 
-        figureList.addListSelectionListener(new ListSelectionListener() {
+        figureList.addTreeSelectionListener(new TreeSelectionListener() {
+
             @Override
-            public void valueChanged(ListSelectionEvent e) {
+            public void valueChanged(TreeSelectionEvent e) {
                 Figure selectedFigure = figureList.getSelectedFigure();
                 if (selectedFigure != null) {
                     int initialPosition = -1;

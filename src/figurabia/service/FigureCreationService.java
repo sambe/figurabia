@@ -13,6 +13,8 @@ import org.apache.commons.io.FileUtils;
 
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
+import figurabia.domain.Folder;
+import figurabia.domain.FolderItem;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.PersistenceProvider;
@@ -62,6 +64,9 @@ public class FigureCreationService {
         prepareFigure(f);
 
         int id = persistenceProvider.persistFigure(f);
+        Folder root = persistenceProvider.getRootFolder();
+        List<FolderItem> rootFolderItems = persistenceProvider.getItems(root);
+        persistenceProvider.insertItem(root, rootFolderItems.size(), f);
 
         // creating figure pictures directory
         new File(workspace.getPictureDir() + File.separator + id).mkdir();

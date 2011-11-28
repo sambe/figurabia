@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Figure implements Serializable, Cloneable {
+public class Figure implements Serializable, Cloneable, FolderItem {
 
     private final static long serialVersionUID = -2708230799923225277L;
 
@@ -16,6 +16,7 @@ public class Figure implements Serializable, Cloneable {
      * Id of the figure (set when it is made persistent for the first time)
      */
     private int id;
+    private Folder parent;
     /**
      * Name of this figure (optional)
      */
@@ -58,6 +59,20 @@ public class Figure implements Serializable, Cloneable {
      */
     public void setId(int id) {
         this.id = id;
+    }
+
+    /**
+     * @return the parent
+     */
+    public Folder getParent() {
+        return parent;
+    }
+
+    /**
+     * @param parent the parent to set
+     */
+    public void setParent(Folder parent) {
+        this.parent = parent;
     }
 
     /**

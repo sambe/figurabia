@@ -13,10 +13,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,8 +26,11 @@ import org.apache.commons.io.FileUtils;
 
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
+import figurabia.domain.Folder;
+import figurabia.domain.FolderItem;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureListener;
+import figurabia.framework.FolderItemChangeListener;
 import figurabia.framework.PersistenceProvider;
 import figurabia.framework.FigureListener.ChangeType;
 
@@ -43,9 +48,85 @@ public abstract class AbstractFilePersistenceProvider implements PersistenceProv
     protected Map<String, PuertoPosition> namedPositions = new HashMap<String, PuertoPosition>();
 
     protected Set<FigureListener> figureListeners = new HashSet<FigureListener>();
+    protected Set<FolderItemChangeListener> folderItemChangeListeners = new HashSet<FolderItemChangeListener>();
+
+    protected Map<Integer, Folder> folderById = new HashMap<Integer, Folder>();
+    protected Map<Folder, List<FolderItem>> folderItems = new HashMap<Folder, List<FolderItem>>();
+
+    protected Folder rootFolder;
 
     public AbstractFilePersistenceProvider(File serializedDataFile) {
         this.serializedDataFile = serializedDataFile;
+    }
+
+    protected static class FigureReference implements FolderItem {
+
+        private int id;
+
+        public FigureReference(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getName() {
+            return "figure_" + id;
+        }
+
+        /**
+         * @return the id
+         */
+        public int getId() {
+            return id;
+        }
+
+        /**
+         * @return the parent
+         */
+        public Folder getParent() {
+            throw new IllegalStateException("not intended to be used. Convert to real figure first");
+        }
+
+        /**
+         * @param parent the parent to set
+         */
+        public void setParent(Folder parent) {
+            throw new IllegalStateException("not intended to be used. Convert to real figure first");
+        }
+    }
+
+    protected static class FolderReference implements FolderItem {
+
+        private int id;
+
+        public FolderReference(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getName() {
+            return "figure_" + id;
+        }
+
+        /**
+         * @return the id
+         */
+        public int getId() {
+            return id;
+        }
+
+        /**
+         * @return the parent
+         */
+        public Folder getParent() {
+            throw new IllegalStateException("not intended to be used. Convert to real figure first");
+        }
+
+        /**
+         * @param parent the parent to set
+         */
+        public void setParent(Folder parent) {
+            throw new IllegalStateException("not intended to be used. Convert to real figure first");
+        }
     }
 
     private int getNewId() {
@@ -272,5 +353,122 @@ public abstract class AbstractFilePersistenceProvider implements PersistenceProv
         String formattedDate = String.format("_%1$ty%1$tm%1$td", file.lastModified());
         String newName = name.substring(0, lastDot) + formattedDate + name.substring(lastDot);
         return new File(file.getParentFile(), newName);
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#getItems(figurabia.domain.Folder)
+     */
+    @Override
+    public List<FolderItem> getItems(Folder folder) {
+        return folderItems.get(folder);
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#getRootFolder()
+     */
+    @Override
+    public Folder getRootFolder() {
+        return rootFolder;
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#newFolder(java.lang.String, int, figurabia.domain.Folder)
+     */
+    @Override
+    public Folder newFolder(String name, int index, Folder parent) {
+        int id = getNewId();
+        Folder folder = new Folder(id, name, parent);
+        folderById.put(folder.getId(), (Folder) folder);
+        folderItems.get(parent).add(index, folder);
+        folderItems.put(folder, new ArrayList<FolderItem>());
+        // emit update event
+        for (FolderItemChangeListener l : folderItemChangeListeners) {
+            l.itemAdded(parent, index, folder);
+        }
+        return folder;
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#insertItem(figurabia.domain.Folder, int,
+     * figurabia.domain.FolderItem)
+     */
+    @Override
+    public void insertItem(Folder folder, int index, FolderItem item) {
+        item.setParent(folder);
+        folderItems.get(folder).add(index, item);
+        // emit update event
+        for (FolderItemChangeListener l : folderItemChangeListeners) {
+            l.itemAdded(folder, index, item);
+        }
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#moveItem(figurabia.domain.Folder, int, figurabia.domain.Folder, int)
+     */
+    @Override
+    public void moveItem(Folder oldFolder, int oldIndex, Folder newFolder, int newIndex) {
+        FolderItem item = folderItems.get(oldFolder).remove(oldIndex);
+        folderItems.get(newFolder).add(newIndex, item);
+        item.setParent(newFolder);
+        // emit update event
+        for (FolderItemChangeListener l : folderItemChangeListeners) {
+            // TODO should use more information
+            l.itemRemoved(oldFolder, oldIndex, item);
+            l.itemAdded(newFolder, newIndex, item);
+        }
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#removeItem(figurabia.domain.Folder, int)
+     */
+    @Override
+    public void removeItem(Folder folder, int index) {
+        FolderItem removedItem = folderItems.get(folder).remove(index);
+        cleanUpFolderEntries(removedItem);
+        removedItem.setParent(null);
+        // emit update event
+        for (FolderItemChangeListener l : folderItemChangeListeners) {
+            l.itemRemoved(folder, index, removedItem);
+        }
+    }
+
+    private void cleanUpFolderEntries(FolderItem item) {
+        if (item instanceof Folder) {
+            folderById.remove(((Folder) item).getId());
+            List<FolderItem> children = folderItems.remove(item);
+            for (FolderItem fi : children)
+                cleanUpFolderEntries(fi);
+        } else if (item instanceof Figure) {
+            deleteFigure((Figure) item);
+            // TODO should also remove data in workspace (maybe better when writing to disk)
+        }
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#updateItem(figurabia.domain.FolderItem)
+     */
+    @Override
+    public void updateItem(FolderItem item) {
+        // emit update event
+        for (FolderItemChangeListener l : folderItemChangeListeners) {
+            l.itemChanged(item);
+        }
+
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#addFolderItemChangeListener(figurabia.framework.FolderItemChangeListener)
+     */
+    @Override
+    public void addFolderItemChangeListener(FolderItemChangeListener listener) {
+        folderItemChangeListeners.add(listener);
+    }
+
+    /**
+     * @see figurabia.framework.PersistenceProvider#removeFolderItemChangeListener(figurabia.framework.FolderItemChangeListener)
+     */
+    @Override
+    public void removeFolderItemChangeListener(FolderItemChangeListener listener) {
+        folderItemChangeListeners.remove(listener);
     }
 }
