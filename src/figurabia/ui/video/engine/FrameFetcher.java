@@ -6,10 +6,10 @@ package figurabia.ui.video.engine;
 
 import java.io.File;
 
-import javax.media.format.VideoFormat;
 import javax.sound.sampled.AudioFormat;
 
-import figurabia.ui.video.access.MediaInputStream;
+import figurabia.ui.video.access.VideoFormat;
+import figurabia.ui.video.access.XugglerMediaInputStream;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.messages.CacheBlock;
 import figurabia.ui.video.engine.messages.CachedFrame;
@@ -19,7 +19,7 @@ import figurabia.ui.video.engine.messages.MediaInfoResponse;
 
 public class FrameFetcher extends Actor {
 
-    private MediaInputStream mediaInputStream;
+    private XugglerMediaInputStream mediaInputStream;
     private final File mediaFile;
     private double frameRate = 0;
 
@@ -30,7 +30,7 @@ public class FrameFetcher extends Actor {
 
     @Override
     protected void init() throws Exception {
-        mediaInputStream = new MediaInputStream(mediaFile);
+        mediaInputStream = new XugglerMediaInputStream(mediaFile);
         frameRate = mediaInputStream.getVideoFormat().getFrameRate();
     }
 
@@ -51,30 +51,38 @@ public class FrameFetcher extends Actor {
     }
 
     private void handleFetchFrames(FetchFrames message) {
+        long startMillis = System.currentTimeMillis();
         CacheBlock block = message.block;
         // set position and find seq nr
-        double position = block.baseSeqNum / frameRate;
-        double actualPosition = mediaInputStream.setPosition(position);
+        long position = (long) (1000.0 * block.baseSeqNum / frameRate);
+        long actualPosition = mediaInputStream.setPosition(position);
         System.out.println("TRACE: " + block.baseSeqNum + ": fetching at position " + position
-                + " was positionioned at " + actualPosition + " (difference " + (actualPosition - position) + ")");
+                + "ms and was positionioned at " + actualPosition + "ms (difference " + (actualPosition - position)
+                + "ms)");
+        long afterSetPositionMillis = System.currentTimeMillis();
         long startSeqNr = block.baseSeqNum; //Math.round(newPosition * frameRate);
 
         // read frames from stream
         for (CachedFrame f : block.frames) {
             // allocating a buffer if the cachedFrame does not bring one already
             if (f.frame == null) {
-                f.frame = mediaInputStream.createFrameBuffer();
+                f.frame = mediaInputStream.createFrame();
             }
             mediaInputStream.readFrame(f.frame);
             f.seqNum = startSeqNr++;
         }
         message.responseTo.send(block);
+        long endMillis = System.currentTimeMillis();
+        double seekingSeconds = (afterSetPositionMillis - startMillis) / 1000.0;
+        double totalSeconds = (endMillis - startMillis) / 1000.0;
+        System.out.println("DEBUG: " + block.baseSeqNum + ": total fetch time " + totalSeconds + "s (seeking "
+                + seekingSeconds + "s)");
     }
 
     private void handleMediaInfoRequest(MediaInfoRequest message) {
         VideoFormat videoFormat = mediaInputStream.getVideoFormat();
         AudioFormat audioFormat = mediaInputStream.getAudioFormat();
-        long duration = Math.round(mediaInputStream.getDuration() * 1000.0);
+        long duration = mediaInputStream.getDuration() / 1000L;
         MediaInfoResponse response = new MediaInfoResponse(videoFormat, audioFormat, duration);
         message.responseTo.send(response);
     }

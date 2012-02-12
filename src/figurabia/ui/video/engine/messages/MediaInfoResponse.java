@@ -4,8 +4,9 @@
  */
 package figurabia.ui.video.engine.messages;
 
-import javax.media.format.VideoFormat;
 import javax.sound.sampled.AudioFormat;
+
+import figurabia.ui.video.access.VideoFormat;
 
 public class MediaInfoResponse {
 

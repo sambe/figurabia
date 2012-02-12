@@ -290,4 +290,15 @@ public class FrameCache extends Actor {
             }
         }
     }*/
+
+    @Override
+    protected void destruct() {
+        // free all (native) memory of the cached frames
+        for (CacheBlock c : cacheBlocks) {
+            for (CachedFrame mf : c.frames) {
+                if (mf.frame != null)
+                    mf.frame.delete();
+            }
+        }
+    }
 }

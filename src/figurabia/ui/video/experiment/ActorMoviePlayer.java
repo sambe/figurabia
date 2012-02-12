@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
 
-import javax.media.Buffer;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
@@ -112,12 +111,11 @@ public class ActorMoviePlayer {
             // preprocess frames
             for (int j = 0; j < FRAME_BATCH; j++) {
                 AudioBuffer audioBuffer = requestedFrames.get(j).frame.audio;
-                Buffer buffer = audioBuffer.getBuffer();
                 // reverse audio
                 int samplesize = mir.audioFormat.getSampleSizeInBits() / 8;
-                int offset = buffer.getOffset();
-                int length = buffer.getLength();
-                byte[] audioData = (byte[]) buffer.getData();
+                byte[] audioData = audioBuffer.getAudioData();
+                int offset = 0;
+                int length = audioData.length;
                 for (int k = offset; k < (length - offset) / 2; k += samplesize) {
                     int k2 = length - offset - k - samplesize;
                     // swap two blocks of "samplesize" bytes

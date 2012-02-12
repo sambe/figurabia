@@ -4,8 +4,6 @@
  */
 package figurabia.ui.video.access;
 
-import javax.media.format.VideoFormat;
-
 public class MediaFrame {
     public final AudioBuffer audio;
     public final VideoBuffer video;
@@ -16,12 +14,19 @@ public class MediaFrame {
         this.video = video;
     }
 
-    public double getPositionInSeconds(long frameNumber) {
+    /*public double getPositionInSeconds(long frameNumber) {
         VideoFormat vf = (VideoFormat) this.video.getBuffer().getFormat();
         return frameNumber / vf.getFrameRate();
-    }
+    }*/
 
     public boolean isEndOfMedia() {
         return endOfMedia;
+    }
+
+    /**
+     * Only call this method, if you can be sure that this frame will no longer be used.
+     */
+    public void delete() {
+        video.videoPicture.delete();
     }
 }

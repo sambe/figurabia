@@ -20,7 +20,7 @@ import javax.media.format.VideoFormat;
 import com.omnividea.media.parser.video.Parser;
 import com.omnividea.media.protocol.file.DataSource;
 
-public class MediaInputStream {
+public class FobsMediaInputStream {
 
     private File file;
     private Parser parser;
@@ -43,7 +43,7 @@ public class MediaInputStream {
 
     private long currentSeqNum = 0;
 
-    public MediaInputStream(File file) throws IOException {
+    public FobsMediaInputStream(File file) throws IOException {
         this.file = file;
         MediaLocator mediaLocator = new MediaLocator("file:" + file.getAbsolutePath());
         fileDataSource = new DataSource();
@@ -208,7 +208,7 @@ public class MediaInputStream {
 
     public void readFrame(MediaFrame frame) {
 
-        Buffer decodedVideoFrame = frame.video.getBuffer();
+        /*Buffer decodedVideoFrame = frame.video.getBuffer();
         videoFrame.setEOM(false);
         videoTrack.readFrame(videoFrame);
 
@@ -245,13 +245,14 @@ public class MediaInputStream {
             System.out.println("results " + videoResult + " " + audioResult);
         }
 
-        if (/*DEBUG_counter++ < 10 ||*/frame.video.getBuffer().getFlags() != 0
+        if (/*DEBUG_counter++ < 10 ||* /frame.video.getBuffer().getFlags() != 0
                 || frame.audio.getBuffer().getFlags() != 0) {
             printBufferInfo(frame.video.getBuffer(), "video");
             printBufferInfo(frame.audio.getBuffer(), "audio");
         }
 
-        currentSeqNum++;
+        currentSeqNum++;*/
+        throw new UnsupportedOperationException("fobs no longer supported");
     }
 
     private void copySourceAudioFrame(Buffer targetBuffer, int targetBufferBytes) {
@@ -299,11 +300,12 @@ public class MediaInputStream {
     }
 
     public MediaFrame createFrameBuffer() {
-        AudioBuffer audioFrame = new AudioBuffer();
+        /*AudioBuffer audioFrame = new AudioBuffer();
         audioFrame.getBuffer().setData(new byte[audioBufferBytes]);
         VideoBuffer videoFrame = new VideoBuffer();
         videoFrame.getBuffer().setData(new int[videoBufferInts]);
-        return new MediaFrame(audioFrame, videoFrame);
+        return new MediaFrame(audioFrame, videoFrame);*/
+        throw new UnsupportedOperationException("fobs no longer supported");
     }
 
     public void close() {

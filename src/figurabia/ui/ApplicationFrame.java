@@ -32,6 +32,9 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import com.xuggle.ferry.JNIMemoryManager;
+import com.xuggle.ferry.JNIMemoryManager.MemoryModel;
+
 import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
@@ -263,6 +266,8 @@ public class ApplicationFrame extends JFrame {
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
+
+        JNIMemoryManager.setMemoryModel(MemoryModel.NATIVE_BUFFERS);
 
         final Workspace w = new SimpleWorkspace(new File("figurantdata"));
         final PersistenceProvider pp = new XStreamPersistenceProvider(new File(w.getDatabaseDir() + File.separator

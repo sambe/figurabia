@@ -1,5 +1,5 @@
 <object-stream>
-  <int>62</int>
+  <int>63</int>
   <map>
     <entry>
       <int>1</int>
@@ -5975,12 +5975,12 @@
             <frontOffset>5</frontOffset>
             <sideOffset>10</sideOffset>
             <handsJoined>BOTH_JOINED</handsJoined>
-            <handsTwist>1</handsTwist>
+            <handsTwist>0</handsTwist>
             <leftHandHeight>NORMAL</leftHandHeight>
             <rightHandHeight>NORMAL</rightHandHeight>
             <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
             <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
-            <leftArmAroundLady>HALF_WRAPPED</leftArmAroundLady>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
             <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
           </PuertoPosition>
           <PuertoPosition>
@@ -9738,6 +9738,389 @@
         </barIds>
       </Figure>
     </entry>
+    <entry>
+      <int>62</int>
+      <Figure>
+        <id>62</id>
+        <name>12-17.06.09</name>
+        <videoName>12-17.06.09.flv</videoName>
+        <videoPositions>
+          <long>3899000000</long>
+          <long>5943000000</long>
+          <long>7403000000</long>
+          <long>7876000000</long>
+          <long>9801000000</long>
+          <long>11476000000</long>
+          <long>13136000000</long>
+          <long>15202000000</long>
+          <long>17067000000</long>
+          <long>18806000000</long>
+          <long>20543000000</long>
+          <long>22336000000</long>
+          <long>24004000000</long>
+          <long>25870000000</long>
+          <long>27472000000</long>
+          <long>29474000000</long>
+          <long>31469000000</long>
+          <long>33496000000</long>
+        </videoPositions>
+        <positions>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>LEFT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>LEFT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>FREE</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+        </positions>
+        <elements>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>0</absPosLineDir>
+              <absPosSideDir>0</absPosSideDir>
+            </offsetChange>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+          <Element>
+            <offsetChange reference="../../Element/offsetChange"/>
+          </Element>
+        </elements>
+        <baseOffset>
+          <ladyLineDir>true</ladyLineDir>
+          <absPosLineDir>-10</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds>
+          <int>1017</int>
+          <int>1001</int>
+          <int>1000</int>
+          <int>1002</int>
+          <int>1003</int>
+          <int>1004</int>
+          <int>1005</int>
+          <int>1006</int>
+          <int>1007</int>
+          <int>1008</int>
+          <int>1009</int>
+          <int>1010</int>
+          <int>1011</int>
+          <int>1012</int>
+          <int>1013</int>
+          <int>1014</int>
+          <int>1015</int>
+          <int>1016</int>
+        </barIds>
+      </Figure>
+    </entry>
   </map>
   <map>
     <entry>
@@ -9780,21 +10163,125 @@
   <map>
     <entry>
       <Folder>
-        <id>61</id>
-        <name>partial</name>
+        <id>57</id>
+        <name>completed</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>1</id>
+          <id>12</id>
         </FigureReference>
         <FigureReference>
-          <id>17</id>
+          <id>33</id>
         </FigureReference>
         <FigureReference>
-          <id>16</id>
+          <id>38</id>
         </FigureReference>
         <FigureReference>
-          <id>19</id>
+          <id>37</id>
+        </FigureReference>
+        <FigureReference>
+          <id>47</id>
+        </FigureReference>
+        <FigureReference>
+          <id>44</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>60</id>
+        <name>too dark</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>27</id>
+        </FigureReference>
+        <FigureReference>
+          <id>34</id>
+        </FigureReference>
+        <FigureReference>
+          <id>49</id>
+        </FigureReference>
+        <FigureReference>
+          <id>50</id>
+        </FigureReference>
+        <FigureReference>
+          <id>51</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>59</id>
+        <name>worst quality</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>29</id>
+        </FigureReference>
+        <FigureReference>
+          <id>28</id>
+        </FigureReference>
+        <FigureReference>
+          <id>30</id>
+        </FigureReference>
+        <FigureReference>
+          <id>48</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>-1</id>
+        <name>All</name>
+      </Folder>
+      <list>
+        <FolderReference>
+          <id>61</id>
+        </FolderReference>
+        <FolderReference>
+          <id>60</id>
+        </FolderReference>
+        <FolderReference>
+          <id>53</id>
+        </FolderReference>
+        <FolderReference>
+          <id>57</id>
+        </FolderReference>
+        <FigureReference>
+          <id>3</id>
+        </FigureReference>
+        <FigureReference>
+          <id>11</id>
+        </FigureReference>
+        <FigureReference>
+          <id>55</id>
+        </FigureReference>
+        <FigureReference>
+          <id>56</id>
+        </FigureReference>
+        <FigureReference>
+          <id>62</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>58</id>
+        <name>bad quality</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>20</id>
+        </FigureReference>
+        <FigureReference>
+          <id>25</id>
+        </FigureReference>
+        <FigureReference>
+          <id>42</id>
+        </FigureReference>
+        <FigureReference>
+          <id>43</id>
         </FigureReference>
       </list>
     </entry>
@@ -9847,122 +10334,21 @@
     </entry>
     <entry>
       <Folder>
-        <id>59</id>
-        <name>worst quality</name>
+        <id>61</id>
+        <name>partial</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>29</id>
+          <id>1</id>
         </FigureReference>
         <FigureReference>
-          <id>28</id>
+          <id>17</id>
         </FigureReference>
         <FigureReference>
-          <id>30</id>
+          <id>16</id>
         </FigureReference>
         <FigureReference>
-          <id>48</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>58</id>
-        <name>bad quality</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>20</id>
-        </FigureReference>
-        <FigureReference>
-          <id>25</id>
-        </FigureReference>
-        <FigureReference>
-          <id>42</id>
-        </FigureReference>
-        <FigureReference>
-          <id>43</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>-1</id>
-        <name>All</name>
-      </Folder>
-      <list>
-        <FolderReference>
-          <id>61</id>
-        </FolderReference>
-        <FolderReference>
-          <id>60</id>
-        </FolderReference>
-        <FolderReference>
-          <id>53</id>
-        </FolderReference>
-        <FolderReference>
-          <id>57</id>
-        </FolderReference>
-        <FigureReference>
-          <id>3</id>
-        </FigureReference>
-        <FigureReference>
-          <id>11</id>
-        </FigureReference>
-        <FigureReference>
-          <id>55</id>
-        </FigureReference>
-        <FigureReference>
-          <id>56</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>57</id>
-        <name>completed</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>12</id>
-        </FigureReference>
-        <FigureReference>
-          <id>33</id>
-        </FigureReference>
-        <FigureReference>
-          <id>38</id>
-        </FigureReference>
-        <FigureReference>
-          <id>37</id>
-        </FigureReference>
-        <FigureReference>
-          <id>47</id>
-        </FigureReference>
-        <FigureReference>
-          <id>44</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>60</id>
-        <name>too dark</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>27</id>
-        </FigureReference>
-        <FigureReference>
-          <id>34</id>
-        </FigureReference>
-        <FigureReference>
-          <id>49</id>
-        </FigureReference>
-        <FigureReference>
-          <id>50</id>
-        </FigureReference>
-        <FigureReference>
-          <id>51</id>
+          <id>19</id>
         </FigureReference>
       </list>
     </entry>

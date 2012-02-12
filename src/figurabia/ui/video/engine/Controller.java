@@ -7,8 +7,7 @@ package figurabia.ui.video.engine;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-import javax.media.format.VideoFormat;
-
+import figurabia.ui.video.access.VideoFormat;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.actorframework.ObjectReceiver;
 import figurabia.ui.video.engine.messages.AudioSyncEvent;

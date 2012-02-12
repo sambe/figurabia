@@ -6,13 +6,17 @@ package figurabia.ui.video.engine;
 
 import java.io.File;
 
-import javax.media.format.VideoFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import net.miginfocom.swing.MigLayout;
+
+import com.xuggle.ferry.JNIMemoryManager;
+import com.xuggle.ferry.JNIMemoryManager.MemoryModel;
+
 import figurabia.ui.util.SimplePanelFrame;
+import figurabia.ui.video.access.VideoFormat;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.actorframework.MessageSendable;
 import figurabia.ui.video.engine.actorframework.ObjectReceiver;
@@ -162,6 +166,7 @@ public class MediaPlayer {
     }
 
     public static void main(String[] args) {
+        JNIMemoryManager.setMemoryModel(MemoryModel.NATIVE_BUFFERS);
         MediaPlayer mediaPlayer = new MediaPlayer();
 
         VideoScreen screen = mediaPlayer.createScreen();

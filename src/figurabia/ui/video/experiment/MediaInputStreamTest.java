@@ -9,18 +9,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.media.format.VideoFormat;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.access.MediaFrame;
-import figurabia.ui.video.access.MediaInputStream;
-import figurabia.ui.video.engine.AudioRenderer;
+import figurabia.ui.video.access.VideoFormat;
+import figurabia.ui.video.access.XugglerMediaInputStream;
 import figurabia.ui.video.engine.actorframework.Actor;
-import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.MediaError;
-import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
 public class MediaInputStreamTest {
 
@@ -28,7 +25,7 @@ public class MediaInputStreamTest {
 
     public static void main(String[] args) throws Exception {
         File videoFile = new File("/home/sberner/Desktop/10-21.04.09.flv");
-        MediaInputStream is = new MediaInputStream(videoFile);
+        XugglerMediaInputStream is = new XugglerMediaInputStream(videoFile);
 
         // create screen
         VideoFormat videoFormat = is.getVideoFormat();
@@ -75,25 +72,25 @@ public class MediaInputStreamTest {
             }
         };
         recycler.start();
-        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, is.getAudioFormat(), null);
-        audioRenderer.start();
+        //AudioRenderer audioRenderer = new AudioRenderer(errorHandler, is.getAudioFormat(), null);
+        //audioRenderer.start();
         boolean startedPlayback = false;
 
         // init buffers
         MediaFrame[] mediaFrames = new MediaFrame[100];
         for (int i = 0; i < mediaFrames.length; i++) {
-            mediaFrames[i] = is.createFrameBuffer();
+            mediaFrames[i] = is.createFrame();
         }
 
         for (int i = 0; i < 100; i++) {
 
             if (newLocationToSet != -1) {
-                double actualPosition = is.setPosition(newLocationToSet / 1000.0);
+                double actualPosition = is.setPosition(newLocationToSet);
                 System.out.println("Set to " + actualPosition + " seconds");
                 newLocationToSet = -1;
-                audioRenderer.send(new ControlCommand(Command.STOP));
+                //audioRenderer.send(new ControlCommand(Command.STOP));
                 startedPlayback = false;
-                audioRenderer.send(new ControlCommand(Command.FLUSH));
+                //audioRenderer.send(new ControlCommand(Command.FLUSH));
             }
 
             // preprocess frames
@@ -117,12 +114,12 @@ public class MediaInputStreamTest {
             }
 
             // end of media
-            if (mediaFrames[0].video.getBuffer().isEOM()) {
+            if (mediaFrames[0].isEndOfMedia()) {
                 break;
             }
 
             if (!startedPlayback) {
-                audioRenderer.send(new ControlCommand(Command.START));
+                //audioRenderer.send(new ControlCommand(Command.START));
                 startedPlayback = true;
             }
 
@@ -130,10 +127,12 @@ public class MediaInputStreamTest {
             //int audioFramePos = 0;
             ////int audioFramePos = 99;
             //int audioPos = 0;
-            for (int j = 0; j < 100; j++) {
+            /*for (int j = 0; j < 100; j++) {
                 // TODO insert into media buffer
-                audioRenderer.send(mediaFrames[j]);
-            }
+                CachedFrame cf = new CachedFrame(0, null);
+                cf.frame = mediaFrames[j];
+                audioRenderer.send(cf);
+            }*/
 
             for (int j = 0; j < 100; j++) {
                 //for (int j = 99; j >= 0; j--) {
@@ -182,7 +181,7 @@ public class MediaInputStreamTest {
 
         //// close sound channel
         //line.close();
-        audioRenderer.stop();
+        //audioRenderer.stop();
 
         // close media input stream
         is.close();

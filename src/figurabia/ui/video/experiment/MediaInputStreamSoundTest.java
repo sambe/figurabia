@@ -12,8 +12,8 @@ import javax.sound.sampled.AudioFormat;
 
 import figurabia.experiment.JMFUtil;
 import figurabia.experiment.gui.SoundViewer;
+import figurabia.ui.video.access.FobsMediaInputStream;
 import figurabia.ui.video.access.MediaFrame;
-import figurabia.ui.video.access.MediaInputStream;
 
 public class MediaInputStreamSoundTest {
 
@@ -28,12 +28,12 @@ public class MediaInputStreamSoundTest {
     private static void experiment1() throws Exception {
         int n = 40;
 
-        MediaInputStream mis = new MediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
+        FobsMediaInputStream mis = new FobsMediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
         MediaFrame frame = mis.createFrameBuffer();
         AudioFormat audioFormat = mis.getAudioFormat();
         VideoFormat videoFormat = mis.getVideoFormat();
         double frameRate = videoFormat.getFrameRate();
-        int audioBufferSize = ((byte[]) frame.audio.getBuffer().getData()).length;
+        int audioBufferSize = frame.audio.getAudioData().length;
         byte[] sound = new byte[n * audioBufferSize];
         System.err.println("Total buffer size: " + sound.length);
         int insertPos = 0;
@@ -50,8 +50,8 @@ public class MediaInputStreamSoundTest {
         mis.setPosition(0);
         for (int i = 0; i < n; i++) {
             mis.readFrame(frame);
-            int length = frame.audio.getBuffer().getLength();
-            System.arraycopy(frame.audio.getBuffer().getData(), 0, sound, insertPos, length);
+            int length = frame.audio.getAudioData().length;
+            System.arraycopy(frame.audio.getAudioData(), 0, sound, insertPos, length);
             insertPos += length;
         }
         System.out.println("sound = " + Arrays.toString(Arrays.copyOfRange(sound, 0, 200)));
@@ -68,7 +68,7 @@ public class MediaInputStreamSoundTest {
         double seconds = seqNum / frameRate;
         mis.setPosition(seconds);
         mis.readFrame(frame);
-        byte[] frameSound = (byte[]) frame.audio.getBuffer().getData();
+        byte[] frameSound = (byte[]) frame.audio.getAudioData();
         System.out.println("array: " + Arrays.toString(frameSound));
         int maxMatch = 0;
         for (int i = 0; i < sound.length; i++) {
@@ -99,12 +99,12 @@ public class MediaInputStreamSoundTest {
         int n = 1;
         int m = 40;
 
-        MediaInputStream mis = new MediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
+        FobsMediaInputStream mis = new FobsMediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
         MediaFrame frame = mis.createFrameBuffer();
         AudioFormat audioFormat = mis.getAudioFormat();
         VideoFormat videoFormat = mis.getVideoFormat();
         double frameRate = videoFormat.getFrameRate();
-        int audioBufferSize = ((byte[]) frame.audio.getBuffer().getData()).length;
+        int audioBufferSize = frame.audio.getAudioData().length;
         byte[][] sound = new byte[m][n * audioBufferSize];
         System.err.println("Total buffer size: " + sound[0].length);
 
@@ -123,8 +123,8 @@ public class MediaInputStreamSoundTest {
             System.out.println("DEBUG actual pos = " + actualPos);
             for (int i = 0; i < n; i++) {
                 mis.readFrame(frame);
-                int length = frame.audio.getBuffer().getLength();
-                System.arraycopy(frame.audio.getBuffer().getData(), 0, sound[k], insertPos, length);
+                int length = frame.audio.getAudioData().length;
+                System.arraycopy(frame.audio.getAudioData().length, 0, sound[k], insertPos, length);
                 insertPos += length;
             }
             System.out.println("sound = " + Arrays.toString(Arrays.copyOfRange(sound[k], 0, 200)));

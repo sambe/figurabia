@@ -17,7 +17,6 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.media.format.VideoFormat;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
@@ -25,6 +24,7 @@ import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
 import figurabia.framework.Workspace;
 import figurabia.ui.framework.PlayerListener;
+import figurabia.ui.video.access.VideoFormat;
 import figurabia.ui.video.engine.MediaPlayer;
 import figurabia.ui.video.engine.PositionListener;
 import figurabia.ui.video.engine.messages.CachedFrame;

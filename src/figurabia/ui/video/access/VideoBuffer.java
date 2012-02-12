@@ -18,24 +18,24 @@ import java.awt.image.WritableRaster;
 import javax.media.Buffer;
 import javax.media.format.RGBFormat;
 
+import com.xuggle.xuggler.IVideoPicture;
+
 /**
  * Represents the memory unit that stores one image of one frame of the media file. This class can be passed around
  * between different actors.
  */
 public class VideoBuffer {
 
-    private Buffer buffer;
+    //private Buffer buffer;
+    IVideoPicture videoPicture;
+    BufferedImage bufferedImage;
 
     public VideoBuffer() {
-        buffer = new Buffer();
+        //buffer = new Buffer();
     }
 
     public Image getImage() {
-        return bufferToImage(buffer);
-    }
-
-    public Buffer getBuffer() {
-        return buffer;
+        return bufferedImage;
     }
 
     private static BufferedImage bufferToImage(Buffer buffer) {
