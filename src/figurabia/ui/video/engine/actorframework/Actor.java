@@ -135,6 +135,15 @@ public abstract class Actor implements MessageSendable {
         LockSupport.unpark(thread);
     }
 
+    public final void stopAndWait() {
+        stop();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            // just stop sleeping after interrupt
+        }
+    }
+
     /**
      * Sends a message to the actor, which means it will be put into the queue and the method returns immediately.
      * 

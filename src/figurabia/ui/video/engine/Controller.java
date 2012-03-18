@@ -160,8 +160,9 @@ public class Controller extends Actor {
         if (frameFetcher != null) {
             engine.reset();
 
-            frameFetcher.stop();
             frameCache.stop();
+            frameFetcher.stopAndWait(); // TODO rather try to see if it is possible to keep the frame fetcher actor and just send it a message to change
+            // TODO another potential cause of crashes: a frame that is still being fetched, might be deleted by the cache
 
             engine.stop();
 

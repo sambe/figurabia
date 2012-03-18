@@ -8,6 +8,8 @@ import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -52,6 +54,8 @@ public class XugglerMediaInputStream {
     private int targetAudioBytePos = -1;
     private boolean packetReadPartially = false;
     private int samplesBytePos = 0;
+
+    private List<IVideoPicture> createdVideoPictures = new ArrayList<IVideoPicture>();
 
     public XugglerMediaInputStream(File file) throws IOException {
         this.file = file;
@@ -200,19 +204,19 @@ public class XugglerMediaInputStream {
                         // first skip audio samples that are before the "intendedPosition" (position that was set with setPosition)
                         if (intendedPosition != -1 && packetTimestamp < targetAudioPacket) { //packetTimestamp + (long) (1.5 * frameTime) < intendedPosition)
                             // reset buffer, so it can start filling again (because we're skipping until intendedPosition)
-                            //System.out.println("Skipping " + samples.getNumSamples() + " audio samples. ("
-                            //        + packetTimestamp + ")");
+                            System.out.println("Skipping " + samples.getNumSamples() + " audio samples. ("
+                                    + packetTimestamp + ")");
                             //samples.setComplete(false, audioFramesSampleNum, audioCoder.getSampleRate(),
                             //        audioCoder.getChannels(), audioCoder.getSampleFormat(), packet.getPts());
                             skippedAudioFrames++;
                             continue;
                         }
-                        if (intendedPosition == -1) {
+                        if (intendedPosition != -1) {
                             intendedPosition = -1; // to reset (already skipped frames as necessary) 
                             audioBytePos = targetAudioBytePos;
                         }
-                        //System.out.println("Got " + samples.getNumSamples() + " audio samples! (" + packetTimestamp
-                        //        + ")");
+                        System.out.println("Got " + samples.getNumSamples() + " audio samples! (" + packetTimestamp
+                                + ")");
                         packetReadPartially = offset < packet.getSize();
                         //// getByteArray copies the bytes
                         //byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
@@ -257,7 +261,7 @@ public class XugglerMediaInputStream {
                         // first skip video frames that are before the "intendedPosition" (position that was set with setPosition)
                         if (intendedPosition != -1 && packetTimestamp < intendedPosition) {
                             // reset buffer (because we're skipping frames until intendedPosition)
-                            //System.out.println("Skipping a video picture. (" + packetTimestamp + ")");
+                            System.out.println("Skipping a video picture. (" + packetTimestamp + ")");
                             picture.setComplete(false, videoCoder.getPixelType(), videoCoder.getWidth(),
                                     videoCoder.getHeight(), packet.getPts());
                             skippedVideoFrames++;
@@ -289,7 +293,7 @@ public class XugglerMediaInputStream {
                         mf.video.bufferedImage = javaImageConverter.toImage(newPic);
                         newPic.setPts(packet.getPts());
 
-                        //System.out.println("Received a video picture (" + packetTimestamp + ")");
+                        System.out.println("Received a video picture (" + packetTimestamp + ")");
                         videoComplete = true;
                         break;
                     }
@@ -358,6 +362,7 @@ public class XugglerMediaInputStream {
         VideoBuffer video = new VideoBuffer();
         video.videoPicture = IVideoPicture.make(IPixelFormat.Type.BGR24, videoCoder.getWidth(),
                 videoCoder.getHeight());
+        createdVideoPictures.add(video.videoPicture.copyReference());
         return new MediaFrame(audio, video);
     }
 
@@ -365,6 +370,8 @@ public class XugglerMediaInputStream {
         audioCoder.close();
         videoCoder.close();
         container.close();
+        for (IVideoPicture p : createdVideoPictures)
+            p.delete();
     }
 
     public static void main(String[] args) {
@@ -442,10 +449,10 @@ public class XugglerMediaInputStream {
                     if (samples.isComplete()) {
                         double realTime = audioPacketCount++ * audioPacketDiff;
                         double fileTime = samples.getPts() * samples.getTimeBase().getDouble(); // * audioTimeBase / 1000.0;
-                        //System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
-                        //        + ": Got " + samples.getNumSamples()
-                        //        + " audio samples!"
-                        //        + (packet.isKeyPacket() ? " (key)" : ""));
+                        System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
+                                + ": Got " + samples.getNumSamples()
+                                + " audio samples!"
+                                + (packet.isKeyPacket() ? " (key)" : ""));
                         // getByteArray copies the bytes
                         byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
                     }
@@ -454,9 +461,9 @@ public class XugglerMediaInputStream {
                 double realTime = videoPacketCount++ * videoPacketDiff;
                 double videoDts = packet.getPts();
                 double fileTime = videoDts * packet.getTimeBase().getDouble(); //* videoTimeBase / 1000.0;
-                //System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
-                //        + ": Got video frame"
-                //        + (packet.isKeyPacket() ? " (key)" : ""));
+                System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
+                        + ": Got video frame"
+                        + (packet.isKeyPacket() ? " (key)" : ""));
             }
         }
     }
