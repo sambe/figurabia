@@ -9,6 +9,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
@@ -47,11 +51,11 @@ public class MediaInputStreamTest {
         });
 
         // create sound channel
-        /*AudioFormat audioFormat = is.getAudioFormat();
+        AudioFormat audioFormat = is.getAudioFormat();
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
         final SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
         line.open(audioFormat);
-        line.start();*/
+        line.start();
         Actor errorHandler = new Actor(null, -1) {
             @Override
             protected void act(Object message) {
@@ -123,10 +127,10 @@ public class MediaInputStreamTest {
                 startedPlayback = true;
             }
 
-            //// play frames backwards
-            //int audioFramePos = 0;
-            ////int audioFramePos = 99;
-            //int audioPos = 0;
+            // play frames backwards
+            int audioFramePos = 0;
+            //int audioFramePos = 99;
+            int audioPos = 0;
             /*for (int j = 0; j < 100; j++) {
                 // TODO insert into media buffer
                 CachedFrame cf = new CachedFrame(0, null);
@@ -141,12 +145,12 @@ public class MediaInputStreamTest {
                 Graphics g = screen.getGraphics();
                 g.drawImage(mediaFrames[j].video.getImage(), 0, 0, width, height, null);
 
-                /*// fill audio frames into buffer, until it would block
+                // fill audio frames into buffer, until it would block
                 for (int k = audioFramePos; k < 100; k++) {
                     //for (int k = audioFramePos; k >= 0; k--) {
-                    Buffer audioBuffer = mediaFrames[k].audio.getBuffer();
-                    int offset = audioBuffer.getOffset() + audioPos;
-                    int length = audioBuffer.getLength() - audioPos;
+                    byte[] audioBuffer = mediaFrames[k].audio.getAudioData();
+                    int offset = 0 + audioPos;
+                    int length = audioBuffer.length - audioPos;
                     int available = line.available();
                     boolean onlyPartFree = length > available;
                     if (onlyPartFree) {
@@ -154,11 +158,11 @@ public class MediaInputStreamTest {
                     }
                     int bytesWritten = 0;
                     if (available != 0) {
-                        bytesWritten = line.write((byte[]) audioBuffer.getData(), offset, length);
+                        bytesWritten = line.write(audioBuffer, offset, length);
                         //System.out.println("written " + bytesWritten + " bytes to audio line");
                     }
                     if (onlyPartFree) {
-                        if (audioBuffer.getLength() - audioPos > 1) {
+                        if (audioBuffer.length - audioPos > 1) {
                             audioFramePos = k;
                             audioPos = audioPos + bytesWritten;
                         } else {
@@ -170,7 +174,7 @@ public class MediaInputStreamTest {
                     }
                     audioPos = 0;
                     audioFramePos = k + 1;
-                }*/
+                }
                 Thread.sleep(60);
             }
             Thread.sleep(2000);

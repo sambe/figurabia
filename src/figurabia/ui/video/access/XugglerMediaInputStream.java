@@ -9,7 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -22,6 +24,8 @@ import com.xuggle.xuggler.IStream;
 import com.xuggle.xuggler.IStreamCoder;
 import com.xuggle.xuggler.IVideoPicture;
 import com.xuggle.xuggler.IVideoResampler;
+import com.xuggle.xuggler.IAudioSamples.Format;
+import com.xuggle.xuggler.IPixelFormat.Type;
 import com.xuggle.xuggler.video.ConverterFactory;
 import com.xuggle.xuggler.video.IConverter;
 
@@ -38,7 +42,8 @@ public class XugglerMediaInputStream {
     private final IVideoPicture resamplingTempPic;
     private final IConverter javaImageConverter;
 
-    private final IPacket packet;
+    private final PacketSource packetSource;
+
     private final IAudioSamples samples;
 
     private final double audioTimeBase;
@@ -49,13 +54,99 @@ public class XugglerMediaInputStream {
     private final double frameTime;
     private final double audioPacketTimeStep;
 
-    private long intendedPosition = -1;
+    private long intendedAudioPosition = -1;
+    private long intendedVideoPosition = -1;
     private long targetAudioPacket = -1;
     private int targetAudioBytePos = -1;
-    private boolean packetReadPartially = false;
+    private IPacket audioPacketReadPartially = null;
+    private IPacket videoPacketReadPartially = null;
+    private int audioPacketOffset = 0;
+    private int videoPacketOffset = 0;
     private int samplesBytePos = 0;
 
     private List<IVideoPicture> createdVideoPictures = new ArrayList<IVideoPicture>();
+
+    public static class PacketRecord {
+        public final IPacket packet;
+        public final long timestamp;
+        public final long pts;
+
+        public PacketRecord(IPacket packet, long timestamp, long pts) {
+            this.packet = packet;
+            this.timestamp = timestamp;
+            this.pts = pts;
+        }
+    }
+
+    public static class PacketSource {
+        private IContainer container;
+        private IPacket localPacket;
+        private Queue<PacketRecord> audioPackets = new LinkedList<PacketRecord>();
+        private Queue<PacketRecord> videoPackets = new LinkedList<PacketRecord>();
+        private int audioStreamIndex;
+        private int videoStreamIndex;
+
+        public PacketSource(IContainer container, int audioStreamIndex, int videoStreamIndex) {
+            this.container = container;
+            this.audioStreamIndex = audioStreamIndex;
+            this.videoStreamIndex = videoStreamIndex;
+            localPacket = IPacket.make();
+        }
+
+        public void reset() {
+            for (PacketRecord r : audioPackets)
+                r.packet.delete();
+            audioPackets.clear();
+            for (PacketRecord r : videoPackets)
+                r.packet.delete();
+            videoPackets.clear();
+        }
+
+        private PacketRecord readPacketOfStream(int index, int otherIndex, Queue<PacketRecord> otherPackets) {
+            while (true) {
+                if (container.readNextPacket(localPacket) < 0) {
+                    return null;
+                }
+                IPacket p = IPacket.make(localPacket, true);
+                long pts = localPacket.getPts();
+                long position = localPacket.getPosition();
+                long timestamp = localPacket.getTimeStamp();
+                long ppts = p.getPts();
+                long pposition = p.getPosition();
+                long ptimestamp = p.getTimeStamp();
+                System.out.println("reading packet of stream " + p.getStreamIndex() + ": pts = " + pts
+                        + "; timestamp = " + timestamp + "; position = " + position + " bytes  (" + ppts
+                        + "; timestamp = " + ptimestamp + "; position = " + pposition);
+                if (p.getStreamIndex() == index) {
+                    return new PacketRecord(p, p.getTimeStamp(), p.getPts());
+                } else if (p.getStreamIndex() == otherIndex) {
+                    otherPackets.add(new PacketRecord(p, p.getTimeStamp(), p.getPts()));
+                } else {
+                    p.delete();
+                }
+            }
+        }
+
+        /**
+         * @return the next audio packet or null if end of file or error
+         */
+        public PacketRecord readNextAudioPacket() {
+            if (audioPackets.isEmpty())
+                return readPacketOfStream(audioStreamIndex, videoStreamIndex, videoPackets);
+            else
+                return audioPackets.poll();
+        }
+
+        /**
+         * @return the next video packet or null if end of file or error
+         */
+        public PacketRecord readNextVideoPacket() {
+            if (videoPackets.isEmpty())
+                return readPacketOfStream(videoStreamIndex, audioStreamIndex, audioPackets);
+            else
+                return videoPackets.poll();
+        }
+    }
 
     public XugglerMediaInputStream(File file) throws IOException {
         this.file = file;
@@ -144,8 +235,9 @@ public class XugglerMediaInputStream {
                 videoCoder.getWidth(), videoCoder.getHeight());
 
         // initialize buffers
-        packet = IPacket.make();
         samples = IAudioSamples.make(audioCoder.getAudioFrameSize(), audioCoder.getChannels());
+
+        packetSource = new PacketSource(container, audioStream.getIndex(), videoStream.getIndex());
     }
 
     private static AudioFormat createJavaSoundFormat(IStreamCoder audioCoder) {
@@ -169,87 +261,139 @@ public class XugglerMediaInputStream {
         int skippedVideoFrames = 0;
         int skippedAudioFrames = 0;
 
+        // loop through the packets
+        int audioBytePos = 0;
+
+        boolean audioComplete = false;
+        while (!audioComplete) {
+            PacketRecord audioPacketRecord = null;
+            IPacket audioPacket = null;
+            if (audioPacketReadPartially != null) {
+                audioPacket = audioPacketReadPartially;
+            } else {
+                audioPacketRecord = packetSource.readNextAudioPacket();
+                // end of media (or error)
+                if (audioPacketRecord == null || audioPacketRecord.packet == null)
+                    break;
+                audioPacket = audioPacketRecord.packet;
+            }
+            long packetTimestamp = (long) (audioPacket.getTimeStamp() * audioPacket.getTimeBase().getValue() * 1000.0);
+
+            System.out.println("original timestamps: packet.pts = " + audioPacket.getPts() + "; samples.pts = "
+                    + samples.getPts() + "; packet.timestamp = " + audioPacket.getTimeStamp()
+                    + "; samples.timestamp = " + samples.getTimeStamp());
+
+            while (audioPacketOffset < audioPacket.getSize()) {
+                // only decode packet if previous decoded data has been copied fully
+                if (samplesBytePos == 0) {
+                    if (samples.isComplete()) {
+                        //System.err.println("Samples was already complete!");
+                        // only in case it was completed before, it needs to be reset
+                        samples.setComplete(false, -1, -1, -1, Format.FMT_NONE, -1);
+                    }
+                    int bytesDecoded = audioCoder.decodeAudio(samples, audioPacket, audioPacketOffset);
+                    if (bytesDecoded < 0) {
+                        throw new IllegalStateException("could not decode audio. Error code " + bytesDecoded);
+                    }
+                    audioPacketOffset += bytesDecoded;
+                }
+                if (audioPacketOffset < audioPacket.getSize()) {
+                    audioPacketReadPartially = audioPacket;
+                } else {
+                    audioPacketReadPartially = null;
+                    audioPacketOffset = 0;
+                }
+
+                if (samples.isComplete()) {
+                    long samplesTimestamp = samples.getPts() / 1000L;
+                    // first skip audio samples that are before the "intendedPosition" (position that was set with setPosition)
+                    if (intendedAudioPosition != -1 && samplesTimestamp < targetAudioPacket) { //packetTimestamp + (long) (1.5 * frameTime) < intendedPosition)
+                        // reset buffer, so it can start filling again (because we're skipping until intendedPosition)
+                        System.out.println("Skipping " + samples.getNumSamples() + " audio samples. ("
+                                + samplesTimestamp + ")");
+                        //samples.setComplete(false, audioFramesSampleNum, audioCoder.getSampleRate(),
+                        //        audioCoder.getChannels(), audioCoder.getSampleFormat(), packet.getPts());
+                        skippedAudioFrames++;
+                        if (audioPacketOffset == 0) // because the packet was already completely processed (see if/else further up)
+                            break;
+                        continue;
+                    }
+                    if (intendedAudioPosition != -1) {
+                        intendedAudioPosition = -1; // to reset (already skipped frames as necessary) 
+                        audioBytePos = targetAudioBytePos;
+                    }
+                    // CAUTION packetTimestamp can be wrong (the one from the next packet), because content of samples can be
+                    // leftover from a packet that has been completely decoded, but the decoded samples have not all been used yet.
+                    System.out.println("Got " + samples.getNumSamples() + " audio samples! (" + samplesTimestamp + ")");
+                    //// getByteArray copies the bytes
+                    //byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
+                    byte[] dest = mf.audio.audioData;
+                    int bytesToCopy = Math.min(samples.getSize() - samplesBytePos, dest.length - audioBytePos);
+                    samples.get(samplesBytePos, dest, audioBytePos, bytesToCopy);
+                    samplesBytePos += bytesToCopy;
+                    audioBytePos += bytesToCopy;
+                    // if "samples" could not be fully copied because the current frame is already filled up
+                    if (audioBytePos == dest.length) {
+                        audioBytePos = 0; // because it is full now
+                        audioComplete = true;
+                        break;
+                    } else {
+                        if (samplesBytePos != samples.getSize())
+                            throw new IllegalStateException(
+                                    "internal inconsistency: target array not full, but still uncopied bytes available");
+                        samplesBytePos = 0; // because it has been fully copied over
+                    }
+                }
+
+                // means that the packet was completely read (see if/else further up)
+                if (audioPacketOffset == 0)
+                    break;
+            }
+        }
+
         IVideoPicture picture;
         if (videoResampler == null)
             picture = mf.video.videoPicture;
         else
             picture = resamplingTempPic;
 
-        picture.setComplete(false, videoCoder.getPixelType(), videoCoder.getWidth(),
-                videoCoder.getHeight(), packet.getPts());
+        // TODO maybe this is not needed at all
+        //picture.setComplete(false, videoCoder.getPixelType(), videoCoder.getWidth(),
+        //        videoCoder.getHeight(), 0);
 
-        // loop through the packets
-        boolean audioComplete = false;
         boolean videoComplete = false;
-        int audioBytePos = 0;
-        while ((!videoComplete || !audioComplete) && (packetReadPartially || container.readNextPacket(packet) >= 0)) {
-            long packetTimestamp = (long) (packet.getTimeStamp() * packet.getTimeBase().getValue() * 1000.0);
-            if (packet.getStreamIndex() == audioStream.getIndex()) {
-                if (audioComplete)
-                    throw new IllegalStateException("reading an audio packet, even though already read enough");
 
-                int offset = 0;
+        while (!videoComplete) {
+            PacketRecord videoPacketRecord = null;
+            IPacket videoPacket;
+            if (videoPacketReadPartially != null) {
+                videoPacket = videoPacketReadPartially;
+            } else {
+                videoPacketRecord = packetSource.readNextVideoPacket();
+                if (videoPacketRecord != null)
+                    videoPacket = videoPacketRecord.packet;
+                else
+                    break;
+            }
+            if (videoPacket != null) {
+                long packetTimestamp = (long) (videoPacket.getTimeStamp() * videoPacket.getTimeBase().getValue() * 1000.0);
 
-                while (offset < packet.getSize()) {
-                    // only decode packet if previous decoded data has been copied fully
-                    if (samplesBytePos == 0) {
-                        int bytesDecoded = audioCoder.decodeAudio(samples, packet, offset);
-                        if (bytesDecoded < 0) {
-                            throw new IllegalStateException("could not decode audio. Error code " + bytesDecoded);
-                        }
-                        offset += bytesDecoded;
+                while (videoPacketOffset < videoPacket.getSize()) {
+                    if (picture.isComplete()) {
+                        picture.setComplete(false, Type.NONE, -1, -1, -1);
                     }
-
-                    if (samples.isComplete()) {
-                        // first skip audio samples that are before the "intendedPosition" (position that was set with setPosition)
-                        if (intendedPosition != -1 && packetTimestamp < targetAudioPacket) { //packetTimestamp + (long) (1.5 * frameTime) < intendedPosition)
-                            // reset buffer, so it can start filling again (because we're skipping until intendedPosition)
-                            System.out.println("Skipping " + samples.getNumSamples() + " audio samples. ("
-                                    + packetTimestamp + ")");
-                            //samples.setComplete(false, audioFramesSampleNum, audioCoder.getSampleRate(),
-                            //        audioCoder.getChannels(), audioCoder.getSampleFormat(), packet.getPts());
-                            skippedAudioFrames++;
-                            continue;
-                        }
-                        if (intendedPosition != -1) {
-                            intendedPosition = -1; // to reset (already skipped frames as necessary) 
-                            audioBytePos = targetAudioBytePos;
-                        }
-                        System.out.println("Got " + samples.getNumSamples() + " audio samples! (" + packetTimestamp
-                                + ")");
-                        packetReadPartially = offset < packet.getSize();
-                        //// getByteArray copies the bytes
-                        //byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
-                        byte[] dest = mf.audio.audioData;
-                        int bytesToCopy = Math.min(samples.getSize() - samplesBytePos, dest.length - audioBytePos);
-                        samples.get(samplesBytePos, dest, audioBytePos, bytesToCopy);
-                        samplesBytePos += bytesToCopy;
-                        audioBytePos += bytesToCopy;
-                        // if "samples" could not be fully copied because the current frame is already filled up
-                        if (audioBytePos == dest.length) {
-                            audioBytePos = 0; // because it is full now
-                            audioComplete = true;
-                            break;
-                        } else {
-                            if (samplesBytePos != samples.getSize())
-                                throw new IllegalStateException(
-                                        "internal inconsistency: target array not full, but still uncopied bytes available");
-                            samplesBytePos = 0; // because it has been fully copied over
-                        }
-                    }
-                }
-            } else if (packet.getStreamIndex() == videoStream.getIndex()) {
-                if (videoComplete)
-                    throw new IllegalStateException("reading a video packet, even though already read enough");
-
-                int offset = 0;
-
-                while (offset < packet.getSize()) {
-                    int bytesDecoded = videoCoder.decodeVideo(picture, packet, offset);
+                    int bytesDecoded = videoCoder.decodeVideo(picture, videoPacket, videoPacketOffset);
                     if (bytesDecoded < 0) {
                         throw new RuntimeException("could not decode video. Error code " + bytesDecoded);
                     }
-                    offset += bytesDecoded;
+                    videoPacketOffset += bytesDecoded;
+
+                    if (videoPacketOffset < videoPacket.getSize()) {
+                        videoPacketReadPartially = videoPacket;
+                    } else {
+                        videoPacketReadPartially = null;
+                        videoPacketOffset = 0;
+                    }
 
                     /*
                      * Some decoders will consume data in a packet, but will not be able to construct
@@ -257,18 +401,20 @@ public class XugglerMediaInputStream {
                      * got a complete picture from the decoder
                      */
                     if (picture.isComplete()) {
+                        long pictureTimestamp = picture.getPts() / 1000L;
 
                         // first skip video frames that are before the "intendedPosition" (position that was set with setPosition)
-                        if (intendedPosition != -1 && packetTimestamp < intendedPosition) {
+                        if (intendedVideoPosition != -1 && pictureTimestamp < intendedVideoPosition) {
                             // reset buffer (because we're skipping frames until intendedPosition)
-                            System.out.println("Skipping a video picture. (" + packetTimestamp + ")");
+                            System.out.println("Skipping a video picture. (" + pictureTimestamp + ")");
                             picture.setComplete(false, videoCoder.getPixelType(), videoCoder.getWidth(),
-                                    videoCoder.getHeight(), packet.getPts());
+                                    videoCoder.getHeight(), videoPacket.getPts());
                             skippedVideoFrames++;
+                            if (videoPacketOffset == 0) // because 0 means that it was processed completely (see if/else further up)
+                                break;
                             continue;
                         }
 
-                        packetReadPartially = offset < packet.getSize();
                         IVideoPicture newPic;
                         /*
                          * If the resampler is not null, that means we didn't get the
@@ -291,22 +437,20 @@ public class XugglerMediaInputStream {
                         //            " as BGR 24 bit data in: " + file);
 
                         mf.video.bufferedImage = javaImageConverter.toImage(newPic);
-                        newPic.setPts(packet.getPts());
 
-                        System.out.println("Received a video picture (" + packetTimestamp + ")");
+                        System.out.println("Received a video picture (" + pictureTimestamp + ")");
                         videoComplete = true;
                         break;
                     }
+
+                    // means that the packet was completely read (see if/else further up)
+                    if (audioPacketOffset == 0)
+                        break;
+
                 }
             }
         }
 
-        if (!audioComplete) {
-            System.err.println("Audio not complete");
-        }
-        if (!videoComplete) {
-            System.err.println("Video not complete");
-        }
         if (skippedAudioFrames != 0 || skippedVideoFrames != 0) {
             System.out.println("TRACE: skipped video frames: " + skippedVideoFrames + "; skipped audio frames: "
                     + skippedAudioFrames);
@@ -327,10 +471,19 @@ public class XugglerMediaInputStream {
         if (statusCode < 0)
             throw new IllegalStateException("Seek to position " + millis + "ms failed with code " + statusCode
                     + " in file " + file);
-        packetReadPartially = false;
+        if (videoPacketReadPartially != null)
+            videoPacketReadPartially.delete();
+        videoPacketReadPartially = null;
+        if (audioPacketReadPartially != null)
+            audioPacketReadPartially.delete();
+        audioPacketReadPartially = null;
+        audioPacketOffset = 0;
+        videoPacketOffset = 0;
+        packetSource.reset();
         samplesBytePos = 0;
         long actualMillis = (long) (videoStream.getCurrentDts() * videoTimeBase * 1000.0);
-        intendedPosition = millis;
+        intendedAudioPosition = millis;
+        intendedVideoPosition = millis;
         int audioFrameSize = audioCoder.getAudioFrameSize();
         long targetSample = (long) Math.floor((double) millis / 1000.0 / audioPacketTimeStep * audioFrameSize);
         targetAudioPacket = Math.round(Math.floor(targetSample / audioFrameSize) * audioPacketTimeStep * 1000.0);
