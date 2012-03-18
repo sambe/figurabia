@@ -66,23 +66,10 @@ public class XugglerMediaInputStream {
 
     private List<IVideoPicture> createdVideoPictures = new ArrayList<IVideoPicture>();
 
-    public static class PacketRecord {
-        public final IPacket packet;
-        public final long timestamp;
-        public final long pts;
-
-        public PacketRecord(IPacket packet, long timestamp, long pts) {
-            this.packet = packet;
-            this.timestamp = timestamp;
-            this.pts = pts;
-        }
-    }
-
     public static class PacketSource {
         private IContainer container;
-        private IPacket localPacket;
-        private Queue<PacketRecord> audioPackets = new LinkedList<PacketRecord>();
-        private Queue<PacketRecord> videoPackets = new LinkedList<PacketRecord>();
+        private Queue<IPacket> audioPackets = new LinkedList<IPacket>();
+        private Queue<IPacket> videoPackets = new LinkedList<IPacket>();
         private int audioStreamIndex;
         private int videoStreamIndex;
 
@@ -90,37 +77,28 @@ public class XugglerMediaInputStream {
             this.container = container;
             this.audioStreamIndex = audioStreamIndex;
             this.videoStreamIndex = videoStreamIndex;
-            localPacket = IPacket.make();
         }
 
         public void reset() {
-            for (PacketRecord r : audioPackets)
-                r.packet.delete();
+            for (IPacket packet : audioPackets)
+                packet.delete();
             audioPackets.clear();
-            for (PacketRecord r : videoPackets)
-                r.packet.delete();
+            for (IPacket packet : videoPackets)
+                packet.delete();
             videoPackets.clear();
         }
 
-        private PacketRecord readPacketOfStream(int index, int otherIndex, Queue<PacketRecord> otherPackets) {
+        private IPacket readPacketOfStream(int index, int otherIndex, Queue<IPacket> otherPackets) {
             while (true) {
-                if (container.readNextPacket(localPacket) < 0) {
+                IPacket p = IPacket.make();
+                if (container.readNextPacket(p) < 0) {
+                    p.delete();
                     return null;
                 }
-                IPacket p = IPacket.make(localPacket, true);
-                long pts = localPacket.getPts();
-                long position = localPacket.getPosition();
-                long timestamp = localPacket.getTimeStamp();
-                long ppts = p.getPts();
-                long pposition = p.getPosition();
-                long ptimestamp = p.getTimeStamp();
-                System.out.println("reading packet of stream " + p.getStreamIndex() + ": pts = " + pts
-                        + "; timestamp = " + timestamp + "; position = " + position + " bytes  (" + ppts
-                        + "; timestamp = " + ptimestamp + "; position = " + pposition);
                 if (p.getStreamIndex() == index) {
-                    return new PacketRecord(p, p.getTimeStamp(), p.getPts());
+                    return p;
                 } else if (p.getStreamIndex() == otherIndex) {
-                    otherPackets.add(new PacketRecord(p, p.getTimeStamp(), p.getPts()));
+                    otherPackets.add(p);
                 } else {
                     p.delete();
                 }
@@ -130,7 +108,7 @@ public class XugglerMediaInputStream {
         /**
          * @return the next audio packet or null if end of file or error
          */
-        public PacketRecord readNextAudioPacket() {
+        public IPacket readNextAudioPacket() {
             if (audioPackets.isEmpty())
                 return readPacketOfStream(audioStreamIndex, videoStreamIndex, videoPackets);
             else
@@ -140,7 +118,7 @@ public class XugglerMediaInputStream {
         /**
          * @return the next video packet or null if end of file or error
          */
-        public PacketRecord readNextVideoPacket() {
+        public IPacket readNextVideoPacket() {
             if (videoPackets.isEmpty())
                 return readPacketOfStream(videoStreamIndex, audioStreamIndex, audioPackets);
             else
@@ -266,16 +244,14 @@ public class XugglerMediaInputStream {
 
         boolean audioComplete = false;
         while (!audioComplete) {
-            PacketRecord audioPacketRecord = null;
             IPacket audioPacket = null;
             if (audioPacketReadPartially != null) {
                 audioPacket = audioPacketReadPartially;
             } else {
-                audioPacketRecord = packetSource.readNextAudioPacket();
+                audioPacket = packetSource.readNextAudioPacket();
                 // end of media (or error)
-                if (audioPacketRecord == null || audioPacketRecord.packet == null)
+                if (audioPacket == null)
                     break;
-                audioPacket = audioPacketRecord.packet;
             }
             long packetTimestamp = (long) (audioPacket.getTimeStamp() * audioPacket.getTimeBase().getValue() * 1000.0);
 
@@ -357,26 +333,19 @@ public class XugglerMediaInputStream {
         else
             picture = resamplingTempPic;
 
-        // TODO maybe this is not needed at all
-        //picture.setComplete(false, videoCoder.getPixelType(), videoCoder.getWidth(),
-        //        videoCoder.getHeight(), 0);
-
         boolean videoComplete = false;
 
         while (!videoComplete) {
-            PacketRecord videoPacketRecord = null;
             IPacket videoPacket;
             if (videoPacketReadPartially != null) {
                 videoPacket = videoPacketReadPartially;
             } else {
-                videoPacketRecord = packetSource.readNextVideoPacket();
-                if (videoPacketRecord != null)
-                    videoPacket = videoPacketRecord.packet;
-                else
+                videoPacket = packetSource.readNextVideoPacket();
+                if (videoPacket == null)
                     break;
             }
             if (videoPacket != null) {
-                long packetTimestamp = (long) (videoPacket.getTimeStamp() * videoPacket.getTimeBase().getValue() * 1000.0);
+                //long packetTimestamp = (long) (videoPacket.getTimeStamp() * videoPacket.getTimeBase().getValue() * 1000.0);
 
                 while (videoPacketOffset < videoPacket.getSize()) {
                     if (picture.isComplete()) {

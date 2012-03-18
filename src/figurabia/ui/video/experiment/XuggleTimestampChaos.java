@@ -15,9 +15,6 @@ import com.xuggle.xuggler.IStreamCoder;
 
 public class XuggleTimestampChaos {
 
-    //TODO write method to read lots of packets,
-    // always some audio in a batch and then some video in a batch
-
     private static int audioIndex;
     private static int videoIndex;
 
@@ -93,15 +90,6 @@ public class XuggleTimestampChaos {
         if (audioStreamOpenResultCode < 0)
             throw new IllegalStateException("Could not open audio stream (error " + audioStreamOpenResultCode + ")");
 
-        /*IPacket packet = IPacket.make();
-        int videoPacketCount = 0;
-        int audioPacketCount = 0;
-        double videoTimeBase = videoCoder.getTimeBase().getDouble() * 1000.0;
-        double audioTimeBase = audioCoder.getTimeBase().getDouble() * 1000.0;
-        double videoPacketDiff = 1.0 / videoCoder.getFrameRate().getDouble();
-        double audioSampleRate = audioCoder.getSampleRate();
-        double audioPacketDiff = audioCoder.getAudioFrameSize() / audioSampleRate;*/
-
         for (int k = 0; k < 10; k++) {
             for (int i = 0; i < 10; i++) {
                 readPacket(container);
@@ -117,38 +105,6 @@ public class XuggleTimestampChaos {
             }
         }
 
-        /*while (container.readNextPacket(packet) >= 0) {
-            if (packet.getStreamIndex() == audioStream.getIndex()) {
-                IAudioSamples samples = IAudioSamples.make(1024, audioCoder.getChannels());
-                int offset = 0;
-
-                while (offset < packet.getSize()) {
-                    int bytesDecoded = audioCoder.decodeAudio(samples, packet, offset);
-                    if (bytesDecoded < 0) {
-                        throw new IllegalStateException("could not decode audio. Error code " + bytesDecoded);
-                    }
-                    offset += bytesDecoded;
-
-                    if (samples.isComplete()) {
-                        double realTime = audioPacketCount++ * audioPacketDiff;
-                        double fileTime = samples.getPts() * samples.getTimeBase().getDouble(); // * audioTimeBase / 1000.0;
-                        System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
-                                + ": Got " + samples.getNumSamples()
-                                + " audio samples!"
-                                + (packet.isKeyPacket() ? " (key)" : ""));
-                        // getByteArray copies the bytes
-                        byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
-                    }
-                }
-            } else if (packet.getStreamIndex() == videoStream.getIndex()) {
-                double realTime = videoPacketCount++ * videoPacketDiff;
-                double videoDts = packet.getPts();
-                double fileTime = videoDts * packet.getTimeBase().getDouble(); //* videoTimeBase / 1000.0;
-                System.out.println(String.format("%9.6f %9.6f %9.6f", realTime, fileTime, realTime - fileTime)
-                        + ": Got video frame"
-                        + (packet.isKeyPacket() ? " (key)" : ""));
-            }
-        }*/
     }
 
     private static IPacket localPacket = IPacket.make();
