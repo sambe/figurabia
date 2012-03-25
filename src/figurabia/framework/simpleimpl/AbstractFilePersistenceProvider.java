@@ -406,15 +406,23 @@ public abstract class AbstractFilePersistenceProvider implements PersistenceProv
      * @see figurabia.framework.PersistenceProvider#moveItem(figurabia.domain.Folder, int, figurabia.domain.Folder, int)
      */
     @Override
-    public void moveItem(Folder oldFolder, int oldIndex, Folder newFolder, int newIndex) {
-        FolderItem item = folderItems.get(oldFolder).remove(oldIndex);
-        folderItems.get(newFolder).add(newIndex, item);
-        item.setParent(newFolder);
+    public void moveItem(FolderItem itemToMove, Folder newFolder, int newIndex) {
+        Folder oldFolder = itemToMove.getParent();
+        List<FolderItem> oldFolderItems = folderItems.get(oldFolder);
+        int oldIndex = oldFolderItems.indexOf(itemToMove);
+        oldFolderItems.remove(oldIndex);
+        // to account for the removed one (when in the same folder)
+        if (oldFolder.equals(newFolder) && newIndex > oldIndex)
+            newIndex--;
+        if (newIndex == -1)
+            newIndex = 0;
+        folderItems.get(newFolder).add(newIndex, itemToMove);
+        itemToMove.setParent(newFolder);
         // emit update event
         for (FolderItemChangeListener l : folderItemChangeListeners) {
             // TODO should use more information
-            l.itemRemoved(oldFolder, oldIndex, item);
-            l.itemAdded(newFolder, newIndex, item);
+            l.itemRemoved(oldFolder, oldIndex, itemToMove);
+            l.itemAdded(newFolder, newIndex, itemToMove);
         }
     }
 

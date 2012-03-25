@@ -76,12 +76,11 @@ public interface PersistenceProvider {
      * Moves an existing item from one position in the tree (specified by folder and index) to another position in the
      * tree (specified by folder and index).
      * 
-     * @param oldFolder the previous position's folder
-     * @param oldIndex the previous position's index
+     * @param itemToMove the item to move
      * @param newFolder the new position's folder
      * @param newIndex the new position's index
      */
-    void moveItem(Folder oldFolder, int oldIndex, Folder newFolder, int newIndex);
+    void moveItem(FolderItem itemToMove, Folder newFolder, int newIndex);
 
     void addFolderItemChangeListener(FolderItemChangeListener listener);
 

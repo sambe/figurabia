@@ -9,18 +9,25 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JTree;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.TransferHandler;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.event.TreeSelectionListener;
@@ -50,6 +57,54 @@ public class FigureList extends JPanel {
 
     private JPopupMenu popupMenu;
 
+    private static DataFlavor folderItemFlavor;
+    static {
+        try {
+            folderItemFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=\""
+                    + FolderItem.class.getName() + "\"");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class FolderItemTransferable implements Transferable {
+
+        private FolderItem item;
+
+        private static DataFlavor[] flavors = new DataFlavor[] {
+                folderItemFlavor,
+                DataFlavor.stringFlavor
+        };
+
+        public FolderItemTransferable(FolderItem item) {
+            this.item = item;
+        }
+
+        @Override
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+            if (flavor.equals(folderItemFlavor))
+                return item;
+            if (flavor.equals(DataFlavor.stringFlavor))
+                return item.getName();
+            throw new UnsupportedFlavorException(flavor);
+        }
+
+        @Override
+        public DataFlavor[] getTransferDataFlavors() {
+            return flavors.clone();
+        }
+
+        @Override
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            for (DataFlavor f : flavors) {
+                if (f.equals(flavor))
+                    return true;
+            }
+            return false;
+        }
+
+    }
+
     public FigureList(Workspace workspace_, PersistenceProvider pp) {
         this.workspace = workspace_;
         this.persistenceProvider = pp;
@@ -65,6 +120,48 @@ public class FigureList extends JPanel {
         tree = new CheckboxTree();
         tree.setModel(treeModel);
         tree.getSelectionModel().setSelectionMode(DefaultTreeSelectionModel.SINGLE_TREE_SELECTION);
+        TransferHandler transferHandler = new TransferHandler() {
+            @Override
+            public int getSourceActions(JComponent c) {
+                return MOVE;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c) {
+                JTree t = (JTree) c;
+                FolderItem item = (FolderItem) t.getSelectionPath().getLastPathComponent();
+                return new FolderItemTransferable(item);
+            }
+
+            @Override
+            protected void exportDone(JComponent source, Transferable data, int action) {
+                // nothing to do, because move is only within tree
+            }
+
+            @Override
+            public boolean canImport(TransferSupport support) {
+                if (!support.isDrop())
+                    return false;
+                return true;
+            }
+
+            @Override
+            public boolean importData(TransferSupport support) {
+                if (!canImport(support))
+                    return false;
+                // selection is drag position
+                //support.getTransferable().getTransferData(folderItemFlavor);
+                TreePath selected = tree.getSelectionPath();
+                // get drop position
+                JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
+                moveItem(selected, dropLocation.getPath(), dropLocation.getChildIndex());
+                return true;
+            }
+        };
+        tree.setTransferHandler(transferHandler);
+        tree.setDragEnabled(true);
+        tree.setDropMode(DropMode.INSERT);
+
         setLayout(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(tree);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -235,6 +332,22 @@ public class FigureList extends JPanel {
         int index = persistenceProvider.getItems(parent).indexOf(f);
         persistenceProvider.removeItem(f.getParent(), index);
         // TODO pictures of removed figures are not removed here, probably better done at closing the application (or in a proper backend)
+    }
+
+    private void moveItem(TreePath pathToMove, TreePath newPath, int newIndex) {
+        FolderItem itemToMove = (FolderItem) pathToMove.getLastPathComponent();
+        FolderItem target = (FolderItem) newPath.getLastPathComponent();
+        Folder newParent;
+        if (target instanceof Folder)
+            newParent = (Folder) target;
+        else {
+            newParent = target.getParent();
+            // FIXME newIndex is invalid in this case
+            newIndex = 0;
+        }
+        persistenceProvider.moveItem(itemToMove, newParent, newIndex);
+
+        persistenceProvider.updateItem(itemToMove);
     }
 
     private void cloneFigure(ActionEvent e) {
