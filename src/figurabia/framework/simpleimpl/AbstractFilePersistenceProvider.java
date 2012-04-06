@@ -458,8 +458,10 @@ public abstract class AbstractFilePersistenceProvider implements PersistenceProv
     @Override
     public void updateItem(FolderItem item) {
         // emit update event
+        Folder parent = item.getParent();
+        int index = folderItems.get(parent).indexOf(item);
         for (FolderItemChangeListener l : folderItemChangeListeners) {
-            l.itemChanged(item);
+            l.itemChanged(parent, index, item);
         }
 
     }

@@ -18,5 +18,9 @@
 			<attribute name="javadoc_location" value="file:/home/sberner/doc/java/xuggler/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/sberner/apps/jogamp/joal-2.0-20111219-linux-i586/jar/joal-natives-linux-i586.jar"/>
+	<classpathentry kind="lib" path="/home/sberner/apps/jogamp/joal-2.0-20111219-linux-i586/jar/joal.jar" sourcepath="/home/sberner/apps/jogamp/joal-2.0-20111219-linux-i586/joal-java-src.zip"/>
+	<classpathentry kind="lib" path="/home/sberner/apps/jogamp/gluegen-2.0-b33-20111219-linux-i586/jar/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="/home/sberner/apps/jogamp/gluegen-2.0-b33-20111219-linux-i586/jar/gluegen-rt-natives-linux-i586.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

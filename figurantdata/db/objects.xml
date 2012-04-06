@@ -1,6 +1,24 @@
 <object-stream>
-  <int>64</int>
+  <int>72</int>
   <map>
+    <entry>
+      <int>69</int>
+      <Figure>
+        <id>69</id>
+        <name>Raphi Pasitos (13.02.12)</name>
+        <videoName>MOV00357.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
+      </Figure>
+    </entry>
     <entry>
       <int>1</int>
       <Figure>
@@ -390,6 +408,283 @@
       </Figure>
     </entry>
     <entry>
+      <int>70</int>
+      <Figure>
+        <id>70</id>
+        <name>Raphi &amp; Martina (13.02.12)</name>
+        <videoName>MOV00356.MP4</videoName>
+        <videoPositions>
+          <long>27418000000</long>
+          <long>28619000000</long>
+          <long>29872000000</long>
+          <long>30917000000</long>
+          <long>32170000000</long>
+          <long>33424000000</long>
+          <long>34625000000</long>
+          <long>35930000000</long>
+          <long>37236000000</long>
+          <long>38437000000</long>
+          <long>40161000000</long>
+        </videoPositions>
+        <positions>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>LEFT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>LEFT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>BOTH_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>ON_SHOULDER</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>5</frontOffset>
+            <sideOffset>10</sideOffset>
+            <handsJoined>BOTH_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>ON_SHOULDER</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>5</frontOffset>
+            <sideOffset>-10</sideOffset>
+            <handsJoined>LEFT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>HIP_LOCKED</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>HALF_WRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>SAME</manDir>
+            <frontOffset>-5</frontOffset>
+            <sideOffset>10</sideOffset>
+            <handsJoined>RIGHT_GREET</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>ON_HIP</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>SIDE</ladyDir>
+            <manDir>SAME</manDir>
+            <frontOffset>-10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>BOTH_GREET</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>ON_SHOULDER</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>RIGHT</manDir>
+            <frontOffset>-5</frontOffset>
+            <sideOffset>5</sideOffset>
+            <handsJoined>BOTH_GREET</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>ON_SHOULDER</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>SAME</manDir>
+            <frontOffset>-10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>RIGHT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>5</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>SAME</manDir>
+            <frontOffset>0</frontOffset>
+            <sideOffset>10</sideOffset>
+            <handsJoined>RIGHT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>FULLY_WRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+          <PuertoPosition>
+            <beat>1</beat>
+            <ladyDir>ON_LINE</ladyDir>
+            <manDir>OPPOSITE</manDir>
+            <frontOffset>10</frontOffset>
+            <sideOffset>0</sideOffset>
+            <handsJoined>RIGHT_JOINED</handsJoined>
+            <handsTwist>0</handsTwist>
+            <leftHandHeight>NORMAL</leftHandHeight>
+            <rightHandHeight>NORMAL</rightHandHeight>
+            <leftArmAroundMan>UNWRAPPED</leftArmAroundMan>
+            <rightArmAroundMan>UNWRAPPED</rightArmAroundMan>
+            <leftArmAroundLady>UNWRAPPED</leftArmAroundLady>
+            <rightArmAroundLady>UNWRAPPED</rightArmAroundLady>
+          </PuertoPosition>
+        </positions>
+        <elements>
+          <Element>
+            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
+            <name>Grundschritt</name>
+          </Element>
+          <Element>
+            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
+            <name>Grundschritt</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>-5</absPosLineDir>
+              <absPosSideDir>-5</absPosSideDir>
+            </offsetChange>
+            <name>Dile que no</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>true</ladyLineDir>
+              <absPosLineDir>-5</absPosLineDir>
+              <absPosSideDir>0</absPosSideDir>
+            </offsetChange>
+            <name>Hook Turn</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>0</absPosLineDir>
+              <absPosSideDir>-10</absPosSideDir>
+            </offsetChange>
+            <name>Open break</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>0</absPosLineDir>
+              <absPosSideDir>0</absPosSideDir>
+            </offsetChange>
+            <name>Around</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>-5</absPosLineDir>
+              <absPosSideDir>5</absPosSideDir>
+            </offsetChange>
+            <name>Chica Bonita</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>-5</absPosLineDir>
+              <absPosSideDir>0</absPosSideDir>
+            </offsetChange>
+            <name>Outside turn</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>5</absPosLineDir>
+              <absPosSideDir>-5</absPosSideDir>
+            </offsetChange>
+            <name>Eindrehen</name>
+          </Element>
+          <Element>
+            <offsetChange>
+              <ladyLineDir>false</ladyLineDir>
+              <absPosLineDir>5</absPosLineDir>
+              <absPosSideDir>5</absPosSideDir>
+            </offsetChange>
+            <name>Untendurch</name>
+          </Element>
+        </elements>
+        <baseOffset reference="../../../entry/Figure/baseOffset"/>
+        <active>true</active>
+        <barIds>
+          <int>1</int>
+          <int>1</int>
+          <int>2</int>
+          <int>2</int>
+          <int>3</int>
+          <int>3</int>
+          <int>4</int>
+          <int>4</int>
+          <int>5</int>
+          <int>5</int>
+          <int>6</int>
+        </barIds>
+      </Figure>
+    </entry>
+    <entry>
       <int>3</int>
       <Figure>
         <id>3</id>
@@ -545,15 +840,15 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -730,7 +1025,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[8]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[4]/Figure/elements/Element[8]/offsetChange"/>
             <name>Dile que no</name>
           </Element>
           <Element>
@@ -2833,7 +3128,7 @@
             </offsetChange>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[3]/Figure/elements/Element[6]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[5]/Figure/elements/Element[6]/offsetChange"/>
             <name>Doppeldrehung, rechts</name>
           </Element>
           <Element>
@@ -2850,7 +3145,7 @@
               <absPosLineDir>-10</absPosLineDir>
               <absPosSideDir>0</absPosSideDir>
             </offsetChange>
-            <name>Hug</name>
+            <name>Hook Turn</name>
           </Element>
           <Element>
             <offsetChange>
@@ -3271,7 +3566,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[5]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[7]/Figure/baseOffset"/>
           </Element>
           <Element>
             <offsetChange>
@@ -3338,7 +3633,7 @@
             <name>Platzwechsel</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[5]/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry[7]/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -3486,7 +3781,7 @@
             </offsetChange>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[8]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[4]/Figure/elements/Element[8]/offsetChange"/>
             <name>Drehung, rechts</name>
           </Element>
           <Element>
@@ -3513,7 +3808,7 @@
             <name>Inside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[2]/Figure/elements/Element[8]/offsetChange"/>
+        <baseOffset reference="../../../entry[4]/Figure/elements/Element[8]/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -3880,7 +4175,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[5]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[7]/Figure/baseOffset"/>
             <name>Platzwechsel</name>
           </Element>
           <Element>
@@ -3904,7 +4199,7 @@
             <name>Links-Rechts-Links</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[5]/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry[7]/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -4201,7 +4496,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[12]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[14]/Figure/elements/Element/offsetChange"/>
             <name>Dile que no mit Slide</name>
           </Element>
           <Element>
@@ -4228,7 +4523,7 @@
             <name>Inside turn</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[14]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -4251,7 +4546,7 @@
             <name>Outside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[12]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[14]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -4673,10 +4968,10 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -4694,7 +4989,7 @@
             </offsetChange>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[16]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[18]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -5241,7 +5536,7 @@
           </Element>
           <Element>
             <offsetChange reference="../../Element/offsetChange"/>
-            <name>Hug</name>
+            <name>Hook Turn</name>
           </Element>
           <Element>
             <offsetChange reference="../../Element/offsetChange"/>
@@ -5463,7 +5758,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[14]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
             <name>Reverse Dile Que No</name>
           </Element>
           <Element>
@@ -5475,7 +5770,7 @@
             <name>Reverse Dile Que No</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -5486,7 +5781,7 @@
             <name>Outside turn</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
             <name>Mann: Drehung, links</name>
           </Element>
           <Element>
@@ -5529,7 +5824,7 @@
             <name>Inside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[14]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[16]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -5816,7 +6111,7 @@
             <offsetChange reference="../../Element[5]/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[20]/Figure/elements/Element/offsetChange"/>
             <name>Doppeldrehung, rechts</name>
           </Element>
           <Element>
@@ -5835,7 +6130,7 @@
             </offsetChange>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[20]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -6194,7 +6489,7 @@
               <absPosLineDir>0</absPosLineDir>
               <absPosSideDir>0</absPosSideDir>
             </offsetChange>
-            <name>Hug mit Handtaucher</name>
+            <name>Hook mit Handtaucher</name>
           </Element>
           <Element>
             <offsetChange reference="../../Element[2]/offsetChange"/>
@@ -6285,7 +6580,7 @@
           </Element>
           <Element>
             <offsetChange reference="../../Element[13]/offsetChange"/>
-            <name>Hug</name>
+            <name>Hook Turn</name>
           </Element>
           <Element>
             <offsetChange reference="../../Element[13]/offsetChange"/>
@@ -6476,7 +6771,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[22]/Figure/elements/Element[2]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[24]/Figure/elements/Element[2]/offsetChange"/>
             <name>Drehung, links</name>
           </Element>
           <Element>
@@ -6533,7 +6828,7 @@
             <name>Ambulancia</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[22]/Figure/elements/Element[2]/offsetChange"/>
+        <baseOffset reference="../../../entry[24]/Figure/elements/Element[2]/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -6767,7 +7062,7 @@
           </Element>
           <Element>
             <offsetChange reference="../../Element[3]/offsetChange"/>
-            <name>Hug</name>
+            <name>Hook Turn</name>
           </Element>
           <Element>
             <offsetChange reference="../../Element[3]/offsetChange"/>
@@ -7372,10 +7667,10 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[26]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[26]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element/offsetChange"/>
             <name>Doppeldrehung, rechts</name>
           </Element>
           <Element>
@@ -7520,18 +7815,18 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
             <name>Setenta</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
             <name>Manitos volandos</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
             <name>Manitos volandos</name>
           </Element>
         </elements>
@@ -7770,7 +8065,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
             <name>Dile que no</name>
           </Element>
           <Element>
@@ -7852,7 +8147,7 @@
             </offsetChange>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[23]/Figure/elements/Element[4]/offsetChange"/>
+        <baseOffset reference="../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -8458,7 +8753,7 @@
               <absPosLineDir>5</absPosLineDir>
               <absPosSideDir>5</absPosSideDir>
             </offsetChange>
-            <name>Hug</name>
+            <name>Hook Turn</name>
           </Element>
           <Element>
             <offsetChange>
@@ -9197,7 +9492,7 @@
             <name>Inside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[30]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[32]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -9426,7 +9721,7 @@
             <name>Outside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[30]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[32]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -10163,26 +10458,6 @@
   <map>
     <entry>
       <Folder>
-        <id>59</id>
-        <name>worst quality</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>29</id>
-        </FigureReference>
-        <FigureReference>
-          <id>28</id>
-        </FigureReference>
-        <FigureReference>
-          <id>30</id>
-        </FigureReference>
-        <FigureReference>
-          <id>48</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
         <id>58</id>
         <name>bad quality</name>
       </Folder>
@@ -10203,79 +10478,57 @@
     </entry>
     <entry>
       <Folder>
-        <id>60</id>
-        <name>too dark</name>
+        <id>59</id>
+        <name>worst quality</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>27</id>
+          <id>29</id>
         </FigureReference>
         <FigureReference>
-          <id>34</id>
+          <id>28</id>
         </FigureReference>
         <FigureReference>
-          <id>49</id>
+          <id>30</id>
         </FigureReference>
         <FigureReference>
-          <id>50</id>
-        </FigureReference>
-        <FigureReference>
-          <id>51</id>
+          <id>48</id>
         </FigureReference>
       </list>
     </entry>
     <entry>
       <Folder>
-        <id>-1</id>
-        <name>All</name>
+        <id>65</id>
+        <name>test2</name>
       </Folder>
-      <list>
-        <FolderReference>
-          <id>61</id>
-        </FolderReference>
-        <FolderReference>
-          <id>60</id>
-        </FolderReference>
-        <FolderReference>
-          <id>53</id>
-        </FolderReference>
-        <FolderReference>
-          <id>57</id>
-        </FolderReference>
-        <FigureReference>
-          <id>3</id>
-        </FigureReference>
-        <FigureReference>
-          <id>11</id>
-        </FigureReference>
-        <FigureReference>
-          <id>55</id>
-        </FigureReference>
-        <FigureReference>
-          <id>56</id>
-        </FigureReference>
-        <FigureReference>
-          <id>62</id>
-        </FigureReference>
-      </list>
+      <list/>
     </entry>
     <entry>
       <Folder>
-        <id>61</id>
-        <name>partial</name>
+        <id>57</id>
+        <name>completed</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>1</id>
+          <id>70</id>
         </FigureReference>
         <FigureReference>
-          <id>17</id>
+          <id>12</id>
         </FigureReference>
         <FigureReference>
-          <id>16</id>
+          <id>33</id>
         </FigureReference>
         <FigureReference>
-          <id>19</id>
+          <id>38</id>
+        </FigureReference>
+        <FigureReference>
+          <id>37</id>
+        </FigureReference>
+        <FigureReference>
+          <id>47</id>
+        </FigureReference>
+        <FigureReference>
+          <id>44</id>
         </FigureReference>
       </list>
     </entry>
@@ -10319,36 +10572,102 @@
           <id>45</id>
         </FigureReference>
         <FolderReference>
-          <id>59</id>
+          <id>58</id>
         </FolderReference>
         <FolderReference>
-          <id>58</id>
+          <id>59</id>
         </FolderReference>
       </list>
     </entry>
     <entry>
       <Folder>
-        <id>57</id>
-        <name>completed</name>
+        <id>71</id>
+        <name>pasitos</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>12</id>
+          <id>69</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>61</id>
+        <name>partial</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>1</id>
         </FigureReference>
         <FigureReference>
-          <id>33</id>
+          <id>17</id>
         </FigureReference>
         <FigureReference>
-          <id>38</id>
+          <id>16</id>
         </FigureReference>
         <FigureReference>
-          <id>37</id>
+          <id>19</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>-1</id>
+        <name>All</name>
+      </Folder>
+      <list>
+        <FolderReference>
+          <id>61</id>
+        </FolderReference>
+        <FolderReference>
+          <id>60</id>
+        </FolderReference>
+        <FolderReference>
+          <id>53</id>
+        </FolderReference>
+        <FolderReference>
+          <id>57</id>
+        </FolderReference>
+        <FigureReference>
+          <id>3</id>
         </FigureReference>
         <FigureReference>
-          <id>47</id>
+          <id>11</id>
         </FigureReference>
         <FigureReference>
-          <id>44</id>
+          <id>62</id>
+        </FigureReference>
+        <FigureReference>
+          <id>55</id>
+        </FigureReference>
+        <FigureReference>
+          <id>56</id>
+        </FigureReference>
+        <FolderReference>
+          <id>71</id>
+        </FolderReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>60</id>
+        <name>too dark</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>27</id>
+        </FigureReference>
+        <FigureReference>
+          <id>34</id>
+        </FigureReference>
+        <FigureReference>
+          <id>49</id>
+        </FigureReference>
+        <FigureReference>
+          <id>50</id>
+        </FigureReference>
+        <FigureReference>
+          <id>51</id>
         </FigureReference>
       </list>
     </entry>

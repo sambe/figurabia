@@ -38,9 +38,9 @@ public class FiguresTreeModel implements TreeModel {
             }
 
             @Override
-            public void itemChanged(FolderItem item) {
-                TreePath path = createTreePath(item);
-                treeModelSupport.firePathChanged(path);
+            public void itemChanged(Folder parent, int index, FolderItem item) {
+                TreePath treePath = createTreePath(parent);
+                treeModelSupport.fireChildChanged(treePath, index, item);
             }
 
             @Override

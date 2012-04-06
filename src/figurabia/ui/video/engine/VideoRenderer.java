@@ -83,7 +83,7 @@ public class VideoRenderer extends Actor {
         g.fillRect(x, y, width, height);
     }
 
-    private static void paintImage(VideoScreen screen, Graphics g, Image image) {
+    private static void paintImage(VideoScreen screen, Graphics2D g, Image image) {
         int x = 0;
         int y = 0;
         int width = screen.getWidth();
@@ -103,7 +103,8 @@ public class VideoRenderer extends Actor {
             g.fillRect(0, 0, width, d / 2);
             g.fillRect(0, height + d / 2, width, (d + 1) / 2);
         }
-
+        // Waaayyyy tooo slow!!!
+        //g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.drawImage(image, x, y, width, height, null);
     }
 

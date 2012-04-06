@@ -10,7 +10,7 @@ import figurabia.domain.FolderItem;
 public interface FolderItemChangeListener {
     public void itemAdded(Folder parent, int index, FolderItem item);
 
-    public void itemChanged(FolderItem item);
+    public void itemChanged(Folder parent, int index, FolderItem item);
 
     public void itemRemoved(Folder parent, int index, FolderItem item);
 

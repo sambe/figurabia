@@ -8,17 +8,14 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
 import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.LineEvent.Type;
 
 import figurabia.ui.video.access.AudioBuffer;
 import figurabia.ui.video.engine.actorframework.Actor;
+import figurabia.ui.video.engine.audio.AudioProvider;
+import figurabia.ui.video.engine.audio.JoalAudioProvider;
+import figurabia.ui.video.engine.audio.AudioProvider.AudioState;
 import figurabia.ui.video.engine.messages.AudioSyncEvent;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
@@ -29,7 +26,7 @@ public class AudioRenderer extends Actor {
     private static final double MIN_SPEED = 0.25;
 
     private AudioFormat audioFormat;
-    private SourceDataLine line;
+    private AudioProvider audioProvider;
     private final Queue<CachedFrame> frameQueue = new LinkedList<CachedFrame>();
     private int bufferPos = 0;
     private int bytesToWrite = -1;
@@ -49,32 +46,24 @@ public class AudioRenderer extends Actor {
     protected void init() throws Exception {
         // create sound channel
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
-        line = (SourceDataLine) AudioSystem.getLine(info);
-        line.open(audioFormat);
+        //audioProvider = new JavaSoundAudioProvider();
+        audioProvider = new JoalAudioProvider();
+        audioProvider.open(audioFormat);
 
         // add listener for synchronization events
         if (syncTarget != null) {
-            line.addLineListener(new LineListener() {
+            audioProvider.addAudioStateListener(new AudioProvider.AudioStateListener() {
+
                 @Override
-                public void update(LineEvent event) {
-                    if (event.getType().equals(Type.START)) {
-                        System.err.println("Received LineEvent: START");
+                public void updateState(AudioState audioState) {
+                    if (audioState.equals(AudioState.PLAYING)) {
                         syncTarget.send(new AudioSyncEvent(AudioSyncEvent.Type.START));
-                    } else if (event.getType().equals(Type.STOP)) {
-                        System.err.println("Received LineEvent: STOP");
+                    } else if (audioState.equals(AudioState.STOPPED)) {
                         syncTarget.send(new AudioSyncEvent(AudioSyncEvent.Type.STOP));
-                    } else {
-                        System.err.println("Received LineEvent: " + event.getType());
                     }
                 }
             });
         }
-
-        // TODO do something with these controls
-        FloatControl mixerSourceLineGainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-        BooleanControl mixerSourceLineMuteControl = (BooleanControl) line.getControl(BooleanControl.Type.MUTE);
-        FloatControl mixerSourceLinePanControl = (FloatControl) line.getControl(FloatControl.Type.PAN);
-        FloatControl mixerSourceLineSampleRateControl = (FloatControl) line.getControl(FloatControl.Type.SAMPLE_RATE);
     }
 
     @Override
@@ -96,10 +85,10 @@ public class AudioRenderer extends Actor {
         switch (c.command) {
         case START:
             System.err.println("AudioRenderer: starting...");
-            line.start();
+            audioProvider.start();
             break;
         case STOP:
-            line.stop();
+            audioProvider.stop();
             break;
         case FLUSH:
             // recycle all frames in the queue
@@ -107,7 +96,7 @@ public class AudioRenderer extends Actor {
                 cf.recycle();
             }
             frameQueue.clear();
-            line.flush();
+            audioProvider.flush();
             break;
         case CLOSE:
             // stops the actor (which will close the line)
@@ -169,9 +158,10 @@ public class AudioRenderer extends Actor {
     private void fillAudioBuffer() {
         // TODO if speed != 1.0, we need to copy the data in a different fashion (approximation -> later offer different modes of approximation (e.g. nearest, average, polynomial)
         int available;
-        while (frameQueue.peek() != null && (available = line.available()) != 0) {
-            if (!line.isOpen()) {
-                throw new IllegalStateException("Line was not started, but is already delivered with audio data.");
+        while (frameQueue.peek() != null && (available = audioProvider.getWritableBytes()) != 0) {
+            if (!audioProvider.isOpen()) {
+                throw new IllegalStateException(
+                        "Audio Provider was not started, but is already delivered with audio data.");
             }
             AudioBuffer audio = frameQueue.peek().frame.audio;
             byte[] audioBuffer = audio.getAudioData();
@@ -197,10 +187,10 @@ public class AudioRenderer extends Actor {
             }
             //System.out.println("writing: length = " + length + "; bufferPos = " + bufferPos + "; offset = " + offset
             //        + "; buffer.length = " + audioBuffer.getLength() + "; buffer.offset = " + audioBuffer.getOffset());
-            //System.out.println("AudioRenderer: before writing to line: available = " + available + "; length = "
+            //System.out.println("AudioRenderer: before writing to audio provider: available = " + available + "; length = "
             //        + length);
-            int bytesWritten = line.write(audioBuffer, offset, length);
-            //System.out.println("AudioRenderer: after else {writing to line: bytesWritten: " + bytesWritten);
+            int bytesWritten = audioProvider.write(audioBuffer, offset, length);
+            //System.out.println("AudioRenderer: after else {writing to audio provider: bytesWritten: " + bytesWritten);
             //System.out.println("written " + bytesWritten + " bytes to audio line");
 
             bufferPos += bytesWritten;
@@ -230,9 +220,8 @@ public class AudioRenderer extends Actor {
 
     @Override
     protected void destruct() {
-        // close sound channel
-        if (line.isOpen()) {
-            line.close();
+        if (audioProvider.isOpen()) {
+            audioProvider.close();
         }
     }
 }
