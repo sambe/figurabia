@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
@@ -42,6 +43,7 @@ public class FigureMapScreen extends JComponent {
     private Map<Figure, Color> colors;
 
     private PuertoPosition selectedPosition;
+    private double moveDiffX, moveDiffY;
     private Point originalPoint;
 
     private AffineTransform transform = new AffineTransform();
@@ -58,7 +60,7 @@ public class FigureMapScreen extends JComponent {
         };*/
         connectionDrawer = new CurveConnectionDrawer();
 
-        addMouseListener(new MouseAdapter() {
+        MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent event) {
                 Point eventPoint = event.getPoint();
@@ -70,6 +72,8 @@ public class FigureMapScreen extends JComponent {
                     if (pp.getX() + WIDTH > mp.getX() && pp.getX() - WIDTH < mp.getX() && pp.getY() + WIDTH > mp.getY()
                             && pp.getY() - WIDTH < mp.getY()) {
                         selectedPosition = e.getKey();
+                        moveDiffX = mp.getX() - pp.getX();
+                        moveDiffY = mp.getY() - pp.getY();
                     }
                 }
             }
@@ -80,6 +84,7 @@ public class FigureMapScreen extends JComponent {
                 if (e.getClickCount() == 2) {
                     transform = new AffineTransform();
                     selectedPosition = null;
+                    paintImmediately(-50000, -50000, 100000, 100000);
                     return;
                 }
                 // only if one was selected
@@ -87,17 +92,20 @@ public class FigureMapScreen extends JComponent {
                     // set new coordinates of position
                     Point mp = e.getPoint();
                     Point2D ptDst = inverseTransform(new Point2D.Double(mp.x, mp.y));
-                    coordinates.put(selectedPosition, ptDst);
+                    Point2D ptCorrectedDst = new Point2D.Double(ptDst.getX() - moveDiffX, ptDst.getY() - moveDiffY);
+                    coordinates.put(selectedPosition, ptCorrectedDst);
                     selectedPosition = null;
                     paintImmediately(-50000, -50000, 100000, 100000);
                 } else {
-                    int oldX = originalPoint.x;
-                    int oldY = originalPoint.y;
+                    Point2D ptOrig = inverseTransform(new Point2D.Double(originalPoint.x, originalPoint.y));
+                    double oldX = ptOrig.getX();
+                    double oldY = ptOrig.getY();
                     Point mp = e.getPoint();
-                    int newX = mp.x;
-                    int newY = mp.y;
-                    int dX = newX - oldX;
-                    int dY = newY - oldY;
+                    Point2D ptNew = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                    double newX = ptNew.getX();
+                    double newY = ptNew.getY();
+                    double dX = newX - oldX;
+                    double dY = newY - oldY;
                     transform.translate(dX, dY);
                     paintImmediately(-50000, -50000, 100000, 100000);
                 }
@@ -110,10 +118,37 @@ public class FigureMapScreen extends JComponent {
                 } catch (NoninvertibleTransformException ex) {
                     throw new IllegalStateException("should never happen", ex);
                 }
-                System.out.println("DEBUG: position original: " + ptSrc + "; position destination: " + ptDst);
+                //System.out.println("DEBUG: position original: " + ptSrc + "; position destination: " + ptDst);
                 return ptDst;
             }
-        });
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                int clicks = e.getWheelRotation();
+                double scale = clicks < 0 ? -2 * clicks : 0.5 / clicks;
+                Point mp = e.getPoint();
+                Point2D ptFocus = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                // first, transform mouse location into center
+                //AffineTransform tf1 = AffineTransform.getTranslateInstance(ptFocus.getX(), ptFocus.getY());
+                transform.translate(ptFocus.getX(), ptFocus.getY());
+                // then, scale
+                //AffineTransform tf2 = AffineTransform.getScaleInstance(scale, scale);
+                transform.scale(scale, scale);
+                // last, transform center back into mouse location
+                double afterScale = scale > 1.0 ? scale / 2.0 : scale * 2.0;
+                transform.translate(-ptFocus.getX() * afterScale, -ptFocus.getY() * afterScale);
+                //AffineTransform tf3 = AffineTransform.getTranslateInstance(-ptFocus.getX() * afterScale,
+                //        -ptFocus.getY() * afterScale);
+
+                //tf1.concatenate(tf2);
+                //tf1.concatenate(tf3);
+                //transform.concatenate(tf1);
+
+                paintImmediately(-50000, -50000, 100000, 100000);
+            }
+        };
+        addMouseWheelListener(mouseAdapter);
+        addMouseListener(mouseAdapter);
     }
 
     public void refreshData() {
