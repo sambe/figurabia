@@ -30,7 +30,11 @@ public class FigureCreationService {
         this.persistenceProvider = persistenceProvider;
     }
 
-    public Figure createNewFigure(File videoFile) throws IOException {
+    public Figure createNewFigure(File videofile) throws IOException {
+        return createNewFigure(videofile, null, -1);
+    }
+
+    public Figure createNewFigure(File videoFile, Folder parent, int index) throws IOException {
         // copying video file to workspace
         File destFile = new File(workspace.getVideoDir() + File.separator + videoFile.getName());
         int runningNumber = 1;
@@ -64,9 +68,17 @@ public class FigureCreationService {
         prepareFigure(f);
 
         int id = persistenceProvider.persistFigure(f);
-        Folder root = persistenceProvider.getRootFolder();
-        List<FolderItem> rootFolderItems = persistenceProvider.getItems(root);
-        persistenceProvider.insertItem(root, rootFolderItems.size(), f);
+
+        if (parent == null) {
+            parent = persistenceProvider.getRootFolder();
+            index = -1;
+        }
+        // -1 means insert at the end
+        if (index == -1) {
+            List<FolderItem> parentFolderItems = persistenceProvider.getItems(parent);
+            index = parentFolderItems.size();
+        }
+        persistenceProvider.insertItem(parent, index, f);
 
         // creating figure pictures directory
         new File(workspace.getPictureDir() + File.separator + id).mkdir();

@@ -1,24 +1,6 @@
 <object-stream>
-  <int>72</int>
+  <int>76</int>
   <map>
-    <entry>
-      <int>69</int>
-      <Figure>
-        <id>69</id>
-        <name>Raphi Pasitos (13.02.12)</name>
-        <videoName>MOV00357.MP4</videoName>
-        <videoPositions/>
-        <positions/>
-        <elements/>
-        <baseOffset>
-          <ladyLineDir>false</ladyLineDir>
-          <absPosLineDir>0</absPosLineDir>
-          <absPosSideDir>0</absPosSideDir>
-        </baseOffset>
-        <active>false</active>
-        <barIds/>
-      </Figure>
-    </entry>
     <entry>
       <int>1</int>
       <Figure>
@@ -408,6 +390,24 @@
       </Figure>
     </entry>
     <entry>
+      <int>69</int>
+      <Figure>
+        <id>69</id>
+        <name>Raphi Pasitos (13.02.12)</name>
+        <videoName>MOV00357.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
+      </Figure>
+    </entry>
+    <entry>
       <int>70</int>
       <Figure>
         <id>70</id>
@@ -595,11 +595,11 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/baseOffset"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/baseOffset"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
@@ -667,7 +667,7 @@
             <name>Untendurch</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry[2]/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -840,15 +840,15 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -1078,6 +1078,24 @@
           <int>3</int>
           <int>4</int>
         </barIds>
+      </Figure>
+    </entry>
+    <entry>
+      <int>72</int>
+      <Figure>
+        <id>72</id>
+        <name>MOV00348</name>
+        <videoName>MOV00348.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
       </Figure>
     </entry>
     <entry>
@@ -1403,6 +1421,42 @@
           <int>6</int>
           <int>7</int>
         </barIds>
+      </Figure>
+    </entry>
+    <entry>
+      <int>73</int>
+      <Figure>
+        <id>73</id>
+        <name>MOV00348</name>
+        <videoName>MOV00348.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
+      </Figure>
+    </entry>
+    <entry>
+      <int>75</int>
+      <Figure>
+        <id>75</id>
+        <name>MOV00347</name>
+        <videoName>MOV00347.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
       </Figure>
     </entry>
     <entry>
@@ -3566,7 +3620,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[7]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[10]/Figure/baseOffset"/>
           </Element>
           <Element>
             <offsetChange>
@@ -3633,7 +3687,7 @@
             <name>Platzwechsel</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[7]/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry[10]/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -4175,7 +4229,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[7]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry[10]/Figure/baseOffset"/>
             <name>Platzwechsel</name>
           </Element>
           <Element>
@@ -4199,7 +4253,7 @@
             <name>Links-Rechts-Links</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[7]/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry[10]/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -4496,7 +4550,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[14]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[17]/Figure/elements/Element/offsetChange"/>
             <name>Dile que no mit Slide</name>
           </Element>
           <Element>
@@ -4523,7 +4577,7 @@
             <name>Inside turn</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[19]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -4546,7 +4600,7 @@
             <name>Outside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[14]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[17]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -4968,10 +5022,10 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[21]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[21]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -4989,7 +5043,7 @@
             </offsetChange>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[18]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[21]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -5758,7 +5812,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[16]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[19]/Figure/elements/Element/offsetChange"/>
             <name>Reverse Dile Que No</name>
           </Element>
           <Element>
@@ -5770,7 +5824,7 @@
             <name>Reverse Dile Que No</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[21]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -5781,7 +5835,7 @@
             <name>Outside turn</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[18]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[21]/Figure/elements/Element/offsetChange"/>
             <name>Mann: Drehung, links</name>
           </Element>
           <Element>
@@ -5824,7 +5878,7 @@
             <name>Inside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[16]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[19]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -6111,7 +6165,7 @@
             <offsetChange reference="../../Element[5]/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[20]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element/offsetChange"/>
             <name>Doppeldrehung, rechts</name>
           </Element>
           <Element>
@@ -6130,7 +6184,7 @@
             </offsetChange>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[20]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[23]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -6771,7 +6825,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[24]/Figure/elements/Element[2]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[27]/Figure/elements/Element[2]/offsetChange"/>
             <name>Drehung, links</name>
           </Element>
           <Element>
@@ -6828,7 +6882,7 @@
             <name>Ambulancia</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[24]/Figure/elements/Element[2]/offsetChange"/>
+        <baseOffset reference="../../../entry[27]/Figure/elements/Element[2]/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -7667,10 +7721,10 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[31]/Figure/elements/Element/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element/offsetChange"/>
+            <offsetChange reference="../../../../../entry[31]/Figure/elements/Element/offsetChange"/>
             <name>Doppeldrehung, rechts</name>
           </Element>
           <Element>
@@ -7815,18 +7869,18 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
             <name>Setenta</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
             <name>Manitos volandos</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
             <name>Manitos volandos</name>
           </Element>
         </elements>
@@ -8065,7 +8119,7 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
             <name>Dile que no</name>
           </Element>
           <Element>
@@ -8147,7 +8201,7 @@
             </offsetChange>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[25]/Figure/elements/Element[4]/offsetChange"/>
+        <baseOffset reference="../../../entry[28]/Figure/elements/Element[4]/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -9492,7 +9546,7 @@
             <name>Inside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[32]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[35]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -9721,7 +9775,7 @@
             <name>Outside turn</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[32]/Figure/elements/Element/offsetChange"/>
+        <baseOffset reference="../../../entry[35]/Figure/elements/Element/offsetChange"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -10458,6 +10512,75 @@
   <map>
     <entry>
       <Folder>
+        <id>-1</id>
+        <name>All</name>
+      </Folder>
+      <list>
+        <FolderReference>
+          <id>61</id>
+        </FolderReference>
+        <FolderReference>
+          <id>60</id>
+        </FolderReference>
+        <FolderReference>
+          <id>53</id>
+        </FolderReference>
+        <FolderReference>
+          <id>57</id>
+        </FolderReference>
+        <FigureReference>
+          <id>3</id>
+        </FigureReference>
+        <FigureReference>
+          <id>11</id>
+        </FigureReference>
+        <FigureReference>
+          <id>62</id>
+        </FigureReference>
+        <FigureReference>
+          <id>55</id>
+        </FigureReference>
+        <FigureReference>
+          <id>56</id>
+        </FigureReference>
+        <FolderReference>
+          <id>71</id>
+        </FolderReference>
+        <FolderReference>
+          <id>74</id>
+        </FolderReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>71</id>
+        <name>pasitos</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>69</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>74</id>
+        <name>Marco Ferrigno</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>72</id>
+        </FigureReference>
+        <FigureReference>
+          <id>73</id>
+        </FigureReference>
+        <FigureReference>
+          <id>75</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
         <id>58</id>
         <name>bad quality</name>
       </Folder>
@@ -10473,6 +10596,26 @@
         </FigureReference>
         <FigureReference>
           <id>43</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>61</id>
+        <name>partial</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>1</id>
+        </FigureReference>
+        <FigureReference>
+          <id>17</id>
+        </FigureReference>
+        <FigureReference>
+          <id>16</id>
+        </FigureReference>
+        <FigureReference>
+          <id>19</id>
         </FigureReference>
       </list>
     </entry>
@@ -10525,10 +10668,10 @@
           <id>37</id>
         </FigureReference>
         <FigureReference>
-          <id>47</id>
+          <id>44</id>
         </FigureReference>
         <FigureReference>
-          <id>44</id>
+          <id>47</id>
         </FigureReference>
       </list>
     </entry>
@@ -10576,75 +10719,6 @@
         </FolderReference>
         <FolderReference>
           <id>59</id>
-        </FolderReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>71</id>
-        <name>pasitos</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>69</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>61</id>
-        <name>partial</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>1</id>
-        </FigureReference>
-        <FigureReference>
-          <id>17</id>
-        </FigureReference>
-        <FigureReference>
-          <id>16</id>
-        </FigureReference>
-        <FigureReference>
-          <id>19</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>-1</id>
-        <name>All</name>
-      </Folder>
-      <list>
-        <FolderReference>
-          <id>61</id>
-        </FolderReference>
-        <FolderReference>
-          <id>60</id>
-        </FolderReference>
-        <FolderReference>
-          <id>53</id>
-        </FolderReference>
-        <FolderReference>
-          <id>57</id>
-        </FolderReference>
-        <FigureReference>
-          <id>3</id>
-        </FigureReference>
-        <FigureReference>
-          <id>11</id>
-        </FigureReference>
-        <FigureReference>
-          <id>62</id>
-        </FigureReference>
-        <FigureReference>
-          <id>55</id>
-        </FigureReference>
-        <FigureReference>
-          <id>56</id>
-        </FigureReference>
-        <FolderReference>
-          <id>71</id>
         </FolderReference>
       </list>
     </entry>

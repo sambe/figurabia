@@ -129,20 +129,12 @@ public class FigureMapScreen extends JComponent {
                 Point mp = e.getPoint();
                 Point2D ptFocus = inverseTransform(new Point2D.Double(mp.x, mp.y));
                 // first, transform mouse location into center
-                //AffineTransform tf1 = AffineTransform.getTranslateInstance(ptFocus.getX(), ptFocus.getY());
                 transform.translate(ptFocus.getX(), ptFocus.getY());
                 // then, scale
-                //AffineTransform tf2 = AffineTransform.getScaleInstance(scale, scale);
                 transform.scale(scale, scale);
                 // last, transform center back into mouse location
                 double afterScale = scale > 1.0 ? scale / 2.0 : scale * 2.0;
                 transform.translate(-ptFocus.getX() * afterScale, -ptFocus.getY() * afterScale);
-                //AffineTransform tf3 = AffineTransform.getTranslateInstance(-ptFocus.getX() * afterScale,
-                //        -ptFocus.getY() * afterScale);
-
-                //tf1.concatenate(tf2);
-                //tf1.concatenate(tf3);
-                //transform.concatenate(tf1);
 
                 paintImmediately(-50000, -50000, 100000, 100000);
             }

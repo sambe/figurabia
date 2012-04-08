@@ -39,7 +39,6 @@ public class JoalAudioProvider implements AudioProvider {
     }
 
     private static boolean debug = true;
-    private static int totalBytes = 0;
 
     private static void debugMsg(String str) {
         if (debug)
@@ -47,10 +46,10 @@ public class JoalAudioProvider implements AudioProvider {
     }
 
     // The size of a chunk from the stream that we want to read for each update.
-    private static int BUFFER_SIZE = 4096 * 16;
+    private static int MAX_BUFFER_SIZE = 4096 * 16;
 
-    // The number of buffers used in the audio pipeline
-    private static int NUM_BUFFERS = 8;
+    // The number of buffers used in the audio pipeline (8 would be enough for normal speed, 24 are needed for 4x speed)
+    private static int NUM_BUFFERS = 24;
 
     private static int MIN_BUFFERS_PREFETCHING = 3;
 
@@ -68,8 +67,6 @@ public class JoalAudioProvider implements AudioProvider {
     private float[] sourcePos = { 0.0f, 0.0f, 0.0f };
     private float[] sourceVel = { 0.0f, 0.0f, 0.0f };
     private float[] sourceDir = { 0.0f, 0.0f, 0.0f };
-
-    private long sleepTime = 0;
 
     private int bufferQueuedNext = 0;
     private int bufferUnqueuedNext = -1;
@@ -103,19 +100,8 @@ public class JoalAudioProvider implements AudioProvider {
 
         rate = (int) audioFormat.getSampleRate();
 
-        // A rough estimation of how much time in milliseconds we can sleep
-        // before checking to see if the queued buffers have been played
-        // (so that we dont peg the CPU by doing an active wait). We divide
-        // by 10 at the end to be safe...
-        // round it off to the nearest multiple of 10.
-        sleepTime = (long) (1000.0 * BUFFER_SIZE /
-                            numBytesPerSample / numChannels / rate / 10.0);
-        sleepTime = (sleepTime + 10) / 10 * 10;
-
         System.err.println("DEBUG: #Buffers: " + NUM_BUFFERS);
-        System.err.println("DEBUG: Buffer size: " + BUFFER_SIZE);
         System.err.println("DEBUG: Format: 0x" + Integer.toString(format, 16));
-        System.err.println("DEBUG: Sleep time: " + sleepTime);
 
         al.alGenBuffers(NUM_BUFFERS, buffers, 0);
         check();
@@ -293,7 +279,7 @@ public class JoalAudioProvider implements AudioProvider {
         // do not start filling a buffer that has not yet been unqueued
         if (bufferQueuedNext == bufferUnqueuedNext)
             return 0;
-        return BUFFER_SIZE;
+        return MAX_BUFFER_SIZE;
     }
 
     public int write(byte[] data, int offset, int length) {

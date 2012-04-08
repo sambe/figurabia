@@ -16,6 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
@@ -58,10 +60,12 @@ public class FigureList extends JPanel {
     private JPopupMenu popupMenu;
 
     private static DataFlavor folderItemFlavor;
+    private static DataFlavor uriListAsString;
     static {
         try {
             folderItemFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=\""
                     + FolderItem.class.getName() + "\"");
+            uriListAsString = new DataFlavor("text/uri-list;class=java.lang.String");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -149,12 +153,64 @@ public class FigureList extends JPanel {
             public boolean importData(TransferSupport support) {
                 if (!canImport(support))
                     return false;
-                // selection is drag position
-                //support.getTransferable().getTransferData(folderItemFlavor);
-                TreePath selected = tree.getSelectionPath();
+
                 // get drop position
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
-                moveItem(selected, dropLocation.getPath(), dropLocation.getChildIndex());
+
+                // get target folder and index
+                FolderItem target = (FolderItem) dropLocation.getPath().getLastPathComponent();
+                Folder targetParent;
+                if (target instanceof Folder)
+                    targetParent = (Folder) target;
+                else
+                    targetParent = target.getParent();
+                int childIndex = dropLocation.getChildIndex();
+
+                if (support.isDataFlavorSupported(folderItemFlavor)) {
+                    // selection is drag position
+                    TreePath selected = tree.getSelectionPath();
+                    //support.getTransferable().getTransferData(folderItemFlavor);
+                    moveItem(selected, dropLocation.getPath(), dropLocation.getChildIndex());
+
+                } else if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                    // import all files that were dropped
+                    try {
+                        List<File> files = (List<File>) support.getTransferable().getTransferData(
+                                DataFlavor.javaFileListFlavor);
+                        for (File f : files) {
+                            createFigureForVideo(f, targetParent, childIndex);
+                        }
+                    } catch (UnsupportedFlavorException e) {
+                        throw new IllegalStateException("Should not be possible to happen.", e);
+                    } catch (IOException e) {
+                        JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
+                        e.printStackTrace();
+                        return false;
+                    }
+                } else if (support.isDataFlavorSupported(uriListAsString)) {
+                    try {
+                        String uriStrings = (String) support.getTransferable().getTransferData(uriListAsString);
+                        String[] uris = uriStrings.split("\n");
+                        for (String uri : uris) {
+                            if (uri == null || uri.isEmpty())
+                                continue;
+                            File f = new File(URI.create(uri.trim()));
+                            createFigureForVideo(f, targetParent, childIndex);
+                        }
+                    } catch (RuntimeException e) {
+                        System.err.println("Runtime Exception on accepting drop: ");
+                        e.printStackTrace();
+                        return false;
+                    } catch (UnsupportedFlavorException e) {
+                        throw new IllegalStateException("Should not be possible to happen.", e);
+                    } catch (IOException e) {
+                        JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
+                        e.printStackTrace();
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
                 return true;
             }
         };
@@ -241,6 +297,18 @@ public class FigureList extends JPanel {
         });
 
         new JTreePopupMenu(tree, popupMenu); // connects the popup menu to the list
+    }
+
+    private void createFigureForVideo(File video, Folder targetFolder, int childIndex) {
+        // create a new figure for video
+        Figure figure = null;
+        try {
+            figure = new FigureCreationService(workspace, persistenceProvider).createNewFigure(video, targetFolder,
+                    childIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, e.getLocalizedMessage());
+        }
     }
 
     private void setFigureActive(boolean newState) {
