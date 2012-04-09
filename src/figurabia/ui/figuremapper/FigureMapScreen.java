@@ -27,7 +27,7 @@ import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.PersistenceProvider;
-import figurabia.ui.figuremapper.placement.GraphBasedPlacement;
+import figurabia.ui.figuremapper.placement.JungLayoutPlacement;
 import figurabia.ui.figuremapper.placement.PlacementStrategy;
 import figurabia.ui.positionviewer.PositionPainter;
 
@@ -46,7 +46,7 @@ public class FigureMapScreen extends JComponent {
     private double moveDiffX, moveDiffY;
     private Point originalPoint;
 
-    private AffineTransform transform = new AffineTransform();
+    private AffineTransform transform = AffineTransform.getScaleInstance(0.25, 0.25);
 
     public FigureMapScreen(PersistenceProvider pp) {
         persistenceProvider = pp;
@@ -64,7 +64,7 @@ public class FigureMapScreen extends JComponent {
             @Override
             public void mousePressed(MouseEvent event) {
                 Point eventPoint = event.getPoint();
-                Point2D mp = inverseTransform(new Point2D.Double(eventPoint.x, eventPoint.y));
+                Point2D mp = inverseTransform(eventPoint);
                 originalPoint = eventPoint;
                 // select position by coordinates (CAUTION: if multiple are in range, the last wins!)
                 for (Entry<PuertoPosition, Point2D> e : coordinates.entrySet()) {
@@ -91,17 +91,17 @@ public class FigureMapScreen extends JComponent {
                 if (selectedPosition != null) {
                     // set new coordinates of position
                     Point mp = e.getPoint();
-                    Point2D ptDst = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                    Point2D ptDst = inverseTransform(mp);
                     Point2D ptCorrectedDst = new Point2D.Double(ptDst.getX() - moveDiffX, ptDst.getY() - moveDiffY);
                     coordinates.put(selectedPosition, ptCorrectedDst);
                     selectedPosition = null;
                     paintImmediately(-50000, -50000, 100000, 100000);
                 } else {
-                    Point2D ptOrig = inverseTransform(new Point2D.Double(originalPoint.x, originalPoint.y));
+                    Point2D ptOrig = inverseTransform(originalPoint);
                     double oldX = ptOrig.getX();
                     double oldY = ptOrig.getY();
                     Point mp = e.getPoint();
-                    Point2D ptNew = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                    Point2D ptNew = inverseTransform(mp);
                     double newX = ptNew.getX();
                     double newY = ptNew.getY();
                     double dX = newX - oldX;
@@ -111,7 +111,8 @@ public class FigureMapScreen extends JComponent {
                 }
             }
 
-            private Point2D inverseTransform(Point2D ptSrc) {
+            private Point2D inverseTransform(Point src) {
+                Point2D ptSrc = new Point2D.Double(src.x - getWidth() / 2, src.y - getHeight() / 2);
                 Point2D ptDst = new Point2D.Double();
                 try {
                     transform.inverseTransform(ptSrc, ptDst);
@@ -127,7 +128,7 @@ public class FigureMapScreen extends JComponent {
                 int clicks = e.getWheelRotation();
                 double scale = clicks < 0 ? -2 * clicks : 0.5 / clicks;
                 Point mp = e.getPoint();
-                Point2D ptFocus = inverseTransform(new Point2D.Double(mp.x, mp.y));
+                Point2D ptFocus = inverseTransform(mp);
                 // first, transform mouse location into center
                 transform.translate(ptFocus.getX(), ptFocus.getY());
                 // then, scale
@@ -150,7 +151,8 @@ public class FigureMapScreen extends JComponent {
 
         // set random coordinates for all positions
         //PlacementStrategy strategy = new RandomPlacement(getWidth(), getHeight(), 25);
-        PlacementStrategy strategy = new GraphBasedPlacement(getWidth(), getHeight(), 25);
+        //PlacementStrategy strategy = new GraphBasedPlacement(getWidth(), getHeight(), 25);
+        PlacementStrategy strategy = new JungLayoutPlacement(getSize());
         strategy.assignCoordinates(allFigures, coordinates);
 
         // set a color for each figure
@@ -169,7 +171,11 @@ public class FigureMapScreen extends JComponent {
         g.clearRect(0, 0, getWidth(), getHeight());
 
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setTransform(transform);
+
+        // move (0,0) into center
+        g2d.translate(getWidth() / 2, getHeight() / 2);
+        // apply transform (user's view)
+        g2d.transform(transform);
 
         // 1) draw all positions
         PositionPainter pp = new PositionPainter();
