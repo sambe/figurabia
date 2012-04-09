@@ -2,6 +2,24 @@
   <int>76</int>
   <map>
     <entry>
+      <int>69</int>
+      <Figure>
+        <id>69</id>
+        <name>Raphi Pasitos (13.02.12)</name>
+        <videoName>MOV00357.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
+      </Figure>
+    </entry>
+    <entry>
       <int>1</int>
       <Figure>
         <id>1</id>
@@ -390,24 +408,6 @@
       </Figure>
     </entry>
     <entry>
-      <int>69</int>
-      <Figure>
-        <id>69</id>
-        <name>Raphi Pasitos (13.02.12)</name>
-        <videoName>MOV00357.MP4</videoName>
-        <videoPositions/>
-        <positions/>
-        <elements/>
-        <baseOffset>
-          <ladyLineDir>false</ladyLineDir>
-          <absPosLineDir>0</absPosLineDir>
-          <absPosSideDir>0</absPosSideDir>
-        </baseOffset>
-        <active>false</active>
-        <barIds/>
-      </Figure>
-    </entry>
-    <entry>
       <int>70</int>
       <Figure>
         <id>70</id>
@@ -595,11 +595,11 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry[2]/Figure/baseOffset"/>
+            <offsetChange reference="../../../../../entry/Figure/baseOffset"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
@@ -667,7 +667,7 @@
             <name>Untendurch</name>
           </Element>
         </elements>
-        <baseOffset reference="../../../entry[2]/Figure/baseOffset"/>
+        <baseOffset reference="../../../entry/Figure/baseOffset"/>
         <active>true</active>
         <barIds>
           <int>1</int>
@@ -840,15 +840,15 @@
         </positions>
         <elements>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
             <name>Grundschritt</name>
           </Element>
           <Element>
-            <offsetChange reference="../../../../../entry/Figure/elements/Element[14]/offsetChange"/>
+            <offsetChange reference="../../../../../entry[2]/Figure/elements/Element[14]/offsetChange"/>
           </Element>
           <Element>
             <offsetChange>
@@ -1078,24 +1078,6 @@
           <int>3</int>
           <int>4</int>
         </barIds>
-      </Figure>
-    </entry>
-    <entry>
-      <int>72</int>
-      <Figure>
-        <id>72</id>
-        <name>MOV00348</name>
-        <videoName>MOV00348.MP4</videoName>
-        <videoPositions/>
-        <positions/>
-        <elements/>
-        <baseOffset>
-          <ladyLineDir>false</ladyLineDir>
-          <absPosLineDir>0</absPosLineDir>
-          <absPosSideDir>0</absPosSideDir>
-        </baseOffset>
-        <active>false</active>
-        <barIds/>
       </Figure>
     </entry>
     <entry>
@@ -1421,6 +1403,24 @@
           <int>6</int>
           <int>7</int>
         </barIds>
+      </Figure>
+    </entry>
+    <entry>
+      <int>72</int>
+      <Figure>
+        <id>72</id>
+        <name>MOV00348</name>
+        <videoName>MOV00348.MP4</videoName>
+        <videoPositions/>
+        <positions/>
+        <elements/>
+        <baseOffset>
+          <ladyLineDir>false</ladyLineDir>
+          <absPosLineDir>0</absPosLineDir>
+          <absPosSideDir>0</absPosSideDir>
+        </baseOffset>
+        <active>false</active>
+        <barIds/>
       </Figure>
     </entry>
     <entry>
@@ -10512,6 +10512,76 @@
   <map>
     <entry>
       <Folder>
+        <id>53</id>
+        <name>old</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>23</id>
+        </FigureReference>
+        <FigureReference>
+          <id>24</id>
+        </FigureReference>
+        <FigureReference>
+          <id>26</id>
+        </FigureReference>
+        <FigureReference>
+          <id>31</id>
+        </FigureReference>
+        <FigureReference>
+          <id>35</id>
+        </FigureReference>
+        <FigureReference>
+          <id>32</id>
+        </FigureReference>
+        <FigureReference>
+          <id>39</id>
+        </FigureReference>
+        <FigureReference>
+          <id>36</id>
+        </FigureReference>
+        <FigureReference>
+          <id>40</id>
+        </FigureReference>
+        <FigureReference>
+          <id>41</id>
+        </FigureReference>
+        <FigureReference>
+          <id>45</id>
+        </FigureReference>
+        <FolderReference>
+          <id>58</id>
+        </FolderReference>
+        <FolderReference>
+          <id>59</id>
+        </FolderReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>60</id>
+        <name>too dark</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>27</id>
+        </FigureReference>
+        <FigureReference>
+          <id>34</id>
+        </FigureReference>
+        <FigureReference>
+          <id>49</id>
+        </FigureReference>
+        <FigureReference>
+          <id>50</id>
+        </FigureReference>
+        <FigureReference>
+          <id>51</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
         <id>-1</id>
         <name>All</name>
       </Folder>
@@ -10581,6 +10651,62 @@
     </entry>
     <entry>
       <Folder>
+        <id>57</id>
+        <name>completed</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>70</id>
+        </FigureReference>
+        <FigureReference>
+          <id>12</id>
+        </FigureReference>
+        <FigureReference>
+          <id>33</id>
+        </FigureReference>
+        <FigureReference>
+          <id>38</id>
+        </FigureReference>
+        <FigureReference>
+          <id>37</id>
+        </FigureReference>
+        <FigureReference>
+          <id>44</id>
+        </FigureReference>
+        <FigureReference>
+          <id>47</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>65</id>
+        <name>test2</name>
+      </Folder>
+      <list/>
+    </entry>
+    <entry>
+      <Folder>
+        <id>59</id>
+        <name>worst quality</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>29</id>
+        </FigureReference>
+        <FigureReference>
+          <id>28</id>
+        </FigureReference>
+        <FigureReference>
+          <id>30</id>
+        </FigureReference>
+        <FigureReference>
+          <id>48</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
         <id>58</id>
         <name>bad quality</name>
       </Folder>
@@ -10616,132 +10742,6 @@
         </FigureReference>
         <FigureReference>
           <id>19</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>59</id>
-        <name>worst quality</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>29</id>
-        </FigureReference>
-        <FigureReference>
-          <id>28</id>
-        </FigureReference>
-        <FigureReference>
-          <id>30</id>
-        </FigureReference>
-        <FigureReference>
-          <id>48</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>65</id>
-        <name>test2</name>
-      </Folder>
-      <list/>
-    </entry>
-    <entry>
-      <Folder>
-        <id>57</id>
-        <name>completed</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>70</id>
-        </FigureReference>
-        <FigureReference>
-          <id>12</id>
-        </FigureReference>
-        <FigureReference>
-          <id>33</id>
-        </FigureReference>
-        <FigureReference>
-          <id>38</id>
-        </FigureReference>
-        <FigureReference>
-          <id>37</id>
-        </FigureReference>
-        <FigureReference>
-          <id>44</id>
-        </FigureReference>
-        <FigureReference>
-          <id>47</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>53</id>
-        <name>old</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>23</id>
-        </FigureReference>
-        <FigureReference>
-          <id>24</id>
-        </FigureReference>
-        <FigureReference>
-          <id>26</id>
-        </FigureReference>
-        <FigureReference>
-          <id>31</id>
-        </FigureReference>
-        <FigureReference>
-          <id>35</id>
-        </FigureReference>
-        <FigureReference>
-          <id>32</id>
-        </FigureReference>
-        <FigureReference>
-          <id>39</id>
-        </FigureReference>
-        <FigureReference>
-          <id>36</id>
-        </FigureReference>
-        <FigureReference>
-          <id>40</id>
-        </FigureReference>
-        <FigureReference>
-          <id>41</id>
-        </FigureReference>
-        <FigureReference>
-          <id>45</id>
-        </FigureReference>
-        <FolderReference>
-          <id>58</id>
-        </FolderReference>
-        <FolderReference>
-          <id>59</id>
-        </FolderReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>60</id>
-        <name>too dark</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>27</id>
-        </FigureReference>
-        <FigureReference>
-          <id>34</id>
-        </FigureReference>
-        <FigureReference>
-          <id>49</id>
-        </FigureReference>
-        <FigureReference>
-          <id>50</id>
-        </FigureReference>
-        <FigureReference>
-          <id>51</id>
         </FigureReference>
       </list>
     </entry>

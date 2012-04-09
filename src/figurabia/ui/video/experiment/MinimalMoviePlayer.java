@@ -4,37 +4,6 @@
  */
 package figurabia.ui.video.experiment;
 
-import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DirectColorModel;
-import java.awt.image.Raster;
-import java.awt.image.SampleModel;
-import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.WritableRaster;
-
-import javax.media.Buffer;
-import javax.media.Format;
-import javax.media.MediaLocator;
-import javax.media.Time;
-import javax.media.Track;
-import javax.media.format.AudioFormat;
-import javax.media.format.RGBFormat;
-import javax.media.format.VideoFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-
-import com.omnividea.media.parser.video.Parser;
-import com.omnividea.media.protocol.file.DataSource;
-
-import figurabia.ui.util.SimplePanelFrame;
 
 public class MinimalMoviePlayer {
 
@@ -43,7 +12,7 @@ public class MinimalMoviePlayer {
     /**
      * @param args
      */
-    public static void main(String[] args) throws Exception {
+    /*public static void main(String[] args) throws Exception {
 
         MediaLocator mediaLocator = new MediaLocator("file:/home/sberner/Desktop/10-21.04.09.flv");
         DataSource fileDataSource = new DataSource();
@@ -180,7 +149,7 @@ public class MinimalMoviePlayer {
                         Thread.sleep(1);
                         currentTime = line.getMicrosecondPosition();
                     }
-                }*/
+                }* /
                 Thread.sleep(20);
             }
         }
@@ -238,5 +207,5 @@ public class MinimalMoviePlayer {
 
         dcm = new DirectColorModel(24, rMask, gMask, bMask);
         return new BufferedImage(dcm, wr, true, null);
-    }
+    }*/
 }

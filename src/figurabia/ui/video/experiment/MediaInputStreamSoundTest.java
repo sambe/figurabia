@@ -4,17 +4,6 @@
  */
 package figurabia.ui.video.experiment;
 
-import java.io.File;
-import java.util.Arrays;
-
-import javax.media.format.VideoFormat;
-import javax.sound.sampled.AudioFormat;
-
-import figurabia.experiment.JMFUtil;
-import figurabia.experiment.gui.SoundViewer;
-import figurabia.ui.video.access.FobsMediaInputStream;
-import figurabia.ui.video.access.MediaFrame;
-
 public class MediaInputStreamSoundTest {
 
     /**
@@ -22,10 +11,10 @@ public class MediaInputStreamSoundTest {
      */
     public static void main(String[] args) throws Exception {
         //experiment1();
-        experiment2();
+        //experiment2();
     }
 
-    private static void experiment1() throws Exception {
+    /*private static void experiment1() throws Exception {
         int n = 40;
 
         FobsMediaInputStream mis = new FobsMediaInputStream(new File("/home/sberner/Desktop/10-21.04.09.flv"));
@@ -154,5 +143,5 @@ public class MediaInputStreamSoundTest {
         }
 
         SoundViewer.displayViewer(shortValues);
-    }
+    }*/
 }

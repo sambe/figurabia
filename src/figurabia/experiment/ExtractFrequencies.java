@@ -4,17 +4,10 @@
  */
 package figurabia.experiment;
 
-import java.io.File;
-import java.util.Arrays;
-
-import figurabia.experiment.gui.SoundViewer;
-import figurabia.experiment.sound.SoundUtil;
-import figurabia.math.Complex;
-import figurabia.math.FFT;
 
 public class ExtractFrequencies {
 
-    public static void main(String[] args) throws Exception {
+    /*public static void main(String[] args) throws Exception {
         File mediaFile = new File("/home/sberner/Desktop/10-21.04.09.flv");
         int segmentSize = 64;
         int evalLength = 200000;
@@ -95,5 +88,5 @@ public class ExtractFrequencies {
         for( int i = 0; i < complexBack.length; i++) {
             values[offset+i] = (short)complexBack[i].re();
         }
-    }
+    }*/
 }

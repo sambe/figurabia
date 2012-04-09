@@ -4,22 +4,6 @@
  */
 package figurabia.experiment;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.media.Buffer;
-import javax.media.Codec;
-import javax.media.Demultiplexer;
-import javax.media.Format;
-import javax.media.Manager;
-import javax.media.MediaException;
-import javax.media.MediaLocator;
-import javax.media.Track;
-import javax.media.format.AudioFormat;
-import javax.media.protocol.DataSource;
 
 /**
  * Contains utility methods to create JMF classes.
@@ -28,7 +12,7 @@ import javax.media.protocol.DataSource;
  */
 public class JMFUtil {
 
-    public static Demultiplexer createParser(DataSource ds) throws IOException, MediaException {
+    /*public static Demultiplexer createParser(DataSource ds) throws IOException, MediaException {
         Demultiplexer d = new com.omnividea.media.parser.video.Parser();
         d.setSource(ds);
         return d;
@@ -121,5 +105,5 @@ public class JMFUtil {
             array[i] = list.get(i);
         }
         return array;
-    }
+    }*/
 }

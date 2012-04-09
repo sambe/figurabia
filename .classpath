@@ -2,8 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/sberner/apps/jmf/fobs4jmf/fobs4jmf.jar" sourcepath="/home/sberner/apps/jmf/fobs4jmf/fobs4jmf.src.zip"/>
-	<classpathentry kind="lib" path="/home/sberner/apps/jmf/fobs4jmf/jmf.jar" sourcepath="/home/sberner/apps/jmf/jmf-2_1_1e-scsl-src.zip"/>
 	<classpathentry kind="lib" path="/home/sberner/apps/jakartacommons/commons-io-1.4/commons-io-1.4.jar" sourcepath="/home/sberner/apps/jakartacommons/commons-io-1.4/commons-io-1.4-sources.jar"/>
 	<classpathentry kind="lib" path="/home/sberner/apps/miglayout/miglayout-3.7-swing.jar" sourcepath="/home/sberner/apps/miglayout/miglayout-3.7-sources.jar"/>
 	<classpathentry kind="lib" path="/home/sberner/apps/substance/substance.jar" sourcepath="/home/sberner/apps/substance/src"/>

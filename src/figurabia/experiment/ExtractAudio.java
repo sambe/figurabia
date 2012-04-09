@@ -4,20 +4,6 @@
  */
 package figurabia.experiment;
 
-import java.util.Arrays;
-
-import javax.media.Buffer;
-import javax.media.Codec;
-import javax.media.Demultiplexer;
-import javax.media.Manager;
-import javax.media.MediaLocator;
-import javax.media.Track;
-import javax.media.format.AudioFormat;
-import javax.media.protocol.DataSource;
-
-import figurabia.experiment.sound.SoundUtil;
-import figurabia.math.Complex;
-import figurabia.math.FFT;
 
 @SuppressWarnings("unused")
 public class ExtractAudio {
@@ -27,7 +13,7 @@ public class ExtractAudio {
      * 
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws Exception {
+    /*public static void main(String[] args) throws Exception {
 
         // get required JMF plugins
         MediaLocator ml = new MediaLocator("file:/home/sberner/Desktop/10-21.04.09.flv");
@@ -95,7 +81,7 @@ public class ExtractAudio {
             if(specTablePos == spectralTable.length) {
                 specTablePos = 0;
                 SpectralTableViewer.displayViewer(spectralTable, 15);
-            }*/
+            }* /
 
             extractFrequencies(values[0], smallAudioBuffer, 40, 80);
             System.arraycopy(smallAudioBuffer, 0, bigAudioBuffer, bigBufPos, smallAudioBuffer.length);
@@ -180,5 +166,5 @@ public class ExtractAudio {
 
     private static void copyToSpectralTable(short[] spectralValues, short[] spectralTable) {
         System.arraycopy(spectralValues, 0, spectralTable, 0, spectralTable.length);
-    }
+    }*/
 }
