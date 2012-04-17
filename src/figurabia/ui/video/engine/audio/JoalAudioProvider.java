@@ -48,8 +48,8 @@ public class JoalAudioProvider implements AudioProvider {
     // The size of a chunk from the stream that we want to read for each update.
     private static int MAX_BUFFER_SIZE = 4096 * 16;
 
-    // The number of buffers used in the audio pipeline (8 would be enough for normal speed, 24 are needed for 4x speed)
-    private static int NUM_BUFFERS = 24;
+    // The number of buffers used in the audio pipeline
+    private static int NUM_BUFFERS = 12;
 
     private static int MIN_BUFFERS_PREFETCHING = 3;
 
@@ -77,6 +77,7 @@ public class JoalAudioProvider implements AudioProvider {
     private boolean clientPlaying = false;
     private boolean actualPlaying = false;
     private int prefetched = 0;
+    private boolean syncEvent = false;
 
     /**
      * Initialize OpenAL based on the given audio format
@@ -181,6 +182,7 @@ public class JoalAudioProvider implements AudioProvider {
     public void start() {
         if (!clientPlaying) {
             clientPlaying = true;
+            syncEvent = true;
             // only start immediately if there are some buffers queued already
             if (bufferUnqueuedNext != -1) {
                 start_();
@@ -194,7 +196,10 @@ public class JoalAudioProvider implements AudioProvider {
         al.alSourcePlay(source[0]);
         if (al.alGetError() == AL.AL_NO_ERROR) {
             debugMsg("Started playback");
-            notifyAudioStateListeners(AudioState.PLAYING);
+            if (syncEvent) {
+                syncEvent = false;
+                notifyAudioStateListeners(AudioState.PLAYING);
+            }
         }
         actualPlaying = true;
     }
@@ -266,6 +271,9 @@ public class JoalAudioProvider implements AudioProvider {
                 bufferUnqueuedNext = -1;
                 if (!isAll(bufferIsQueued, false))
                     throw new IllegalStateException("Flushed, but not all buffers were unqueued");
+                actualPlaying = false;
+                prefetched = 0;
+                debugMsg("Actual playback has stopped (all buffers processed): reset to restart");
             }
         }
     }
