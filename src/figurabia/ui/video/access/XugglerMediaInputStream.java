@@ -63,6 +63,7 @@ public class XugglerMediaInputStream {
     private int audioPacketOffset = 0;
     private int videoPacketOffset = 0;
     private int samplesBytePos = 0;
+    private int bytesPerSample;
 
     private List<IVideoPicture> createdVideoPictures = new ArrayList<IVideoPicture>();
 
@@ -177,6 +178,7 @@ public class XugglerMediaInputStream {
         double exactAudioFramesSampleNum = audioCoder.getSampleRate() / videoFormat.getFrameRate();
         audioFramesSampleNum = (long) Math.ceil(exactAudioFramesSampleNum);
         frameTime = 1000.0 / videoFormat.getFrameRate();
+        bytesPerSample = audioFormat.getSampleSizeInBits() / 8 * audioFormat.getChannels();
 
         int audioFrameSize = audioCoder.getAudioFrameSize();
         int audioSampleRate = audioCoder.getSampleRate();
@@ -296,7 +298,7 @@ public class XugglerMediaInputStream {
                     }
                     if (intendedAudioPosition != -1) {
                         intendedAudioPosition = -1; // to reset (already skipped frames as necessary) 
-                        audioBytePos = targetAudioBytePos;
+                        samplesBytePos = targetAudioBytePos;
                     }
                     // CAUTION packetTimestamp can be wrong (the one from the next packet), because content of samples can be
                     // leftover from a packet that has been completely decoded, but the decoded samples have not all been used yet.
@@ -456,7 +458,7 @@ public class XugglerMediaInputStream {
         int audioFrameSize = audioCoder.getAudioFrameSize();
         long targetSample = (long) Math.floor((double) millis / 1000.0 / audioPacketTimeStep * audioFrameSize);
         targetAudioPacket = Math.round(Math.floor(targetSample / audioFrameSize) * audioPacketTimeStep * 1000.0);
-        targetAudioBytePos = (int) ((targetSample % audioFrameSize) * audioFormat.getSampleSizeInBits() / 8);
+        targetAudioBytePos = (int) ((targetSample % audioFrameSize) * bytesPerSample);
         return millis;
     }
 
@@ -479,8 +481,7 @@ public class XugglerMediaInputStream {
 
     public MediaFrame createFrame() {
         AudioBuffer audio = new AudioBuffer();
-        audio.audioData = new byte[(int) audioFramesSampleNum * audioFormat.getSampleSizeInBits() / 8
-                * audioFormat.getChannels()];
+        audio.audioData = new byte[(int) audioFramesSampleNum * bytesPerSample];
         VideoBuffer video = new VideoBuffer();
         video.videoPicture = IVideoPicture.make(IPixelFormat.Type.BGR24, videoCoder.getWidth(),
                 videoCoder.getHeight());
