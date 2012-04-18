@@ -10512,43 +10512,6 @@
   <map>
     <entry>
       <Folder>
-        <id>59</id>
-        <name>worst quality</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>29</id>
-        </FigureReference>
-        <FigureReference>
-          <id>28</id>
-        </FigureReference>
-        <FigureReference>
-          <id>30</id>
-        </FigureReference>
-        <FigureReference>
-          <id>48</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
-        <id>74</id>
-        <name>Marco Ferrigno</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>72</id>
-        </FigureReference>
-        <FigureReference>
-          <id>73</id>
-        </FigureReference>
-        <FigureReference>
-          <id>75</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
         <id>53</id>
         <name>old</name>
       </Folder>
@@ -10596,29 +10559,6 @@
     </entry>
     <entry>
       <Folder>
-        <id>60</id>
-        <name>too dark</name>
-      </Folder>
-      <list>
-        <FigureReference>
-          <id>27</id>
-        </FigureReference>
-        <FigureReference>
-          <id>34</id>
-        </FigureReference>
-        <FigureReference>
-          <id>49</id>
-        </FigureReference>
-        <FigureReference>
-          <id>50</id>
-        </FigureReference>
-        <FigureReference>
-          <id>51</id>
-        </FigureReference>
-      </list>
-    </entry>
-    <entry>
-      <Folder>
         <id>-1</id>
         <name>All</name>
       </Folder>
@@ -10660,30 +10600,12 @@
     </entry>
     <entry>
       <Folder>
-        <id>57</id>
-        <name>completed</name>
+        <id>71</id>
+        <name>pasitos</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>70</id>
-        </FigureReference>
-        <FigureReference>
-          <id>12</id>
-        </FigureReference>
-        <FigureReference>
-          <id>33</id>
-        </FigureReference>
-        <FigureReference>
-          <id>38</id>
-        </FigureReference>
-        <FigureReference>
-          <id>37</id>
-        </FigureReference>
-        <FigureReference>
-          <id>44</id>
-        </FigureReference>
-        <FigureReference>
-          <id>47</id>
+          <id>69</id>
         </FigureReference>
       </list>
     </entry>
@@ -10716,12 +10638,90 @@
     </entry>
     <entry>
       <Folder>
-        <id>71</id>
-        <name>pasitos</name>
+        <id>59</id>
+        <name>worst quality</name>
       </Folder>
       <list>
         <FigureReference>
-          <id>69</id>
+          <id>29</id>
+        </FigureReference>
+        <FigureReference>
+          <id>28</id>
+        </FigureReference>
+        <FigureReference>
+          <id>30</id>
+        </FigureReference>
+        <FigureReference>
+          <id>48</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>74</id>
+        <name>Marco Ferrigno</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>72</id>
+        </FigureReference>
+        <FigureReference>
+          <id>73</id>
+        </FigureReference>
+        <FigureReference>
+          <id>75</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>57</id>
+        <name>completed</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>70</id>
+        </FigureReference>
+        <FigureReference>
+          <id>12</id>
+        </FigureReference>
+        <FigureReference>
+          <id>33</id>
+        </FigureReference>
+        <FigureReference>
+          <id>38</id>
+        </FigureReference>
+        <FigureReference>
+          <id>37</id>
+        </FigureReference>
+        <FigureReference>
+          <id>44</id>
+        </FigureReference>
+        <FigureReference>
+          <id>47</id>
+        </FigureReference>
+      </list>
+    </entry>
+    <entry>
+      <Folder>
+        <id>60</id>
+        <name>too dark</name>
+      </Folder>
+      <list>
+        <FigureReference>
+          <id>27</id>
+        </FigureReference>
+        <FigureReference>
+          <id>34</id>
+        </FigureReference>
+        <FigureReference>
+          <id>49</id>
+        </FigureReference>
+        <FigureReference>
+          <id>50</id>
+        </FigureReference>
+        <FigureReference>
+          <id>51</id>
         </FigureReference>
       </list>
     </entry>

@@ -4,6 +4,7 @@
  */
 package figurabia.ui.video.engine.audio;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +13,7 @@ import java.util.List;
 import javax.sound.sampled.AudioFormat;
 
 import com.jogamp.openal.AL;
+import com.jogamp.openal.ALConstants;
 import com.jogamp.openal.ALException;
 import com.jogamp.openal.ALFactory;
 import com.jogamp.openal.util.ALut;
@@ -130,10 +132,11 @@ public class JoalAudioProvider implements AudioProvider {
         al.alSourceStop(source[0]);
         flush();
 
-        for (int i = 0; i < NUM_BUFFERS; i++) {
-            al.alDeleteSources(i, source, 0);
-            check();
-        }
+        al.alDeleteBuffers(NUM_BUFFERS, buffers, 0);
+        check();
+
+        al.alDeleteSources(1, source, 0);
+        check();
         open = false;
     }
 
@@ -175,8 +178,34 @@ public class JoalAudioProvider implements AudioProvider {
      */
     private void check() {
         int error = al.alGetError();
-        if (error != AL.AL_NO_ERROR)
-            throw new ALException("OpenAL error raised... (code " + Integer.toHexString(error) + ")");
+        if (error != AL.AL_NO_ERROR) {
+            String errorName = generateErrorName(error);
+            throw new ALException("OpenAL error raised... " + errorName);
+        }
+    }
+
+    private String generateErrorName(int error) {
+        String errorName = "(code " + Integer.toHexString(error) + ")";
+        for (Field f : ALConstants.class.getDeclaredFields()) {
+            if (f.getType() != int.class)
+                continue;
+            try {
+                int value = (Integer) f.get(null);
+                if (value == error) {
+                    errorName = f.getName();
+                    break;
+                }
+            } catch (IllegalArgumentException e) {
+                // don't care
+            } catch (IllegalAccessException e) {
+                // don't care
+            } catch (NullPointerException e) {
+                // don't care
+                System.err.println("Unnecessary null pointer exception, because field " + f.getName()
+                        + " is not static");
+            }
+        }
+        return errorName;
     }
 
     public void start() {

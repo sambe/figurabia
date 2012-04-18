@@ -238,7 +238,7 @@ public class XugglerMediaInputStream {
 
     public void readFrame(MediaFrame mf) {
         mf.endOfMedia = false;
-        long DEBUG_startMillis = System.currentTimeMillis();
+        //long DEBUG_startMillis = System.currentTimeMillis();
         int skippedVideoFrames = 0;
         int skippedAudioFrames = 0;
 
@@ -304,8 +304,6 @@ public class XugglerMediaInputStream {
                     // CAUTION packetTimestamp can be wrong (the one from the next packet), because content of samples can be
                     // leftover from a packet that has been completely decoded, but the decoded samples have not all been used yet.
                     //System.out.println("Got " + samples.getNumSamples() + " audio samples! (" + samplesTimestamp + ")");
-                    //// getByteArray copies the bytes
-                    //byte[] audioBytes = samples.getData().getByteArray(0, samples.getSize());
                     byte[] dest = mf.audio.audioData;
                     int bytesToCopy = Math.min(samples.getSize() - samplesBytePos, dest.length - audioBytePos);
                     samples.get(samplesBytePos, dest, audioBytePos, bytesToCopy);
@@ -431,7 +429,7 @@ public class XugglerMediaInputStream {
             System.out.println("TRACE: skipped video frames: " + skippedVideoFrames + "; skipped audio frames: "
                     + skippedAudioFrames);
         }
-        long DEBUG_endMillis = System.currentTimeMillis();
+        //long DEBUG_endMillis = System.currentTimeMillis();
         //System.err.println("TRACE: read media frame in " + (DEBUG_endMillis - DEBUG_startMillis) + "ms");
     }
 
