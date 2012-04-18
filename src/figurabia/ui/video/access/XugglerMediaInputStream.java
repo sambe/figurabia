@@ -237,6 +237,7 @@ public class XugglerMediaInputStream {
     }
 
     public void readFrame(MediaFrame mf) {
+        mf.endOfMedia = false;
         long DEBUG_startMillis = System.currentTimeMillis();
         int skippedVideoFrames = 0;
         int skippedAudioFrames = 0;
@@ -420,6 +421,10 @@ public class XugglerMediaInputStream {
 
                 }
             }
+        }
+
+        if (!videoComplete) {
+            mf.endOfMedia = true;
         }
 
         if (skippedAudioFrames != 0 || skippedVideoFrames != 0) {
