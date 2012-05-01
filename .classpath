@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/home/sberner/apps/jakartacommons/commons-io-1.4/commons-io-1.4.jar" sourcepath="/home/sberner/apps/jakartacommons/commons-io-1.4/commons-io-1.4-sources.jar"/>
 	<classpathentry kind="lib" path="/home/sberner/apps/miglayout/miglayout-3.7-swing.jar" sourcepath="/home/sberner/apps/miglayout/miglayout-3.7-sources.jar"/>

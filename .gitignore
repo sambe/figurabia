@@ -5,3 +5,4 @@ figurantdata/db/objects_*.xml
 figurantdata/db/objects.*.xml
 *.log
 *.old
+target
