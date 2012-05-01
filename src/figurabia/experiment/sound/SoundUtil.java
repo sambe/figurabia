@@ -11,23 +11,31 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 public class SoundUtil {
-    
+
     public static void playSound(short[] values) throws LineUnavailableException {
-        AudioFormat audioFormat = new AudioFormat(22050,16,1,true,false); //sample rate, bits per sample, 
+        AudioFormat audioFormat = new AudioFormat(22050, 16, 1, true, false); //sample rate, bits per sample, 
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
-        SourceDataLine line = (SourceDataLine)AudioSystem.getLine(info);
+        SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
         line.open(audioFormat);
         line.start();
-        
-        byte[] binary = new byte[values.length*2];
-        for(int i = 0; i < values.length; i++) {
-            binary[i*2] = (byte)(values[i] & 0xff);
-            binary[i*2+1] = (byte)((values[i] >> 8) & 0xff);
+
+        byte[] binary = new byte[values.length * 2];
+        for (int i = 0; i < values.length; i++) {
+            binary[i * 2] = (byte) (values[i] & 0xff);
+            binary[i * 2 + 1] = (byte) ((values[i] >> 8) & 0xff);
         }
         line.write(binary, 0, binary.length);
-        
+
         line.drain();
         line.close();
+    }
+
+    public static void main(String[] args) throws Exception {
+        short[] values = new short[20000];
+        for (int i = 0; i < 20000; i++) {
+            values[i] = (short) (Math.sin(i / 8.0) * (1 << 14) + (1 << 14));
+        }
+        playSound(values);
     }
 
 }

@@ -8,14 +8,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
 
 import figurabia.ui.video.access.AudioBuffer;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.audio.AudioProvider;
-import figurabia.ui.video.engine.audio.JoalAudioProvider;
 import figurabia.ui.video.engine.audio.AudioProvider.AudioState;
+import figurabia.ui.video.engine.audio.JoalAudioProvider;
 import figurabia.ui.video.engine.messages.AudioSyncEvent;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
@@ -45,7 +43,6 @@ public class AudioRenderer extends Actor {
     @Override
     protected void init() throws Exception {
         // create sound channel
-        DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
         //audioProvider = new JavaSoundAudioProvider();
         audioProvider = new JoalAudioProvider();
         audioProvider.open(audioFormat);

@@ -31,6 +31,12 @@ public class JoalAudioProvider implements AudioProvider {
     static {
         // Initialize OpenAL and clear the error bit.
         try {
+
+            /*// check if sound output device is available (was not useful)
+            ALC alc = ALFactory.getALC();
+            String[] deviceSpecifiers = alc.alcGetDeviceSpecifiers();
+            System.err.println("TRACE: Device Specifiers: " + Arrays.toString(deviceSpecifiers));*/
+
             ALut.alutInit();
             al = ALFactory.getAL();
             al.alGetError();
@@ -38,6 +44,7 @@ public class JoalAudioProvider implements AudioProvider {
             System.err.println("ERROR: Error initializing OpenAL");
             e.printStackTrace();
         }
+
     }
 
     private static boolean debug = true;

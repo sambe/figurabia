@@ -16,28 +16,26 @@ import javax.swing.JPanel;
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.access.AudioBuffer;
 import figurabia.ui.video.access.VideoBuffer;
-import figurabia.ui.video.engine.AudioRenderer;
 import figurabia.ui.video.engine.FrameCache;
 import figurabia.ui.video.engine.FrameFetcher;
 import figurabia.ui.video.engine.actorframework.Actor;
 import figurabia.ui.video.engine.actorframework.ObjectReceiver;
 import figurabia.ui.video.engine.messages.CachedFrame;
-import figurabia.ui.video.engine.messages.ControlCommand;
 import figurabia.ui.video.engine.messages.FrameRequest;
 import figurabia.ui.video.engine.messages.MediaError;
 import figurabia.ui.video.engine.messages.MediaInfoRequest;
 import figurabia.ui.video.engine.messages.MediaInfoResponse;
 import figurabia.ui.video.engine.messages.PrefetchRequest;
 import figurabia.ui.video.engine.messages.RecyclingBag;
-import figurabia.ui.video.engine.messages.ControlCommand.Command;
 
 public class ActorMoviePlayer {
 
     private static volatile long newLocationToSet = -1;
 
-    private static final int FRAME_BATCH = 20;
+    private static final int BATCH_SIZE = 8;
+    private static final int FRAME_BATCH = 3 * BATCH_SIZE;
 
-    private static final int USAGE_COUNT_TO_ADD = 2;
+    private static final int USAGE_COUNT_TO_ADD = 1; // TODO set back to 2 when reenabling audio
 
     /**
      * @param args
@@ -66,9 +64,9 @@ public class ActorMoviePlayer {
         frameFetcher.send(new MediaInfoRequest(receiver));
         final MediaInfoResponse mir = (MediaInfoResponse) receiver.waitForMessage();
 
-        AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat, null);
-        audioRenderer.start();
-        audioRenderer.send(new ControlCommand(Command.START));
+        //AudioRenderer audioRenderer = new AudioRenderer(errorHandler, mir.audioFormat, null);
+        //audioRenderer.start();
+        //audioRenderer.send(new ControlCommand(Command.START));
 
         // create screen
         JPanel screen = new JPanel();
@@ -84,7 +82,7 @@ public class ActorMoviePlayer {
         setPositionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                newLocationToSet = 10000;
+                newLocationToSet = 50 * BATCH_SIZE;
             }
         });
 
@@ -137,8 +135,8 @@ public class ActorMoviePlayer {
                 g.drawImage(video.getImage(), 0, 0, width, height, null);
 
                 // play an audio frame
-                System.err.println("DEBUG: Sent frame " + cf.seqNum);
-                audioRenderer.send(cf);
+                //System.err.println("DEBUG: Sent frame " + cf.seqNum);
+                //audioRenderer.send(cf);
                 Thread.sleep(60);
             }
 
@@ -153,7 +151,7 @@ public class ActorMoviePlayer {
         frame.dispose();
 
         // stop actors
-        audioRenderer.stop();
+        //audioRenderer.stop();
         frameFetcher.stop();
         frameCache.stop();
         errorHandler.stop();
