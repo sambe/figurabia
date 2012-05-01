@@ -4,12 +4,14 @@
  */
 package figurabia.ui.video.experiment;
 
+import java.io.File;
 import java.lang.reflect.Field;
 
 import javax.sound.sampled.AudioFormat;
 
 import figurabia.ui.video.access.AudioBuffer;
 import figurabia.ui.video.access.MediaFrame;
+import figurabia.ui.video.access.XugglerMediaInputStream;
 import figurabia.ui.video.engine.AudioRenderer;
 import figurabia.ui.video.engine.FrameCache;
 import figurabia.ui.video.engine.actorframework.Actor;
@@ -43,7 +45,7 @@ public class AudioPulseAudioCrasher {
         // NOTE: It crashes always if and only if LD_LIBRARY_PATH is set to the xuggle lib directory (other empty directory: no crash)
         //       i.e. there must be some binary incompatibility between precompiled Xuggle and /usr/lib/i386-linux-gnu/libpulse.so.0
         // REMEMBER: there is also the workaround using padsp
-        /*XugglerMediaInputStream is = new XugglerMediaInputStream(new File(
+        XugglerMediaInputStream is = new XugglerMediaInputStream(new File(
                 "/home/sberner/media/salsavids/m2/MOV00003.MP4"));
         is.setPosition(0);
         MediaFrame mf = is.createFrame();
@@ -54,7 +56,7 @@ public class AudioPulseAudioCrasher {
         is.readFrame(mf);
         is.readFrame(mf);
         is.readFrame(mf);
-        is.readFrame(mf);*/
+        is.readFrame(mf);
 
         System.out.println("LD_LIBRARY_PATH = " + System.getenv("LD_LIBRARY_PATH") + "   // complete line visible");
 

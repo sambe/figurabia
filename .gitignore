@@ -6,3 +6,6 @@ figurantdata/db/objects.*.xml
 *.log
 *.old
 target
+.settings
+.project
+.classpath
