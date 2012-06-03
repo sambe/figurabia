@@ -21,7 +21,7 @@ public class XugglerMediaInputStreamTest {
 
     private static final boolean INTERACTIVE = true;
 
-    //@Test
+    @Test
     public void testStream() throws Exception {
         File movieFile = new File("/home/sberner/Desktop/10-07.04.09.flv");
         XugglerMediaInputStream is = new XugglerMediaInputStream(movieFile);
@@ -51,7 +51,7 @@ public class XugglerMediaInputStreamTest {
         }
     }
 
-    //@Test
+    @Test
     public void testRepeatableReads() throws Exception {
         File movieFile = new File("/home/sberner/Desktop/10-07.04.09.flv");
         XugglerMediaInputStream is = new XugglerMediaInputStream(movieFile);
@@ -126,7 +126,9 @@ public class XugglerMediaInputStreamTest {
 
                 // compare if same
                 // cannot compare audio of single retrieved frames, because they need to be 
-                //assertAudioEquals("frame " + i + " at position " + positions[i], frames[i], controlFrame);
+                // FIXME: audio is not precise enough yet
+                if (i > 2)
+                    assertAudioEquals("frame " + i + " at position " + positions[i], frames[i], controlFrame);
                 assertImageEquals("frame " + i + " at position " + positions[i], frames[i], controlFrame);
             }
 
@@ -228,10 +230,10 @@ public class XugglerMediaInputStreamTest {
                 // debugging possibility
                 if (INTERACTIVE && (redDifference > 1 || greenDifference > 1 || blueDifference > 1)) {
                     ImageViewer.displayViewer(expected.video.bufferedImage, actual.video.bufferedImage);
-                    // break
-                    i = maxy;
-                    j = maxx;
-                    break;
+                    //// break
+                    //i = maxy;
+                    //j = maxx;
+                    //break;
                 }
                 if (redDifference > 1)
                     Assert.fail(key + ": difference in RED, at pixel (" + j + "," + i + ") with values "

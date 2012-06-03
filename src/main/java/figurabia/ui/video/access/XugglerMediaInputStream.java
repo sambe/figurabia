@@ -59,6 +59,7 @@ public class XugglerMediaInputStream {
 
     private long intendedAudioPosition = -1;
     private long intendedVideoPosition = -1;
+    private long officialVideoPosition = 0;
     private long targetAudioPacket = -1;
     private int targetAudioBytePos = -1;
     private int targetVideoFramesToSkip = -1;
@@ -464,6 +465,8 @@ public class XugglerMediaInputStream {
 
         if (!videoComplete) {
             mf.endOfMedia = true;
+        } else {
+            officialVideoPosition = (long) (mf.video.videoPicture.getTimeStamp() * mediaInfo.pictureTimeBase * 1000L + frameTime);
         }
 
         //if (skippedAudioFrames != 0 || skippedVideoFrames != 0) {
@@ -515,6 +518,7 @@ public class XugglerMediaInputStream {
         long actualMillis = (long) (videoStream.getCurrentDts() * videoTimeBase * 1000.0);
         intendedAudioPosition = millis;
         intendedVideoPosition = millis;
+        officialVideoPosition = millis;
         int audioFrameSize = mediaInfo.audioFrameSize;
         long targetSample = (long) Math.floor((double) millis / 1000.0 / audioPacketTimeStep * audioFrameSize
                 / bytesPerSample)
@@ -548,10 +552,11 @@ public class XugglerMediaInputStream {
     }
 
     public long getPosition() {
-        if (intendedVideoPosition != -1)
+        /*if (intendedVideoPosition != -1)
             return intendedVideoPosition;
         IPacket packet = packetSource.peekNextVideoPacket();
-        return (long) (packet.getTimeStamp() * mediaInfo.videoPacketTimeBase * 1000.0);
+        return (long) (packet.getTimeStamp() * mediaInfo.videoPacketTimeBase * 1000.0);*/
+        return officialVideoPosition;
     }
 
     public long getDuration() {
