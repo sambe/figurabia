@@ -24,7 +24,7 @@ public class SoundViewer extends JPanel {
     private final static int MARGIN_BOTTOM = 20;
     private final static int MARGIN_TOP = 20;
 
-    private short[][] values;
+    private int[][] values;
 
     private int fps = 0;
 
@@ -37,7 +37,7 @@ public class SoundViewer extends JPanel {
         g.drawLine(0, dim.height / 2, dim.width, dim.height / 2);
 
         for (int k = 0; k < values.length; k++) {
-            short[] v = values[k];
+            int[] v = values[k];
             int n = v.length;
             g.setColor(Color.BLACK);
             for (int i = 1; i < n; i++) {
@@ -62,7 +62,7 @@ public class SoundViewer extends JPanel {
         }
     }
 
-    private void drawLine(Graphics g, int i, int n, short value1, short value2, Dimension dim) {
+    private void drawLine(Graphics g, int i, int n, int value1, int value2, Dimension dim) {
         int x1 = nrToX(i, n, dim.width);
         int y1 = valueToY(value1, dim.height);
         int x2 = nrToX(i + 1, n, dim.width);
@@ -75,16 +75,27 @@ public class SoundViewer extends JPanel {
         return i * (width - MARGIN_LEFT - MARGIN_RIGHT) / n + MARGIN_LEFT;
     }
 
-    private int valueToY(short value, int height) {
+    private int valueToY(int value, int height) {
         return ((int) -value - Short.MIN_VALUE) * (height - MARGIN_TOP - MARGIN_BOTTOM) / (1 << 16) + MARGIN_TOP;
     }
 
     public void setValues(short[][] values) {
+        int[][] intValues = new int[values.length][];
+        for (int i = 0; i < values.length; i++) {
+            intValues[i] = new int[values[i].length];
+            for (int j = 0; j < values[i].length; j++) {
+                intValues[i][j] = values[i][j];
+            }
+        }
+        this.values = intValues;
+    }
+
+    public void setValues(int[][] values) {
         this.values = values.clone();
     }
 
     public void setValues(short[] values) {
-        this.values = new short[][] { values.clone() };
+        setValues(new short[][] { values });
     }
 
     private Object waitCondition = new Object();
@@ -107,6 +118,18 @@ public class SoundViewer extends JPanel {
         } catch (InterruptedException ex) {
             // continue execution because of interrupt
         }
+    }
+
+    public static void displayViewer(int[] expectedValues, int[] actualValues) {
+        SoundViewer viewer = new SoundViewer();
+        viewer.setValues(new int[][] { expectedValues, actualValues });
+        displayViewer(viewer);
+    }
+
+    public static void displayViewer(short[] expectedValues, short[] actualValues) {
+        SoundViewer viewer = new SoundViewer();
+        viewer.setValues(new short[][] { expectedValues, actualValues });
+        displayViewer(viewer);
     }
 
     public static void displayViewer(short[][] values) {

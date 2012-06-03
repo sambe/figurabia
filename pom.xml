@@ -89,12 +89,12 @@
     <scope>system</scope>
     <systemPath>${basedir}/lib/gluegen-rt-natives-linux-i586.jar</systemPath>
   </dependency>            
-  <!--<dependency>
+  <dependency>
    <groupId>junit</groupId>
    <artifactId>junit</artifactId>
    <version>4.5</version>
    <scope>test</scope>
-  </dependency>-->
+  </dependency>
  </dependencies>
  <developers>
   <developer>

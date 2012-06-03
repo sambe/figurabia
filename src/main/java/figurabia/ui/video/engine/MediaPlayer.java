@@ -23,6 +23,7 @@ import figurabia.ui.video.engine.actorframework.ObjectReceiver;
 import figurabia.ui.video.engine.actorframework.RegisterForUpdates;
 import figurabia.ui.video.engine.messages.CachedFrame;
 import figurabia.ui.video.engine.messages.ControlCommand;
+import figurabia.ui.video.engine.messages.ControlCommand.Command;
 import figurabia.ui.video.engine.messages.CurrentScreen;
 import figurabia.ui.video.engine.messages.FrameRequest;
 import figurabia.ui.video.engine.messages.MediaError;
@@ -33,7 +34,6 @@ import figurabia.ui.video.engine.messages.PositionUpdate;
 import figurabia.ui.video.engine.messages.SetPosition;
 import figurabia.ui.video.engine.messages.StatusRequest;
 import figurabia.ui.video.engine.messages.StatusResponse;
-import figurabia.ui.video.engine.messages.ControlCommand.Command;
 import figurabia.ui.video.engine.ui.ControlBar;
 import figurabia.ui.video.engine.ui.VideoScreen;
 
@@ -173,7 +173,8 @@ public class MediaPlayer {
         ControlBar controlBar = mediaPlayer.createControlBar();
         mediaPlayer.setActiveScreen(screen);
 
-        mediaPlayer.openVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"));
+        //mediaPlayer.openVideo(new File("/home/sberner/Desktop/10-21.04.09.flv"));
+        mediaPlayer.openVideo(new File("/home/sberner/media/salsavids/m2/MOV00356.MP4"));
 
         JPanel panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0,gap 0", "[fill]", "[fill][20, fill]"));
