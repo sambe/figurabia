@@ -32,10 +32,15 @@
 	<version>3.7.4</version>
   </dependency>
   <dependency>
+    <groupId>com.github.insubstantial</groupId>
+    <artifactId>substance</artifactId>
+    <version>7.1</version>
+  </dependency>
+  <!-- <dependency>
 	<groupId>net.sf.squirrel-sql.thirdparty-non-maven</groupId>
 	<artifactId>substance</artifactId>
 	<version>5.2_01</version>
-  </dependency>
+  </dependency>-->
   <dependency>
 	<groupId>org.swinglabs</groupId>
 	<artifactId>swingx</artifactId>

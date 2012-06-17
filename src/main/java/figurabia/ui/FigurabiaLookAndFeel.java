@@ -4,14 +4,14 @@
  */
 package figurabia.ui;
 
-import org.jvnet.substance.SubstanceLookAndFeel;
-import org.jvnet.substance.api.ColorSchemeTransform;
-import org.jvnet.substance.api.SubstanceColorScheme;
-import org.jvnet.substance.api.SubstanceColorSchemeBundle;
-import org.jvnet.substance.api.SubstanceSkin;
-import org.jvnet.substance.colorscheme.OrangeColorScheme;
-import org.jvnet.substance.painter.decoration.DecorationAreaType;
-import org.jvnet.substance.skin.BusinessBlackSteelSkin;
+import org.pushingpixels.substance.api.ColorSchemeTransform;
+import org.pushingpixels.substance.api.DecorationAreaType;
+import org.pushingpixels.substance.api.SubstanceColorScheme;
+import org.pushingpixels.substance.api.SubstanceColorSchemeBundle;
+import org.pushingpixels.substance.api.SubstanceLookAndFeel;
+import org.pushingpixels.substance.api.SubstanceSkin;
+import org.pushingpixels.substance.api.colorscheme.OrangeColorScheme;
+import org.pushingpixels.substance.api.skin.BusinessBlackSteelSkin;
 
 @SuppressWarnings("serial")
 public class FigurabiaLookAndFeel extends SubstanceLookAndFeel {
@@ -29,8 +29,9 @@ public class FigurabiaLookAndFeel extends SubstanceLookAndFeel {
         };
         skin = skin.transform(transform, "Business Black Steel, Orange Edition");
         SubstanceColorSchemeBundle bundle = new SubstanceColorSchemeBundle(
-                new OrangeColorScheme().hueShift(0.023).saturate(0.5), skin.getMainDefaultColorScheme(),
-                skin.getMainDisabledColorScheme());
+                new OrangeColorScheme().hueShift(0.023).saturate(0.5),
+                skin.getEnabledColorScheme(DecorationAreaType.NONE),
+                skin.getDisabledColorScheme(DecorationAreaType.NONE));
         skin.registerDecorationAreaSchemeBundle(bundle, DecorationAreaType.NONE);
         return skin;
     }
