@@ -8,6 +8,7 @@ public class MediaFrame {
     public final AudioBuffer audio;
     public final VideoBuffer video;
     boolean endOfMedia;
+    double timestamp;
 
     public MediaFrame(AudioBuffer audio, VideoBuffer video) {
         this.audio = audio;
@@ -28,5 +29,12 @@ public class MediaFrame {
      */
     public void delete() {
         video.videoPicture.delete();
+    }
+
+    /**
+     * @return the timestamp in milliseconds
+     */
+    public double getTimestamp() {
+        return timestamp;
     }
 }

@@ -13,6 +13,7 @@ public class AudioBuffer {
     //private Buffer buffer;
     //IAudioSamples audioSamples;
     byte[] audioData;
+    int size;
 
     public AudioBuffer() {
         //buffer = new Buffer();
@@ -20,6 +21,10 @@ public class AudioBuffer {
 
     public byte[] getAudioData() {
         return audioData;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     /*public Buffer getBuffer() {

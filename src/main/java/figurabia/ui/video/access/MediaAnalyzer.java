@@ -74,8 +74,8 @@ public class MediaAnalyzer {
 
             // find key frames
             List<Long> keyFrameTimestamps = new ArrayList<Long>();
-            //List<Long> keyFrameDts = new ArrayList<Long>();
-            //List<Long> keyFramePts = new ArrayList<Long>();
+            List<Double> calculatedFrameRates = new ArrayList<Double>();
+            int videoPacketCount = 0;
             while (true) {
                 int errorNum;
                 if ((errorNum = container.readNextPacket(packet)) < 0) {
@@ -90,12 +90,25 @@ public class MediaAnalyzer {
                 lastTimestamp = (long) (packet.getTimeStamp() * packet.getTimeBase().getValue() * 1000000L);
 
                 //int size = packet.getSize();
-                if (packet.getStreamIndex() == videoStreamIndex && packet.isKey()) {
-                    keyFrameTimestamps.add(lastTimestamp);
-                    //keyFrameDts.add(packet.getDts());
-                    //keyFramePts.add(packet.getPts());
+                if (packet.getStreamIndex() == videoStreamIndex) {
+                    if (packet.isKey()) {
+                        keyFrameTimestamps.add(lastTimestamp);
+                        if (lastTimestamp > 0) {
+                            double calculatedFrameRate = videoPacketCount * 1000000.0 / (double) lastTimestamp;
+                            calculatedFrameRates.add(calculatedFrameRate);
+                        }
+                    }
+                    videoPacketCount++;
                 }
             }
+
+            // check calculated frame rates
+            double selectedFrameRate = calculatedFrameRates.get(calculatedFrameRates.size() - 1);
+            double averageFrameRate = 0;
+            for (Double rate : calculatedFrameRates) {
+                averageFrameRate += rate;
+            }
+            averageFrameRate /= calculatedFrameRates.size();
 
             // find time base corrections for video and audio (timebase of picture was wrong in one case)
             double videoPacketTimeBase = Double.NaN;
@@ -181,8 +194,9 @@ public class MediaAnalyzer {
                     }
                     if (!videoComplete)
                         throw new IllegalStateException("no complete video frame was found for video " + file);
-                    if (!audioComplete)
-                        throw new IllegalStateException("no complete audio frame was found for video " + file);
+                    // commented out, because there are videos without audio
+                    //if (!audioComplete)
+                    //    throw new IllegalStateException("no complete audio frame was found for video " + file);
                 } finally {
                     if (audioDecoder != null && audioDecoder.isOpen())
                         audioDecoder.close();
@@ -198,7 +212,7 @@ public class MediaAnalyzer {
             samplesTimeBase = 1.0 / (Math.round(1.0 / samplesTimeBase * 1000.0) / 1000.0);
 
             return new MediaInfo(keyFrameTimestamps, videoPacketTimeBase, audioPacketTimeBase, pictureTimeBase,
-                    samplesTimeBase, audioFrameSize);
+                    samplesTimeBase, audioFrameSize, averageFrameRate);
 
         } finally {
             if (audioCoder != null && audioCoder.isOpen())

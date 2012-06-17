@@ -121,7 +121,7 @@ public class AudioRenderer extends Actor {
 
     }
 
-    private int copyToSpeedScaledBuffer(byte[] idata, byte[] odata, long seqNum) {
+    private int copyToSpeedScaledBuffer(byte[] idata, int idataSize, byte[] odata, long seqNum) {
         //byte[] idata = (byte[]) inputBuffer.array();
         //byte[] odata = (byte[]) outputBuffer.array();
 
@@ -130,7 +130,7 @@ public class AudioRenderer extends Actor {
 
         // determine length
         int frameBytes = audioFormat.getFrameSize();
-        int inputFrames = idata.length / frameBytes;
+        int inputFrames = idataSize / frameBytes;
         long start = (long) Math.floor(seqNum * inputFrames / absSpeed);
         long end = (long) Math.floor((seqNum + 1) * inputFrames / absSpeed);
         int outputFrames = (int) (end - start);
@@ -162,15 +162,16 @@ public class AudioRenderer extends Actor {
             }
             AudioBuffer audio = frameQueue.peek().frame.audio;
             byte[] audioBuffer = audio.getAudioData();
+            int audioSize = audio.getSize();
 
             // if speed != 1.0 replace with speed corrected buffer
             checkBufferSize(audioBuffer, Math.abs(speed));
             if (speed == 1.0) {
-                bytesToWrite = audioBuffer.length;
+                bytesToWrite = audioSize;
             } else {
                 long seqNum = frameQueue.peek().seqNum;
                 if (seqNum != speedCorrectedBufferSeqNum) {
-                    bytesToWrite = copyToSpeedScaledBuffer(audioBuffer, speedCorrectedBuffer, seqNum);
+                    bytesToWrite = copyToSpeedScaledBuffer(audioBuffer, audioSize, speedCorrectedBuffer, seqNum);
                     speedCorrectedBufferSeqNum = seqNum;
                 }
                 audioBuffer = speedCorrectedBuffer;

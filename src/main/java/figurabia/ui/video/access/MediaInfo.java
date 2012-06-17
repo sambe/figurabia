@@ -16,15 +16,17 @@ public class MediaInfo {
     public final double pictureTimeBase;
     public final double samplesTimeBase;
     public final int audioFrameSize;
+    public final double videoFrameRate;
 
     public MediaInfo(List<Long> keyFrameTimestamps, double videoPacketTimeBase, double audioPacketTimeBase,
-            double pictureTimeBase, double samplesTimeBase, int audioFrameSize) {
+            double pictureTimeBase, double samplesTimeBase, int audioFrameSize, double videoFrameRate) {
         this.keyFrameTimestamps = Collections.unmodifiableList(new ArrayList<Long>(keyFrameTimestamps));
         this.videoPacketTimeBase = videoPacketTimeBase;
         this.audioPacketTimeBase = audioPacketTimeBase;
         this.pictureTimeBase = pictureTimeBase;
         this.samplesTimeBase = samplesTimeBase;
         this.audioFrameSize = audioFrameSize;
+        this.videoFrameRate = videoFrameRate;
     }
 
     public long findRelevantKeyframeTimestamp(long targetValue) {

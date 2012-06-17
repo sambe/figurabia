@@ -71,7 +71,7 @@ public class AudioPulseAudioCrasher {
             AudioBuffer audioBuffer = new AudioBuffer();
             f.set(audioBuffer, new byte[4096]);
             byte[] data = audioBuffer.getAudioData();
-            for (int j = 0; j < data.length / 2; j++) {
+            for (int j = 0; j < audioBuffer.getSize() / 2; j++) {
                 short value = (short) (Short.MAX_VALUE / 4 * Math.sin(j / (4 + 2 * Math.pow(1.05, i))));
                 data[j * 2] = (byte) (value % 256);
                 data[j * 2 + 1] = (byte) (value / 256);

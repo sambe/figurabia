@@ -150,7 +150,7 @@ public class MediaInputStreamTest {
                     //for (int k = audioFramePos; k >= 0; k--) {
                     byte[] audioBuffer = mediaFrames[k].audio.getAudioData();
                     int offset = 0 + audioPos;
-                    int length = audioBuffer.length - audioPos;
+                    int length = mediaFrames[k].audio.getSize() - audioPos;
                     int available = line.available();
                     boolean onlyPartFree = length > available;
                     if (onlyPartFree) {

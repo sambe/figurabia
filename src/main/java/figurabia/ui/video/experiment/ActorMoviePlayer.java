@@ -113,7 +113,7 @@ public class ActorMoviePlayer {
                 int samplesize = mir.audioFormat.getSampleSizeInBits() / 8;
                 byte[] audioData = audioBuffer.getAudioData();
                 int offset = 0;
-                int length = audioData.length;
+                int length = audioBuffer.getSize();
                 for (int k = offset; k < (length - offset) / 2; k += samplesize) {
                     int k2 = length - offset - k - samplesize;
                     // swap two blocks of "samplesize" bytes
