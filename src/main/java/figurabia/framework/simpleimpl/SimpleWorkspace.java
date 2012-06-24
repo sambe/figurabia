@@ -21,6 +21,9 @@ public class SimpleWorkspace implements Workspace {
 
     private Map<String, Image> imageCache = new WeakHashMap<String, Image>();
 
+    // one for FolderItem, Figure, 
+    //private Store<Figure> figureStore = new XStreamStore<Figure>(xstream, );
+
     public SimpleWorkspace(File baseDir) {
         this.baseDir = baseDir;
         if (!baseDir.exists())

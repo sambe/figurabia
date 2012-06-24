@@ -119,16 +119,8 @@ public class PositionPainter {
         return ladyShape;
     }
 
-    public void setLadyShape(Shape ladyShape) {
-        this.ladyShape = ladyShape;
-    }
-
     public Shape getManShape() {
         return manShape;
-    }
-
-    public void setManShape(Shape manShape) {
-        this.manShape = manShape;
     }
 
     public boolean isShowLady() {

@@ -25,4 +25,6 @@ public interface Workspace {
     void deleteAllPictures(int figureId) throws IOException;
 
     File getDatabaseDir();
+
+    //<T extends Identifiable> Store<T> getStore(String subPath, Class<T> type);
 }
