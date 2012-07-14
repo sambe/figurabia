@@ -18,15 +18,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import javax.swing.JComponent;
 
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.PersistenceProvider;
+import figurabia.io.FigureStore;
 import figurabia.ui.figuremapper.placement.JungLayoutPlacement;
 import figurabia.ui.figuremapper.placement.PlacementStrategy;
 import figurabia.ui.positionviewer.PositionPainter;
@@ -36,7 +36,7 @@ public class FigureMapScreen extends JComponent {
 
     private static final double WIDTH = 20;
 
-    private PersistenceProvider persistenceProvider;
+    private FigureStore figureStore;
     private ConnectionDrawer connectionDrawer;
 
     private Map<PuertoPosition, Point2D> coordinates;
@@ -48,8 +48,8 @@ public class FigureMapScreen extends JComponent {
 
     private AffineTransform transform = AffineTransform.getScaleInstance(0.25, 0.25);
 
-    public FigureMapScreen(PersistenceProvider pp) {
-        persistenceProvider = pp;
+    public FigureMapScreen(FigureStore fs) {
+        figureStore = fs;
         setOpaque(true);
         /*connectionDrawer = new ConnectionDrawer() {
             @Override
@@ -145,7 +145,7 @@ public class FigureMapScreen extends JComponent {
     }
 
     public void refreshData() {
-        Collection<Figure> allFigures = persistenceProvider.getAllActiveFigures();
+        Collection<Figure> allFigures = figureStore.getAllActiveFigures();
         coordinates = new HashMap<PuertoPosition, Point2D>();
         colors = new HashMap<Figure, Color>();
 

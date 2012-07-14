@@ -8,15 +8,17 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Figure implements Serializable, Cloneable, FolderItem {
+import figurabia.io.store.Identifiable;
+
+public class Figure implements Serializable, Cloneable, Identifiable {
 
     private final static long serialVersionUID = -2708230799923225277L;
 
     /**
      * Id of the figure (set when it is made persistent for the first time)
      */
-    private int id;
-    private Folder parent;
+    private String id;
+    private String rev;
     /**
      * Name of this figure (optional)
      */
@@ -47,32 +49,24 @@ public class Figure implements Serializable, Cloneable, FolderItem {
      */
     private List<Integer> barIds;
 
-    /**
-     * @return the id
-     */
-    public int getId() {
+    @Override
+    public String getId() {
         return id;
     }
 
-    /**
-     * @param id the id to set
-     */
-    public void setId(int id) {
+    @Override
+    public void setId(String id) {
         this.id = id;
     }
 
-    /**
-     * @return the parent
-     */
-    public Folder getParent() {
-        return parent;
+    @Override
+    public String getRev() {
+        return rev;
     }
 
-    /**
-     * @param parent the parent to set
-     */
-    public void setParent(Folder parent) {
-        this.parent = parent;
+    @Override
+    public void setRev(String rev) {
+        this.rev = rev;
     }
 
     /**
@@ -214,7 +208,7 @@ public class Figure implements Serializable, Cloneable, FolderItem {
     public boolean equals(Object obj) {
         if (obj instanceof Figure) {
             Figure f = (Figure) obj;
-            if (id == f.id) {
+            if (id.equals(f.id)) {
                 if (this != f)
                     throw new IllegalStateException("Found two different figure objects with id " + id);
                 return true;
@@ -225,7 +219,7 @@ public class Figure implements Serializable, Cloneable, FolderItem {
 
     @Override
     public int hashCode() {
-        return id;
+        return id.hashCode();
     }
 
     @Override

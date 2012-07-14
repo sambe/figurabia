@@ -9,79 +9,64 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
+import javax.swing.JOptionPane;
 
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
-import figurabia.domain.Folder;
-import figurabia.domain.FolderItem;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.domain.TreeItem;
+import figurabia.domain.TreeItem.ItemType;
+import figurabia.io.FigureStore;
+import figurabia.io.FiguresTreeStore;
+import figurabia.io.VideoDir;
+import figurabia.io.workspace.Workspace;
+import figurabia.io.workspace.WorkspaceException;
 
 public class FigureCreationService {
 
     private Workspace workspace;
-    private PersistenceProvider persistenceProvider;
+    private FigureStore figureStore;
+    private VideoDir videoDir;
+    private FiguresTreeStore treeStore;
 
-    public FigureCreationService(Workspace workspace, PersistenceProvider persistenceProvider) {
+    public FigureCreationService(Workspace workspace, FigureStore figureStore, VideoDir videoDir,
+            FiguresTreeStore treeStore) {
         this.workspace = workspace;
-        this.persistenceProvider = persistenceProvider;
+        this.figureStore = figureStore;
+        this.videoDir = videoDir;
+        this.treeStore = treeStore;
     }
 
     public Figure createNewFigure(File videofile) throws IOException {
         return createNewFigure(videofile, null, -1);
     }
 
-    public Figure createNewFigure(File videoFile, Folder parent, int index) throws IOException {
-        // copying video file to workspace
-        File destFile = new File(workspace.getVideoDir() + File.separator + videoFile.getName());
-        int runningNumber = 1;
-        boolean copied = false;
-        while (!copied) {
-            if (!destFile.exists()) {
-                FileUtils.copyFile(videoFile, destFile);
-                copied = true;
-            } else if (FileUtils.contentEquals(videoFile, destFile)) {
-                // we just reference the already existing file (no duplicate needed)
-                copied = true;
-            } else {
-                // generate a new name
-                String baseName = videoFile.getName();
-                String extension = "";
-                int dotPos = baseName.lastIndexOf('.');
-                if (dotPos != -1) {
-                    baseName = baseName.substring(0, dotPos);
-                    extension = baseName.substring(dotPos);
-                }
-                String newName = baseName + "_" + String.format("%02d", runningNumber) + extension;
-                destFile = new File(workspace.getVideoDir() + File.separator + newName);
-                runningNumber++;
-            }
-        }
+    public Figure createNewFigure(File videoFile, TreeItem parent, int index) throws IOException {
+        String videoId = videoDir.addVideo(videoFile);
 
         // creating figure
         Figure f = new Figure();
-        f.setVideoName(destFile.getName());
+        f.setVideoName(videoId);
         f.setVideoPositions(new ArrayList<Long>());
         prepareFigure(f);
 
-        int id = persistenceProvider.persistFigure(f);
+        figureStore.create(f);
 
         if (parent == null) {
-            parent = persistenceProvider.getRootFolder();
+            parent = treeStore.getRootFolder();
             index = -1;
         }
         // -1 means insert at the end
         if (index == -1) {
-            List<FolderItem> parentFolderItems = persistenceProvider.getItems(parent);
-            index = parentFolderItems.size();
+            index = parent.getChildIds().size();
         }
-        persistenceProvider.insertItem(parent, index, f);
+        TreeItem itemRef = new TreeItem(null, ItemType.ITEM, f.getName());
+        itemRef.setRefId(f.getId());
+        String itemRefId = treeStore.create(itemRef);
 
-        // creating figure pictures directory
-        new File(workspace.getPictureDir() + File.separator + id).mkdir();
+        parent.getChildIds().add(index, itemRefId);
+        treeStore.update(parent);
 
         return f;
     }
@@ -137,67 +122,42 @@ public class FigureCreationService {
         }
     }
 
-    public void validateAndFinalizeFigure(Figure f) throws IOException {
-        // check if alternating 1 and 5, starting with 1 and ending with 1
-        boolean oneNext = true;
-        for (PuertoPosition p : f.getPositions()) {
-            if (oneNext && p.getBeat() != 1 || !oneNext && p.getBeat() != 5) {
-                throw new IllegalArgumentException("figure does not consist of alternating 1 and 5");
+    public void cloneFigure(TreeItem item) {
+        if (item.getType() == ItemType.ITEM) {
+            Figure f = figureStore.read(item.getRefId());
+            String newName = JOptionPane.showInputDialog(null,
+                    "Please enter a name for the cloned figure:", f.getName());
+            if (newName != null && !newName.equals("")) {
+                try {
+                    Figure clone = f.clone();
+                    clone.setId(null);
+                    clone.setName(newName);
+                    figureStore.create(clone);
+                    String fromPath = "/pics/" + f.getId();
+                    String toPath = "/pics/" + clone.getId();
+                    workspace.copyPath(fromPath, toPath);
+                } catch (WorkspaceException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            "IO Error occured while copying pictures of the cloned figure: " + ex.getLocalizedMessage());
+                }
             }
-            oneNext = !oneNext;
-        }
-        if (f.getPositions().size() % 2 != 1) {
-            throw new IllegalArgumentException("figure does not end with a 1");
+        } else {
+            throw new IllegalStateException("called cloneFigure with something else than a figure: " + item);
         }
 
-        // rearrange bar ids, rename files
-        List<Integer> barIds = f.getBarIds();
-        for (int i = 0; i < barIds.size(); i++) {
-            int oldBarId = barIds.get(i);
-            int newBarId = i / 2 + 1;
-            if (oldBarId != newBarId) {
-                moveBarId(f, oldBarId, newBarId, f.getPositions().get(i).getBeat());
-                barIds.set(i, newBarId);
-            }
-        }
-
-        // clear image cache to ensure that the right images are loaded
-        clearImageCache(f);
     }
 
-    private void moveBarId(Figure f, int oldBarId, int newBarId, int beat) throws IOException {
-        String figurePrefix = workspace.getPictureDir().getAbsolutePath();
-        File oldFile = new File(figurePrefix + workspace.getPictureName(f.getId(), oldBarId, beat));
-        File newFile = new File(figurePrefix + workspace.getPictureName(f.getId(), newBarId, beat));
-        if (newFile.exists()) {
-            List<Integer> barIds = f.getBarIds();
-            int index = barIds.indexOf(newBarId);
-            if (index != -1 && f.getPositions().get(index).getBeat() != beat) {
-                int subIndex = barIds.subList(index + 1, barIds.size()).indexOf(newBarId);
-                if (subIndex == -1)
-                    index = -1;
-                else
-                    index = index + 1 + subIndex;
-            }
-            if (index == -1) {
-                // delete the picture because it is not referenced by any bar
-                newFile.delete();
-            } else {
-                // swap new name out (should only be temporary)
-                int backupBarId = 10000 + newBarId;
-                File backupFile = new File(figurePrefix + workspace.getPictureName(f.getId(), backupBarId, beat));
-                FileUtils.moveFile(newFile, backupFile);
-                barIds.set(index, backupBarId);
-            }
+    public void createNewFolder(TreeItem parent, String name) {
+        int index = 0;
+        if (parent.getType() == ItemType.ITEM) {
+            TreeItem newParent = treeStore.getParentFolder(parent);
+            index = newParent.getChildIds().indexOf(parent.getId()) + 1;
+            parent = newParent;
         }
-        FileUtils.moveFile(oldFile, newFile);
-    }
+        TreeItem newFolder = new TreeItem(null, ItemType.FOLDER, name);
+        treeStore.create(newFolder);
 
-    private void clearImageCache(Figure f) {
-        List<PuertoPosition> positions = f.getPositions();
-        List<Integer> barIds = f.getBarIds();
-        for (int i = 0; i < barIds.size(); i++) {
-            workspace.removePictureFromCache(f.getId(), barIds.get(i), positions.get(i).getBeat());
-        }
+        treeStore.insertItem(parent, index, newFolder);
     }
 }

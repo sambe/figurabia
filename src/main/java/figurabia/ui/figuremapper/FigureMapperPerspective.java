@@ -7,7 +7,7 @@ package figurabia.ui.figuremapper;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
-import figurabia.framework.PersistenceProvider;
+import figurabia.io.FigureStore;
 import figurabia.ui.framework.Perspective;
 
 @SuppressWarnings("serial")
@@ -15,8 +15,8 @@ public class FigureMapperPerspective extends JPanel implements Perspective {
 
     FigureMapScreen mapScreen;
 
-    public FigureMapperPerspective(PersistenceProvider pp) {
-        mapScreen = new FigureMapScreen(pp);
+    public FigureMapperPerspective(FigureStore fs) {
+        mapScreen = new FigureMapScreen(fs);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         add(mapScreen, "push");

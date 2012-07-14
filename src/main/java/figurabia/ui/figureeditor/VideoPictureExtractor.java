@@ -11,40 +11,38 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
+import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.workspace.Workspace;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.video.FigurePlayer;
-import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class VideoPictureExtractor extends JPanel {
 
-    private Workspace workspace;
-    //private PersistenceProvider persistenceProvider;
-    private FigureModel figureModel;
+    private final Workspace workspace;
+    private final BeatPictureCache beatPictureCache;
+    private final FigureModel figureModel;
 
     private FigurePlayer figurePlayer;
     private JButton new1Button;
     private JButton new5Button;
     private JButton correctButton;
 
-    public VideoPictureExtractor(Workspace workspace_, PersistenceProvider pp, MediaPlayer player,
-            FigureModel figureModel_) {
-        this.workspace = workspace_;
-        //this.persistenceProvider = pp;
-        this.figureModel = figureModel_;
+    public VideoPictureExtractor(Workspace ws, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
+        this.workspace = ws;
+        this.beatPictureCache = bpc;
+        this.figureModel = fm;
 
         setLayout(new MigLayout("ins 0", "[][][]push[]", "[][]"));
 
-        figurePlayer = new FigurePlayer(workspace, player, figureModel_);
+        figurePlayer = new FigurePlayer(workspace, beatPictureCache, player, fm);
         add(figurePlayer, "span 4,grow,push,wrap");
 
         new1Button = new JButton("New 1");
@@ -58,16 +56,6 @@ public class VideoPictureExtractor extends JPanel {
         correctButton = new JButton("Correct Selected");
         correctButton.setEnabled(false);
         add(correctButton, "");
-
-        // when the figure is modified
-        pp.addFigureChangeListener(new FigureListener() {
-            @Override
-            public void update(ChangeType type, Figure f) {
-                if (ChangeType.FIGURE_CHANGED == type && f == figureModel.getCurrentFigure()) {
-                    updateButtonsEnabled(f);
-                }
-            }
-        });
 
         // when the selected figure changes
         figureModel.addFigurePositionListener(new FigurePositionListener() {
@@ -126,7 +114,7 @@ public class VideoPictureExtractor extends JPanel {
         figure.getPositions().add(pos, newPosition);
 
         // add picture
-        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), newBarId, beat, videoTime);
+        figurePlayer.captureCurrentImage(figure.getId(), newBarId, beat, videoTime);
     }
 
     public void correctSelectedPosition() {
@@ -136,7 +124,7 @@ public class VideoPictureExtractor extends JPanel {
         figure.getVideoPositions().set(index, time);
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
-        figurePlayer.captureCurrentImage(workspace.getPictureDir(), figure.getId(), bar, beat, time);
+        figurePlayer.captureCurrentImage(figure.getId(), bar, beat, time);
     }
 
     public void setPosition(int pos) {

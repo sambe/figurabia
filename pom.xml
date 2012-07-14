@@ -17,14 +17,66 @@
 
  <dependencies>
   <dependency>
-   <groupId>xuggle</groupId>
-   <artifactId>xuggle-xuggler</artifactId>
-   <version>5.4</version>
+   <groupId>kokos</groupId>
+   <artifactId>exmoplay-engine</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+   <exclusions>
+   	<exclusion>
+   		<groupId>com.jogamp</groupId>
+   		<artifactId>joal</artifactId>
+   	</exclusion>
+   	<exclusion>
+   		<groupId>com.jogamp</groupId>
+   		<artifactId>gluegen-rt</artifactId>
+   	</exclusion>
+   	<exclusion>
+   		<groupId>com.jogamp</groupId>
+   		<artifactId>joal-natives-linux-i586</artifactId>
+   	</exclusion>
+   	<exclusion>
+   		<groupId>com.jogamp</groupId>
+   		<artifactId>gluegen-rt-natives-linux-i586</artifactId>
+   	</exclusion>
+   </exclusions>
   </dependency>
+  <!-- This is ugly, but unfortunately needed until a better solution -->
+			<dependency>
+				<groupId>com.jogamp</groupId>
+				<artifactId>joal</artifactId>
+				<version>2.0.20111219</version>
+				<scope>system</scope>
+				<systemPath>/home/samuel/workspace/exmoplay/lib/joal.jar</systemPath>
+			</dependency>
+			<dependency>
+				<groupId>com.jogamp</groupId>
+				<artifactId>gluegen-rt</artifactId>
+				<version>2.0.20111219</version>
+				<scope>system</scope>
+				<systemPath>/home/samuel/workspace/exmoplay/lib/gluegen-rt.jar</systemPath>
+			</dependency>
+			<dependency>
+				<groupId>com.jogamp</groupId>
+				<artifactId>joal-natives-linux-i586</artifactId>
+				<version>2.0.20111219</version>
+				<scope>system</scope>
+				<systemPath>/home/samuel/workspace/exmoplay/lib/joal-natives-linux-i586.jar</systemPath>
+			</dependency>
+			<dependency>
+				<groupId>com.jogamp</groupId>
+				<artifactId>gluegen-rt-natives-linux-i586</artifactId>
+				<version>2.0.20111219</version>
+				<scope>system</scope>
+				<systemPath>/home/samuel/workspace/exmoplay/lib/gluegen-rt-natives-linux-i586.jar</systemPath>
+			</dependency>
   <dependency>
 	<groupId>commons-io</groupId>
 	<artifactId>commons-io</artifactId>
 	<version>1.4</version>
+  </dependency>
+  <dependency>
+	<groupId>commons-codec</groupId>
+	<artifactId>commons-codec</artifactId>
+	<version>1.6</version>
   </dependency>
   <dependency>
 	<groupId>com.miglayout</groupId>
@@ -36,11 +88,6 @@
     <artifactId>substance</artifactId>
     <version>7.1</version>
   </dependency>
-  <!-- <dependency>
-	<groupId>net.sf.squirrel-sql.thirdparty-non-maven</groupId>
-	<artifactId>substance</artifactId>
-	<version>5.2_01</version>
-  </dependency>-->
   <dependency>
 	<groupId>org.swinglabs</groupId>
 	<artifactId>swingx</artifactId>
@@ -66,34 +113,6 @@
 	<artifactId>jung-algorithms</artifactId>
 	<version>2.0.1</version>
   </dependency>
-  <dependency>
-    <groupId>com.jogamp</groupId>
-    <artifactId>joal</artifactId>
-    <version>2.0.20111219</version>
-    <scope>system</scope>
-    <systemPath>${basedir}/lib/joal.jar</systemPath>
-  </dependency>            
-  <dependency>
-    <groupId>com.jogamp</groupId>
-    <artifactId>joal-natives-linux-i586</artifactId>
-    <version>2.0.20111219</version>
-    <scope>system</scope>
-    <systemPath>${basedir}/lib/joal-natives-linux-i586.jar</systemPath>
-  </dependency>            
-  <dependency>
-    <groupId>com.jogamp</groupId>
-    <artifactId>gluegen-rt</artifactId>
-    <version>2.0.20111219</version>
-    <scope>system</scope>
-    <systemPath>${basedir}/lib/gluegen-rt.jar</systemPath>
-  </dependency>            
-  <dependency>
-    <groupId>com.jogamp</groupId>
-    <artifactId>gluegen-rt-natives-linux-i586</artifactId>
-    <version>2.0.20111219</version>
-    <scope>system</scope>
-    <systemPath>${basedir}/lib/gluegen-rt-natives-linux-i586.jar</systemPath>
-  </dependency>            
   <dependency>
    <groupId>junit</groupId>
    <artifactId>junit</artifactId>
@@ -210,22 +229,5 @@
         <enabled>true</enabled>
     </snapshots>
   </repository>
-  
-  <!--<repository>
-   <id>local repo</id>
-   <url>file://${user.home}/.m2/repository</url>
-   <releases>
-    <enabled>false</enabled>
-    <updatePolicy>always</updatePolicy>
-    <checksumPolicy>warn</checksumPolicy>
-   </releases>
-   <snapshots>
-    <enabled>true</enabled>
-    <updatePolicy>always</updatePolicy>
-    <checksumPolicy>fail</checksumPolicy>
-   </snapshots>
-   <layout>default</layout>
-  </repository>-->
-
  </repositories>
 </project>

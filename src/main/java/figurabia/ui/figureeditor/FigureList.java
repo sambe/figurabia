@@ -36,24 +36,21 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
 
-import org.apache.commons.io.FileUtils;
-
 import figurabia.domain.Figure;
-import figurabia.domain.Folder;
-import figurabia.domain.FolderItem;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.domain.TreeItem;
+import figurabia.domain.TreeItem.ItemType;
+import figurabia.io.FiguresTreeStore;
 import figurabia.service.FigureCreationService;
+import figurabia.service.FigureUpdateService;
 import figurabia.ui.util.JTreePopupMenu;
 
 @SuppressWarnings("serial")
 public class FigureList extends JPanel {
 
-    private Workspace workspace;
+    private final FiguresTreeStore figuresTreeStore;
+    private final FigureCreationService creationService;
+    private final FigureUpdateService figureUpdateService;
 
-    private PersistenceProvider persistenceProvider;
-
-    //private JList list;
     private FiguresTreeModel treeModel;
     private CheckboxTree tree;
 
@@ -64,7 +61,7 @@ public class FigureList extends JPanel {
     static {
         try {
             folderItemFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=\""
-                    + FolderItem.class.getName() + "\"");
+                    + TreeItem.class.getName() + "\"");
             uriListAsString = new DataFlavor("text/uri-list;class=java.lang.String");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -73,14 +70,14 @@ public class FigureList extends JPanel {
 
     private static class FolderItemTransferable implements Transferable {
 
-        private FolderItem item;
+        private TreeItem item;
 
         private static DataFlavor[] flavors = new DataFlavor[] {
                 folderItemFlavor,
                 DataFlavor.stringFlavor
         };
 
-        public FolderItemTransferable(FolderItem item) {
+        public FolderItemTransferable(TreeItem item) {
             this.item = item;
         }
 
@@ -109,18 +106,12 @@ public class FigureList extends JPanel {
 
     }
 
-    public FigureList(Workspace workspace_, PersistenceProvider pp) {
-        this.workspace = workspace_;
-        this.persistenceProvider = pp;
-        //list = new JList();
-        //list.setModel(new DefaultListModel());
-        //list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        //setLayout(new BorderLayout());
-        //JScrollPane scrollPane = new JScrollPane(list);
-        //scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        //add(scrollPane, BorderLayout.CENTER);
+    public FigureList(FiguresTreeStore fts, FigureCreationService fcs, FigureUpdateService fus) {
+        this.figuresTreeStore = fts;
+        this.creationService = fcs;
+        this.figureUpdateService = fus;
 
-        treeModel = new FiguresTreeModel(persistenceProvider);
+        treeModel = new FiguresTreeModel(figuresTreeStore);
         tree = new CheckboxTree();
         tree.setModel(treeModel);
         tree.getSelectionModel().setSelectionMode(DefaultTreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -133,7 +124,7 @@ public class FigureList extends JPanel {
             @Override
             protected Transferable createTransferable(JComponent c) {
                 JTree t = (JTree) c;
-                FolderItem item = (FolderItem) t.getSelectionPath().getLastPathComponent();
+                TreeItem item = (TreeItem) t.getSelectionPath().getLastPathComponent();
                 return new FolderItemTransferable(item);
             }
 
@@ -158,12 +149,12 @@ public class FigureList extends JPanel {
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
 
                 // get target folder and index
-                FolderItem target = (FolderItem) dropLocation.getPath().getLastPathComponent();
-                Folder targetParent;
-                if (target instanceof Folder)
-                    targetParent = (Folder) target;
+                TreeItem target = (TreeItem) dropLocation.getPath().getLastPathComponent();
+                TreeItem targetParent;
+                if (target.getType() == ItemType.FOLDER)
+                    targetParent = target;
                 else
-                    targetParent = target.getParent();
+                    targetParent = figuresTreeStore.getParentFolder(target);
                 int childIndex = dropLocation.getChildIndex();
 
                 if (support.isDataFlavorSupported(folderItemFlavor)) {
@@ -175,6 +166,7 @@ public class FigureList extends JPanel {
                 } else if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                     // import all files that were dropped
                     try {
+                        @SuppressWarnings("unchecked")
                         List<File> files = (List<File>) support.getTransferable().getTransferData(
                                 DataFlavor.javaFileListFlavor);
                         for (File f : files) {
@@ -274,14 +266,13 @@ public class FigureList extends JPanel {
         popupMenu.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                FolderItem fi = getSelectedFolderItem();
+                TreeItem item = getSelectedFolderItem();
                 boolean isFigure = false;
-                if (fi instanceof Figure) {
-                    Figure f = (Figure) fi;
-                    activeFigure.setSelected(f.isActive());
+                if (item.getType() == ItemType.ITEM) {
+                    String figureId = item.getRefId();
+                    boolean isActive = figureUpdateService.figureIsActive(figureId);
+                    activeFigure.setSelected(isActive);
                     isFigure = true;
-                } else if (fi instanceof Folder) {
-
                 }
                 activeFigure.setEnabled(isFigure);
                 cloneFigure.setEnabled(isFigure);
@@ -299,11 +290,10 @@ public class FigureList extends JPanel {
         new JTreePopupMenu(tree, popupMenu); // connects the popup menu to the list
     }
 
-    private void createFigureForVideo(File video, Folder targetFolder, int childIndex) {
+    private void createFigureForVideo(File video, TreeItem targetFolder, int childIndex) {
         // create a new figure for video
-        Figure figure = null;
         try {
-            figure = new FigureCreationService(workspace, persistenceProvider).createNewFigure(video, targetFolder,
+            creationService.createNewFigure(video, targetFolder,
                     childIndex);
         } catch (IOException e) {
             e.printStackTrace();
@@ -313,18 +303,8 @@ public class FigureList extends JPanel {
 
     private void setFigureActive(boolean newState) {
         try {
-            FolderItem fi = getSelectedFolderItem();
-            if (fi instanceof Figure) {
-                Figure f = (Figure) fi;
-                if (newState) {
-                    new FigureCreationService(workspace, persistenceProvider).validateAndFinalizeFigure(f);
-                }
-                f.setActive(newState);
-                FigureList.this.persistenceProvider.updateFigure(f);
-            } else {
-                throw new IllegalStateException("called set figure active " + newState
-                        + " on something else than a figure: " + fi);
-            }
+            TreeItem item = getSelectedFolderItem();
+            figureUpdateService.setActive(item, newState);
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, e.getLocalizedMessage());
@@ -334,126 +314,64 @@ public class FigureList extends JPanel {
         }
     }
 
-    private FolderItem getSelectedFolderItem() {
+    private TreeItem getSelectedFolderItem() {
         TreePath selection = tree.getSelectionModel().getSelectionPath();
         if (selection != null)
-            return (FolderItem) selection.getLastPathComponent();
+            return (TreeItem) selection.getLastPathComponent();
         return null;
     }
 
     private void renameFigure(ActionEvent e) {
-        FolderItem fi = getSelectedFolderItem();
-        if (fi instanceof Figure) {
-            Figure f = (Figure) fi;
-            String newName = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter the new name:",
-                    f.getName());
-            if (newName != null && !newName.equals("")) {
-                f.setName(newName);
-                persistenceProvider.updateFigure(f);
-            }
-        } else if (fi instanceof Folder) {
-            Folder f = (Folder) fi;
-            String newName = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter the new name:",
-                    f.getName());
-            if (newName != null && !newName.equals("")) {
-                f.setName(newName);
-                persistenceProvider.updateItem(f);
-            }
+        TreeItem item = getSelectedFolderItem();
+        String newName = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter the new name:",
+                item.getName());
+        if (newName != null && !newName.equals("")) {
+            figureUpdateService.setName(item, newName);
         }
     }
 
     private void deleteFigure(ActionEvent e) {
-        FolderItem fi = getSelectedFolderItem();
-        if (fi instanceof Figure) {
-            Figure f = (Figure) fi;
+        TreeItem item = getSelectedFolderItem();
+        if (item.getType() == ItemType.ITEM) {
             if (JOptionPane.showConfirmDialog((Component) e.getSource(), "Are you sure you want to delete the figure '"
-                    + f.toString()
+                    + item.getName()
                     + "'?", "Safety Warning", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                deleteFigure(f);
+                figureUpdateService.delete(item);
             }
-        } else if (fi instanceof Folder) {
-            Folder f = (Folder) fi;
+        } else if (item.getType() == ItemType.FOLDER) {
             if (JOptionPane.showConfirmDialog((Component) e.getSource(), "Are you sure you want to delete the folder '"
-                    + f.getName()
+                    + item.getName()
                     + "' and all its contents?", "Safety Warning", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                deleteFolder(f);
+                figureUpdateService.delete(item);
             }
         }
-    }
-
-    private void deleteFigure(Figure f) {
-        Folder parent = f.getParent();
-        int index = persistenceProvider.getItems(parent).indexOf(f);
-        persistenceProvider.removeItem(parent, index);
-        // TODO maybe delete video too
-        try {
-            workspace.deleteAllPictures(f.getId());
-        } catch (IOException e1) {
-            e1.printStackTrace();
-            JOptionPane.showMessageDialog(null, "IO Error occured while deleting pictures of the deleted figure: "
-                    + e1.getLocalizedMessage());
-        }
-    }
-
-    private void deleteFolder(Folder f) {
-        Folder parent = f.getParent();
-        int index = persistenceProvider.getItems(parent).indexOf(f);
-        persistenceProvider.removeItem(f.getParent(), index);
-        // TODO pictures of removed figures are not removed here, probably better done at closing the application (or in a proper backend)
     }
 
     private void moveItem(TreePath pathToMove, TreePath newPath, int newIndex) {
-        FolderItem itemToMove = (FolderItem) pathToMove.getLastPathComponent();
-        FolderItem target = (FolderItem) newPath.getLastPathComponent();
-        Folder newParent;
-        if (target instanceof Folder)
-            newParent = (Folder) target;
+        TreeItem itemToMove = (TreeItem) pathToMove.getLastPathComponent();
+        TreeItem target = (TreeItem) newPath.getLastPathComponent();
+        TreeItem newParent;
+        if (target.getType() == ItemType.FOLDER)
+            newParent = target;
         else {
-            newParent = target.getParent();
+            newParent = figuresTreeStore.getParentFolder(target);
             // FIXME newIndex is invalid in this case
             newIndex = 0;
         }
-        persistenceProvider.moveItem(itemToMove, newParent, newIndex);
-
-        persistenceProvider.updateItem(itemToMove);
+        figuresTreeStore.moveItem(itemToMove, newParent, newIndex);
     }
 
     private void cloneFigure(ActionEvent e) {
-        FolderItem fi = getSelectedFolderItem();
-        if (fi instanceof Figure) {
-            Figure f = (Figure) fi;
-            String newName = JOptionPane.showInputDialog((Component) e.getSource(),
-                    "Please enter a name for the cloned figure:", f.getName());
-            if (newName != null && !newName.equals("")) {
-                try {
-                    Figure clone = persistenceProvider.cloneFigure(f);
-                    clone.setName(newName);
-                    File from = new File(workspace.getPictureDir() + File.separator + f.getId());
-                    File to = new File(workspace.getPictureDir() + File.separator + clone.getId());
-                    FileUtils.copyDirectory(from, to);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog((Component) e.getSource(),
-                            "IO Error occured while copying pictures of the cloned figure: " + ex.getLocalizedMessage());
-                }
-            }
-        } else {
-            throw new IllegalStateException("called cloneFigure with something else than a figure: " + fi);
-        }
+        TreeItem item = getSelectedFolderItem();
+        creationService.cloneFigure(item);
     }
 
     public void newFolder(ActionEvent e) {
         String name = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter folder name:",
                 "");
         if (name != null && !name.equals("")) {
-            int index = 0;
-            FolderItem fi = getSelectedFolderItem();
-            if (!(fi instanceof Folder)) {
-                index = persistenceProvider.getItems(fi.getParent()).indexOf(fi) + 1;
-                fi = fi.getParent();
-            }
-            Folder parent = (Folder) fi;
-            persistenceProvider.newFolder(name, index, parent);
+            TreeItem item = getSelectedFolderItem();
+            creationService.createNewFolder(item, name);
         }
     }
 
@@ -471,14 +389,13 @@ public class FigureList extends JPanel {
 
     // TODO probably this should be removed (or fixed)
     public Figure getSelectedFigure() {
-        FolderItem fi = getSelectedFolderItem();
-        if (fi instanceof Figure)
-            return (Figure) fi;
-        return null;
+        TreeItem item = getSelectedFolderItem();
+        return figureUpdateService.getFigure(item);
     }
 
     public void setSelectedFigure(Figure f) {
-        TreePath path = treeModel.createTreePath(f);
+        TreeItem item = figuresTreeStore.getByRefId(f.getId());
+        TreePath path = treeModel.createTreePath(item);
         tree.setSelectionPath(path);
     }
 }

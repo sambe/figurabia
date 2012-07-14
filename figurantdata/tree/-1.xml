@@ -1,0 +1,19 @@
+<TreeItem>
+  <id>-1</id>
+  <rev>0</rev>
+  <type>FOLDER</type>
+  <name>All</name>
+  <childIds>
+    <string>5</string>
+    <string>11</string>
+    <string>33</string>
+    <string>41</string>
+    <string>42</string>
+    <string>43</string>
+    <string>44</string>
+    <string>45</string>
+    <string>46</string>
+    <string>48</string>
+    <string>52</string>
+  </childIds>
+</TreeItem>

@@ -8,8 +8,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -20,23 +20,28 @@ import javax.imageio.stream.ImageOutputStream;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
+
+import org.apache.commons.io.IOUtils;
+
+import exmoplay.access.VideoFormat;
+import exmoplay.engine.MediaPlayer;
+import exmoplay.engine.PositionListener;
+import exmoplay.engine.messages.CachedFrame;
+import exmoplay.engine.messages.PositionUpdate;
+import exmoplay.engine.ui.ControlBar;
+import exmoplay.engine.ui.VideoScreen;
 import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.workspace.Workspace;
 import figurabia.ui.framework.PlayerListener;
-import figurabia.ui.video.access.VideoFormat;
-import figurabia.ui.video.engine.MediaPlayer;
-import figurabia.ui.video.engine.PositionListener;
-import figurabia.ui.video.engine.messages.CachedFrame;
-import figurabia.ui.video.engine.messages.PositionUpdate;
-import figurabia.ui.video.engine.ui.ControlBar;
-import figurabia.ui.video.engine.ui.VideoScreen;
 
 @SuppressWarnings("serial")
 public class FigurePlayer extends JPanel {
 
-    //private Workspace workspace;
-    private FigureModel figureModel;
+    private final Workspace workspace;
+    private final BeatPictureCache beatPictureCache;
+    private final FigureModel figureModel;
 
     private MediaPlayer mediaPlayer;
     private VideoScreen videoScreen;
@@ -54,9 +59,10 @@ public class FigurePlayer extends JPanel {
 
     private long currentTime = 0;
 
-    public FigurePlayer(Workspace workspace, MediaPlayer player, FigureModel figureModel_) {
-        //this.workspace = workspace;
-        this.figureModel = figureModel_;
+    public FigurePlayer(Workspace ws, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
+        this.workspace = ws;
+        this.beatPictureCache = bpc;
+        this.figureModel = fm;
 
         mediaPlayer = player;
         videoScreen = player.createScreen();
@@ -237,13 +243,18 @@ public class FigurePlayer extends JPanel {
         return currentTime;
     }
 
-    public void captureCurrentImage(File pictureDir, int figureId, int bar, int beat, long videoNanoseconds) {
-        String pictureName = String.format("%03d-%d.jpg", bar, beat);
-        captureImage(videoNanoseconds, new File(pictureDir.getAbsolutePath() + File.separator + figureId
-                + File.separator + pictureName));
+    public void captureCurrentImage(String figureId, int bar, int beat, long videoNanoseconds) {
+        String picturePath = beatPictureCache.getPicturePath(figureId, bar, beat);
+        OutputStream os = null;
+        try {
+            os = workspace.write(picturePath);
+            captureImage(videoNanoseconds, os);
+        } finally {
+            IOUtils.closeQuietly(os);
+        }
     }
 
-    private void captureImage(long videoNanoseconds, File targetFile) {
+    private void captureImage(long videoNanoseconds, OutputStream targetStream) {
         long mediaTime = videoNanoseconds / 1000000L;
         VideoFormat format = mediaPlayer.getVideoFormat();
         double frameRate = format.getFrameRate();
@@ -267,15 +278,14 @@ public class FigurePlayer extends JPanel {
             ImageWriter writer = writers.next();
 
             // Once an ImageWriter has been obtained, its destination must be set to an ImageOutputStream:
-            ImageOutputStream ios = ImageIO.createImageOutputStream(targetFile);
+            ImageOutputStream ios = ImageIO.createImageOutputStream(targetStream);
             writer.setOutput(ios);
 
             // Finally, the image may be written to the output stream:
             writer.write(outImage);
             ios.close();
         } catch (IOException e) {
-            System.out.println("ERROR: An IO problem occured during saving of the picture: "
-                    + targetFile);
+            System.out.println("ERROR: An IO problem occured during saving of the picture");
             e.printStackTrace();
         } finally {
             frame.recycle();

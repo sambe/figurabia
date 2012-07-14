@@ -29,7 +29,7 @@ import javax.swing.event.ListSelectionListener;
 
 import net.miginfocom.swing.MigLayout;
 import figurabia.domain.Figure;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
 import figurabia.ui.FigurabiaBlackLookAndFeel;
 import figurabia.ui.util.JListSelectionFollower;
 
@@ -39,7 +39,7 @@ public class FigurePositionsView extends JPanel {
     private final static int CELL_HEIGHT = 60;
     private final static int CELL_WIDTH = 240;
 
-    private Workspace workspace;
+    private BeatPictureCache beatPictureCache;
 
     private JList list;
     private JScrollPane scrollPane;
@@ -75,8 +75,8 @@ public class FigurePositionsView extends JPanel {
         }
     };
 
-    public FigurePositionsView(Workspace workspace) {
-        this.workspace = workspace;
+    public FigurePositionsView(BeatPictureCache beatPictureCache) {
+        this.beatPictureCache = beatPictureCache;
         list = new JList();
         list.setModel(new DefaultListModel());
         list.setAutoscrolls(true);
@@ -144,7 +144,7 @@ public class FigurePositionsView extends JPanel {
         // load pictures
         positionImages = new ArrayList<Image>();
         for (int i = 0; i < n; i++) {
-            positionImages.add(workspace.getPicture(figure.getId(), i / 2 + 1, (i % 2) * 4 + 1));
+            positionImages.add(beatPictureCache.getPicture(figure.getId(), i / 2 + 1, (i % 2) * 4 + 1));
         }
 
         System.out.println("DEBUG: updated figure");

@@ -1,0 +1,12 @@
+<TreeItem>
+  <id>32</id>
+  <rev>0</rev>
+  <type>FOLDER</type>
+  <name>worst quality</name>
+  <childIds>
+    <string>28</string>
+    <string>29</string>
+    <string>30</string>
+    <string>31</string>
+  </childIds>
+</TreeItem>

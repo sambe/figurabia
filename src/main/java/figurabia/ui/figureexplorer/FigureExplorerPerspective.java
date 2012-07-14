@@ -6,34 +6,30 @@ package figurabia.ui.figureexplorer;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
 import net.miginfocom.swing.MigLayout;
+import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
-import figurabia.framework.simpleimpl.SimpleWorkspace;
-import figurabia.persistence.XStreamPersistenceProvider;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
+import figurabia.io.workspace.LocalFileWorkspace;
+import figurabia.io.workspace.Workspace;
 import figurabia.ui.figureexplorer.PositionPossibilitiesView.FigureLinkActionListener;
 import figurabia.ui.framework.Perspective;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.framework.PositionListener;
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.FigurePlayer;
-import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureExplorerPerspective extends JPanel implements Perspective {
@@ -44,13 +40,13 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
     private PositionChooser positionChooser;
     private PositionPossibilitiesView possibilitiesView;
 
-    public FigureExplorerPerspective(Workspace workspace, PersistenceProvider persistenceProvider,
-            MediaPlayer mediaPlayer, FigureModel figureModel_) {
-        figureModel = figureModel_;
-        player = new FigurePlayer(workspace, mediaPlayer, figureModel_);
-        positionsView = new FigurePositionsView(workspace);
+    public FigureExplorerPerspective(Workspace workspace, FigureStore fs, BeatPictureCache bpc,
+            MediaPlayer mediaPlayer, FigureModel fm) {
+        figureModel = fm;
+        player = new FigurePlayer(workspace, bpc, mediaPlayer, figureModel);
+        positionsView = new FigurePositionsView(bpc);
         positionChooser = new PositionChooser();
-        possibilitiesView = new PositionPossibilitiesView(workspace, persistenceProvider);
+        possibilitiesView = new PositionPossibilitiesView(fs, bpc);
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
@@ -143,33 +139,12 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         //    e.printStackTrace();
         //}
 
-        Workspace w = new SimpleWorkspace(new File("figurantdata"));
-        final PersistenceProvider pp = new XStreamPersistenceProvider(new File(w.getDatabaseDir() + File.separator
-                + "objects.xml"));
-        pp.open();
-        FigureModel figureModel = new FigureModel();
-        FigureExplorerPerspective panel = new FigureExplorerPerspective(w, pp, new MediaPlayer(), figureModel);
-        final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                try {
-                    System.out.println("DEBUG: window closed");
-                    pp.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Problem with persisting data.\n" + ex.getLocalizedMessage());
-                }
-            }
-        });
+        Workspace w = new LocalFileWorkspace(new File("figurantdata"));
+        FigureStore fs = new FigureStore(w, "/figures");
+        BeatPictureCache bpc = new BeatPictureCache(w, "/pics");
 
-        // TODO also test without this block
-        Iterator<Figure> it = pp.getAllFigures().iterator();
-        it.next();
-        it.next();
-        //it.next();
-        //it.next();
-        Figure f = it.next();
-        figureModel.setCurrentFigure(f, 0);
+        FigureModel figureModel = new FigureModel();
+        FigureExplorerPerspective panel = new FigureExplorerPerspective(w, fs, bpc, new MediaPlayer(), figureModel);
+        final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
     }
 }

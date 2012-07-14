@@ -12,84 +12,99 @@ import javax.swing.tree.TreePath;
 
 import org.jdesktop.swingx.tree.TreeModelSupport;
 
-import figurabia.domain.Folder;
-import figurabia.domain.FolderItem;
-import figurabia.framework.FolderItemChangeListener;
-import figurabia.framework.PersistenceProvider;
+import figurabia.domain.TreeItem;
+import figurabia.domain.TreeItem.ItemType;
+import figurabia.io.FiguresTreeStore;
+import figurabia.io.FiguresTreeStore.ParentChangeListener;
+import figurabia.io.store.StoreListener;
+import figurabia.io.store.StoreListener.StateChange;
 
 public class FiguresTreeModel implements TreeModel {
 
     private final TreeModelSupport treeModelSupport = new TreeModelSupport(this);
-    private final PersistenceProvider persistenceProvider;
+    private final FiguresTreeStore figuresTreeStore;
 
-    public FiguresTreeModel(PersistenceProvider pp) {
-        this.persistenceProvider = pp;
+    public FiguresTreeModel(FiguresTreeStore fts) {
+        this.figuresTreeStore = fts;
 
-        persistenceProvider.addFolderItemChangeListener(new FolderItemChangeListener() {
+        figuresTreeStore.addStoreListener(new StoreListener<TreeItem>() {
             @Override
-            public void newRootFolder() {
-                treeModelSupport.fireNewRoot();
+            public void update(figurabia.io.store.StoreListener.StateChange change, TreeItem item) {
+                switch (change) {
+                case CREATED:
+                    // not doing anything, because it cannot yet be referenced anywhere in the tree ([1] create item, [2] add its id to one already in the tree)
+                    break;
+                case UPDATED:
+                    TreeItem parent = figuresTreeStore.getParentFolder(item);
+                    TreePath parentPath = createTreePath(parent);
+                    int index = parent.getChildIds().indexOf(item.getId());
+                    treeModelSupport.fireChildChanged(parentPath, index, item);
+                    break;
+                case DELETED:
+                    // doing nothing because, the event was already sent when it was removed from the folder ([1] remove id from folder, [2] remove item from store)
+                    break;
+                }
             }
-
+        });
+        figuresTreeStore.addParentChangeListener(new ParentChangeListener() {
             @Override
-            public void itemRemoved(Folder parent, int index, FolderItem item) {
-                TreePath treePath = createTreePath(parent);
-                treeModelSupport.fireChildRemoved(treePath, index, item);
-            }
-
-            @Override
-            public void itemChanged(Folder parent, int index, FolderItem item) {
-                TreePath treePath = createTreePath(parent);
-                treeModelSupport.fireChildChanged(treePath, index, item);
-            }
-
-            @Override
-            public void itemAdded(Folder parent, int index, FolderItem item) {
+            public void update(StateChange change, TreeItem parent, int index, TreeItem child) {
                 TreePath parentPath = createTreePath(parent);
-                treeModelSupport.fireChildAdded(parentPath, index, item);
+                switch (change) {
+                case CREATED:
+                    treeModelSupport.fireChildAdded(parentPath, index, child);
+                    break;
+                case UPDATED:
+                    treeModelSupport.fireChildChanged(parentPath, index, child);
+                    break;
+                case DELETED:
+                    treeModelSupport.fireChildRemoved(parentPath, index, child);
+                    break;
+                }
             }
         });
     }
 
-    private Object[] createTreePathArray(FolderItem item, int n) {
+    private Object[] createTreePathArray(TreeItem item, int n) {
         if (item == null)
             return new Object[n];
-        Object[] array = createTreePathArray(item.getParent(), n + 1);
+        Object[] array = createTreePathArray(figuresTreeStore.getParentFolder(item), n + 1);
         array[array.length - 1 - n] = item;
         return array;
     }
 
-    public TreePath createTreePath(FolderItem item) {
+    public TreePath createTreePath(TreeItem item) {
         return new TreePath(createTreePathArray(item, 0));
     }
 
     @Override
     public Object getRoot() {
-        return persistenceProvider.getRootFolder();
+        return figuresTreeStore.getRootFolder();
     }
 
     @Override
     public boolean isLeaf(Object node) {
-        return !(node instanceof Folder);
+        return ((TreeItem) node).getType() == ItemType.ITEM;
     }
 
     @Override
     public int getChildCount(Object parent) {
-        if (parent instanceof Folder) {
-            List<FolderItem> items = persistenceProvider.getItems((Folder) parent);
-            return items == null ? 0 : items.size();
+        if (parent instanceof TreeItem) {
+            List<String> childIds = ((TreeItem) parent).getChildIds();
+            return childIds == null ? 0 : childIds.size();
         }
         return 0;
     }
 
     @Override
     public Object getChild(Object parent, int index) {
-        return persistenceProvider.getItems((Folder) parent).get(index);
+        String id = ((TreeItem) parent).getChildIds().get(index);
+        return figuresTreeStore.read(id);
     }
 
     @Override
     public int getIndexOfChild(Object parent, Object child) {
-        return persistenceProvider.getItems((Folder) parent).indexOf(child);
+        return ((TreeItem) parent).getChildIds().indexOf(((TreeItem) child).getId());
     }
 
     @Override
@@ -107,5 +122,4 @@ public class FiguresTreeModel implements TreeModel {
     public void removeTreeModelListener(TreeModelListener l) {
         treeModelSupport.removeTreeModelListener(l);
     }
-
 }

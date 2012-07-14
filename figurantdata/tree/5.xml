@@ -1,0 +1,12 @@
+<TreeItem>
+  <id>5</id>
+  <rev>0</rev>
+  <type>FOLDER</type>
+  <name>partial</name>
+  <childIds>
+    <string>1</string>
+    <string>2</string>
+    <string>3</string>
+    <string>4</string>
+  </childIds>
+</TreeItem>

@@ -10,8 +10,6 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,26 +26,29 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import com.xuggle.ferry.JNIMemoryManager;
 import com.xuggle.ferry.JNIMemoryManager.MemoryModel;
 
+import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
-import figurabia.framework.simpleimpl.SimpleWorkspace;
-import figurabia.persistence.XStreamPersistenceProvider;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
+import figurabia.io.FiguresTreeStore;
+import figurabia.io.VideoDir;
+import figurabia.io.VideoMetaDataStore;
+import figurabia.io.workspace.LocalFileWorkspace;
+import figurabia.io.workspace.Workspace;
 import figurabia.service.FigureCreationService;
+import figurabia.service.FigureUpdateService;
 import figurabia.ui.figureeditor.FigureEditPerspective;
 import figurabia.ui.figureexplorer.FigureExplorerPerspective;
 import figurabia.ui.figuremapper.FigureMapperPerspective;
 import figurabia.ui.framework.Perspective;
-import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class ApplicationFrame extends JFrame {
@@ -55,8 +56,16 @@ public class ApplicationFrame extends JFrame {
     private final static int INITIAL_WIDTH = 1000;
     private final static int INITIAL_HEIGHT = 750;
 
-    private PersistenceProvider persistenceProvider;
     private Workspace workspace;
+
+    private final FigureStore figureStore;
+    private final FiguresTreeStore treeStore;
+    private final BeatPictureCache beatPictureCache;
+    private final VideoMetaDataStore videoMetaDataStore;
+    private final VideoDir videoDir;
+
+    private final FigureCreationService figureCreationService;
+    private final FigureUpdateService figureUpdateService;
 
     private CardLayout cardLayout;
 
@@ -78,10 +87,16 @@ public class ApplicationFrame extends JFrame {
 
     private File currentDir = null;
 
-    public ApplicationFrame(Workspace workspace_, PersistenceProvider persistenceProvider_) throws IOException {
-        this.workspace = workspace_;
-        this.persistenceProvider = persistenceProvider_;
-        this.persistenceProvider.open();
+    public ApplicationFrame(Workspace ws) throws IOException {
+        this.workspace = ws;
+        this.figureStore = new FigureStore(ws, "/figures");
+        this.treeStore = new FiguresTreeStore(ws, "/tree");
+        this.beatPictureCache = new BeatPictureCache(ws, "/pics");
+        this.videoMetaDataStore = new VideoMetaDataStore(ws, "/vids/meta");
+        this.videoDir = new VideoDir(ws, "/vids", videoMetaDataStore);
+
+        this.figureCreationService = new FigureCreationService(ws, figureStore, videoDir, treeStore);
+        this.figureUpdateService = new FigureUpdateService(ws, figureStore, treeStore, beatPictureCache);
 
         setTitle("Figurabia");
         Toolkit tk = Toolkit.getDefaultToolkit();
@@ -100,7 +115,8 @@ public class ApplicationFrame extends JFrame {
             @Override
             public void update(Figure figure, int index) {
                 // set video of figure
-                File videoFile = new File(workspace.getVideoDir().getAbsoluteFile() + "/" + figure.getVideoName());
+                String videoPath = "/vids/" + figure.getVideoName();
+                File videoFile = workspace.fileForReading(videoPath);
                 long initialPosition = 0;
                 if (index != -1) {
                     initialPosition = figure.getVideoPositions().get(index) / 1000000L;
@@ -110,15 +126,17 @@ public class ApplicationFrame extends JFrame {
         });
 
         // create and add FigureExplorerPerspective
-        explorerPerspective = new FigureExplorerPerspective(workspace, persistenceProvider, player, figureModel);
+        explorerPerspective = new FigureExplorerPerspective(workspace, figureStore, beatPictureCache, player,
+                figureModel);
         contentPane.add(explorerPerspective, explorerPerspective.getPerspectiveId());
 
         // create and add FigureEditPerspective
-        editPerspective = new FigureEditPerspective(workspace, persistenceProvider, player, figureModel);
+        editPerspective = new FigureEditPerspective(workspace, treeStore, beatPictureCache, figureCreationService,
+                figureUpdateService, player, figureModel);
         contentPane.add(editPerspective, editPerspective.getPerspectiveId());
 
         // create and add FigureMapperPerspective
-        mapperPerspective = new FigureMapperPerspective(persistenceProvider);
+        mapperPerspective = new FigureMapperPerspective(figureStore);
         contentPane.add(mapperPerspective, mapperPerspective.getPerspectiveId());
 
         // set up menu bar
@@ -178,34 +196,6 @@ public class ApplicationFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         setVisible(true);
-
-        // set up automatic saving on closing
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                try {
-                    System.out.println("DEBUG: window closed");
-                    ApplicationFrame.this.persistenceProvider.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Problem with persisting data.\n" + ex.getLocalizedMessage());
-                }
-            }
-        });
-
-        Timer timer = new Timer(5 * 60 * 1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    System.out.println("DEBUG: auto saving data...");
-                    ApplicationFrame.this.persistenceProvider.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Problem with autosaving of data.\n" + ex.getLocalizedMessage());
-                }
-            }
-        });
-        timer.start();
     }
 
     private void importVideo() {
@@ -228,7 +218,7 @@ public class ApplicationFrame extends JFrame {
         // create a new figure
         Figure figure = null;
         try {
-            figure = new FigureCreationService(workspace, persistenceProvider).createNewFigure(fileChooser.getSelectedFile());
+            figure = figureCreationService.createNewFigure(fileChooser.getSelectedFile());
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, e.getLocalizedMessage());
@@ -269,9 +259,7 @@ public class ApplicationFrame extends JFrame {
 
         JNIMemoryManager.setMemoryModel(MemoryModel.NATIVE_BUFFERS);
 
-        final Workspace w = new SimpleWorkspace(new File("figurantdata"));
-        final PersistenceProvider pp = new XStreamPersistenceProvider(new File(w.getDatabaseDir() + File.separator
-                + "objects.xml"));
+        final Workspace w = new LocalFileWorkspace(new File("figurantdata"));
 
         // do UI construction in Swing's Event Dispatch Thread
         SwingUtilities.invokeLater(new Runnable() {
@@ -279,7 +267,7 @@ public class ApplicationFrame extends JFrame {
             @Override
             public void run() {
                 try {
-                    new ApplicationFrame(w, pp);
+                    new ApplicationFrame(w);
                 } catch (Exception e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null, "Problem during startup:\n" + e.getLocalizedMessage());

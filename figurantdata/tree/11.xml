@@ -1,0 +1,13 @@
+<TreeItem>
+  <id>11</id>
+  <rev>0</rev>
+  <type>FOLDER</type>
+  <name>too dark</name>
+  <childIds>
+    <string>6</string>
+    <string>7</string>
+    <string>8</string>
+    <string>9</string>
+    <string>10</string>
+  </childIds>
+</TreeItem>

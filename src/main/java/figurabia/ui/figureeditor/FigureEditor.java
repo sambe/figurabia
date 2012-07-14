@@ -13,20 +13,20 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import net.miginfocom.swing.MigLayout;
+import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureListener;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.workspace.Workspace;
 import figurabia.service.FigureCreationService;
+import figurabia.service.FigureUpdateService;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.framework.PositionListener;
 import figurabia.ui.positionviewer.PositionDialogEditor;
-import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureEditor extends JPanel {
@@ -39,19 +39,19 @@ public class FigureEditor extends JPanel {
 
     private FigureModel figureModel;
 
-    private FigureCreationService figureCreationService;
+    private final FigureCreationService figureCreationService;
 
     private int selected = -1;
     private boolean inSetter = false;
     private boolean inPositionChangedAfterListSelect = false;
 
-    public FigureEditor(Workspace workspace, PersistenceProvider persistenceProvider, MediaPlayer player,
-            FigureModel figureModel_) {
-        this.figureModel = figureModel_;
-        figureCreationService = new FigureCreationService(workspace, persistenceProvider);
+    public FigureEditor(Workspace workspace, BeatPictureCache bpc, MediaPlayer player,
+            FigureModel fm, FigureCreationService fcs, FigureUpdateService fus) {
+        this.figureModel = fm;
+        this.figureCreationService = fcs;
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
 
-        positionList = new PositionList(workspace, persistenceProvider);
+        positionList = new PositionList(workspace, bpc, fus.createElementNames());
         positionList.setAutoscrolls(true);
         add(positionList, "south,gap 0 1");
 
@@ -59,7 +59,7 @@ public class FigureEditor extends JPanel {
         centerPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
 
         //pictureView = new PositionPictureView(workspace);
-        pictureExtractor = new VideoPictureExtractor(workspace, persistenceProvider, player, figureModel_);
+        pictureExtractor = new VideoPictureExtractor(workspace, bpc, player, fm);
         dialogEditor = new PositionDialogEditor();
         //centerPanel.add(pictureView, "push,gap 0 1 0 6");
         centerPanel.add(pictureExtractor, "push,gap 0 1 0 6");
@@ -149,24 +149,11 @@ public class FigureEditor extends JPanel {
             }
         });
 
-        // when the figure is modified
-        persistenceProvider.addFigureChangeListener(new FigureListener() {
-            @Override
-            public void update(ChangeType type, Figure f) {
-                if (ChangeType.FIGURE_CHANGED == type && f == figureModel.getCurrentFigure()) {
-                    positionList.setFigure(f); // just to update the list, when it has been changed (e.g. activated)
-                }
-            }
-        });
-
         figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
             public void update(Figure figure, int position) {
                 figureCreationService.prepareFigure(figure); // TODO move this to the appropriate place (creation)
                 positionList.setFigure(figure);
-                /*if (position != -1) {
-                    pictureExtractor.setPosition(position); // TODO here is probably not an intuitive place to have this
-                }*/
             }
         });
 

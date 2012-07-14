@@ -19,12 +19,9 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.ImageObserver;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
@@ -52,8 +49,8 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.workspace.Workspace;
 import figurabia.ui.FigurabiaBlackLookAndFeel;
 import figurabia.ui.util.JListPopupMenu;
 import figurabia.ui.util.JListSelectionFollower;
@@ -61,20 +58,16 @@ import figurabia.ui.util.JListSelectionFollower;
 @SuppressWarnings("serial")
 public class PositionList extends JPanel {
 
-    private PersistenceProvider persistenceProvider;
-
-    private Workspace workspace;
+    private final Workspace workspace;
+    private final BeatPictureCache beatPictureCache;
 
     private JList list;
 
     private Figure figure;
-
     private List<Image> positionImages;
-
     private Set<String> elementNames;
 
     private JMenuItem deletePosition;
-
     private JPopupMenu popupMenu;
 
     private static final Color BACKGROUND_COLOR;
@@ -89,9 +82,10 @@ public class PositionList extends JPanel {
         }
     }
 
-    public PositionList(Workspace workspace_, PersistenceProvider persistenceProvider) {
-        this.persistenceProvider = persistenceProvider;
-        this.workspace = workspace_;
+    public PositionList(Workspace ws, BeatPictureCache bpc, Set<String> elementNames) {
+        this.workspace = ws;
+        this.beatPictureCache = bpc;
+        this.elementNames = elementNames;
         list = new JList();
         list.setModel(new DefaultListModel());
         list.setCellRenderer(new PositionListCellRenderer());
@@ -109,8 +103,6 @@ public class PositionList extends JPanel {
 
         setMinimumSize(new Dimension(400, 180));
         setPreferredSize(new Dimension(400, 180));
-
-        elementNames = createElementNames();
 
         // set up mouse listener for inplace editing of element name
         list.addMouseListener(new MouseAdapter() {
@@ -174,8 +166,8 @@ public class PositionList extends JPanel {
                 // delete picture of position
                 PuertoPosition p = positions.get(selected);
                 int bar = barIds.get(selected);
-                String pictureName = workspace.getPictureName(figure.getId(), bar, p.getBeat());
-                new File(workspace.getPictureDir() + pictureName).delete();
+                String pictureName = beatPictureCache.getPictureName(figure.getId(), bar, p.getBeat());
+                workspace.delete("/pics" + pictureName);
                 positions.remove(selected);
                 videoPositions.remove(selected);
                 barIds.remove(selected);
@@ -369,7 +361,7 @@ public class PositionList extends JPanel {
         for (int i = 0; i < n; i++) {
             int bar = figure.getBarIds().get(i);
             int beat = figure.getPositions().get(i).getBeat();
-            positionImages.add(workspace.getPicture(figure.getId(), bar, beat));
+            positionImages.add(beatPictureCache.getPicture(figure.getId(), bar, beat));
         }
         repaint();
     }
@@ -377,8 +369,8 @@ public class PositionList extends JPanel {
     public void updatePicture(int index) {
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
-        workspace.removePictureFromCache(figure.getId(), bar, beat);
-        positionImages.set(index, workspace.getPicture(figure.getId(), bar, beat));
+        beatPictureCache.removePictureFromCache(figure.getId(), bar, beat);
+        positionImages.set(index, beatPictureCache.getPicture(figure.getId(), bar, beat));
         repaint();
     }
 
@@ -418,19 +410,4 @@ public class PositionList extends JPanel {
         list.setSelectedIndex(index);
     }
 
-    private Set<String> createElementNames() {
-        Set<String> names = new TreeSet<String>(Arrays.asList("", "360", "Ambulancia", "Caminata", "Copa",
-                "Dile que no", "Doppeldrehung", "Dreifachdrehung", "Encuentro", "Enchufla", "Grundschritt",
-                "Inside turn", "Lazo", "Manitos volandos", "Open break", "Outside turn", "Titanic"));
-
-        // collect all element names in use
-        for (Figure f : persistenceProvider.getAllFigures()) {
-            for (Element e : f.getElements()) {
-                if (e != null && e.getName() != null)
-                    names.add(e.getName());
-            }
-        }
-
-        return names;
-    }
 }

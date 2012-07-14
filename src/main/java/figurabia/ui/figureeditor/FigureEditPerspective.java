@@ -4,28 +4,30 @@
  */
 package figurabia.ui.figureeditor;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 
 import net.miginfocom.swing.MigLayout;
+import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
-import figurabia.framework.simpleimpl.SimpleWorkspace;
-import figurabia.persistence.XStreamPersistenceProvider;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
+import figurabia.io.FiguresTreeStore;
+import figurabia.io.VideoDir;
+import figurabia.io.VideoMetaDataStore;
+import figurabia.io.workspace.LocalFileWorkspace;
+import figurabia.io.workspace.Workspace;
+import figurabia.service.FigureCreationService;
+import figurabia.service.FigureUpdateService;
 import figurabia.ui.framework.Perspective;
 import figurabia.ui.util.SimplePanelFrame;
-import figurabia.ui.video.engine.MediaPlayer;
 
 @SuppressWarnings("serial")
 public class FigureEditPerspective extends JPanel implements Perspective {
@@ -34,11 +36,12 @@ public class FigureEditPerspective extends JPanel implements Perspective {
     private FigureList figureList;
     private FigureEditor figureEditor;
 
-    public FigureEditPerspective(Workspace workspace, PersistenceProvider persistenceProvider, MediaPlayer player,
+    public FigureEditPerspective(Workspace workspace, FiguresTreeStore treeStore, BeatPictureCache bpc,
+            FigureCreationService fcs, FigureUpdateService fus, MediaPlayer player,
             FigureModel figureModel_) {
         this.figureModel = figureModel_;
-        figureList = new FigureList(workspace, persistenceProvider);
-        figureEditor = new FigureEditor(workspace, persistenceProvider, player, figureModel_);
+        figureList = new FigureList(treeStore, fcs, fus);
+        figureEditor = new FigureEditor(workspace, bpc, player, figureModel_, fcs, fus);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, figureList, figureEditor);
@@ -99,24 +102,16 @@ public class FigureEditPerspective extends JPanel implements Perspective {
         //    e.printStackTrace();
         //}
 
-        Workspace w = new SimpleWorkspace(new File("figurantdata"));
-        final PersistenceProvider pp = new XStreamPersistenceProvider(new File(w.getDatabaseDir() + File.separator
-                + "objects.xml"));
-        pp.open();
-        FigureEditPerspective panel = new FigureEditPerspective(w, pp, new MediaPlayer(), new FigureModel());
+        Workspace w = new LocalFileWorkspace(new File("figurantdata"));
+        FigureStore fs = new FigureStore(w, "/figures");
+        FiguresTreeStore fts = new FiguresTreeStore(w, "/tree");
+        BeatPictureCache bpc = new BeatPictureCache(w, "/pics");
+        VideoMetaDataStore vmds = new VideoMetaDataStore(w, "/vids/meta");
+        VideoDir videoDir = new VideoDir(w, "/vids", vmds);
+
+        FigureEditPerspective panel = new FigureEditPerspective(w, fts, bpc, new FigureCreationService(w, fs, videoDir,
+                fts), new FigureUpdateService(w, fs, fts, bpc), new MediaPlayer(), new FigureModel());
         final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                try {
-                    System.out.println("DEBUG: window closed");
-                    pp.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Problem with persisting data.\n" + ex.getLocalizedMessage());
-                }
-            }
-        });
     }
 
     @Override

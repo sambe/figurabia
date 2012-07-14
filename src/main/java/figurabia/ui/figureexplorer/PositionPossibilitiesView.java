@@ -24,8 +24,8 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.PersistenceProvider;
-import figurabia.framework.Workspace;
+import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
 import figurabia.service.FiguresByPositionService;
 import figurabia.service.FiguresByPositionService.Result;
 import figurabia.ui.positionviewer.PositionPainter;
@@ -33,9 +33,9 @@ import figurabia.ui.positionviewer.PositionPainter;
 @SuppressWarnings("serial")
 public class PositionPossibilitiesView extends JPanel {
 
-    private Workspace workspace;
-    private PersistenceProvider persistenceProvider;
-    private FiguresByPositionService service;
+    private final FigureStore figureStore;
+    private final BeatPictureCache beatPictureCache;
+    private final FiguresByPositionService service;
 
     private PuertoPosition currentPosition;
     private PuertoOffset currentOffset;
@@ -46,9 +46,9 @@ public class PositionPossibilitiesView extends JPanel {
 
     private List<FigureLinkActionListener> actionListeners = new ArrayList<FigureLinkActionListener>();
 
-    public PositionPossibilitiesView(Workspace w, PersistenceProvider pp) {
-        workspace = w;
-        persistenceProvider = pp;
+    public PositionPossibilitiesView(FigureStore fs, BeatPictureCache bpc) {
+        figureStore = fs;
+        beatPictureCache = bpc;
         service = new FiguresByPositionService();
         updateIndex();
 
@@ -60,7 +60,7 @@ public class PositionPossibilitiesView extends JPanel {
      * Updates the index to reflect the current state
      */
     public void updateIndex() {
-        service.init(persistenceProvider.getAllActiveFigures());
+        service.init(figureStore.getAllActiveFigures());
     }
 
     /**
@@ -164,7 +164,8 @@ public class PositionPossibilitiesView extends JPanel {
             thumbs = new ArrayList<Image>();
             for (int i = 0; i < figures.size(); i++) {
                 int index = figures.get(i).index + 1;
-                Image image = workspace.getPicture(figures.get(i).figure.getId(), index / 2 + 1, (index % 2) * 4 + 1);
+                Image image = beatPictureCache.getPicture(figures.get(i).figure.getId(), index / 2 + 1,
+                        (index % 2) * 4 + 1);
                 Image thumb = image.getScaledInstance(SQUARE_SIDE * 4 / 3, SQUARE_SIDE, Image.SCALE_DEFAULT);
                 thumbs.add(thumb);
             }
