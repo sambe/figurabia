@@ -21,6 +21,7 @@ import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
 import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
 import figurabia.io.workspace.Workspace;
 import figurabia.service.FigureCreationService;
 import figurabia.service.FigureUpdateService;
@@ -45,7 +46,7 @@ public class FigureEditor extends JPanel {
     private boolean inSetter = false;
     private boolean inPositionChangedAfterListSelect = false;
 
-    public FigureEditor(Workspace workspace, BeatPictureCache bpc, MediaPlayer player,
+    public FigureEditor(Workspace workspace, FigureStore fs, BeatPictureCache bpc, MediaPlayer player,
             FigureModel fm, FigureCreationService fcs, FigureUpdateService fus) {
         this.figureModel = fm;
         this.figureCreationService = fcs;
@@ -59,7 +60,7 @@ public class FigureEditor extends JPanel {
         centerPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
 
         //pictureView = new PositionPictureView(workspace);
-        pictureExtractor = new VideoPictureExtractor(workspace, bpc, player, fm);
+        pictureExtractor = new VideoPictureExtractor(workspace, fs, bpc, player, fm);
         dialogEditor = new PositionDialogEditor();
         //centerPanel.add(pictureView, "push,gap 0 1 0 6");
         centerPanel.add(pictureExtractor, "push,gap 0 1 0 6");

@@ -4,10 +4,11 @@
  */
 package figurabia.io.workspace;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,10 +61,15 @@ public abstract class AbstractWorkspace implements Workspace {
     }
 
     @Override
+    public void finishedWriting(String path, boolean newResource) {
+        notifyWorkspaceUpdateListeners(path, newResource ? ChangeType.CREATED : ChangeType.UPDATED);
+    }
+
+    @Override
     public InputStream read(String resourcePath) {
         File f = fileForReading(resourcePath);
         try {
-            FileInputStream fis = new FileInputStream(f);
+            InputStream fis = new BufferedInputStream(new FileInputStream(f));
             return fis;
         } catch (FileNotFoundException e) {
             throw new WorkspaceException("Could not open InputStream to resource " + resourcePath, e);
@@ -74,7 +80,7 @@ public abstract class AbstractWorkspace implements Workspace {
     public OutputStream write(String resourcePath) {
         File f = fileForWriting(resourcePath);
         try {
-            FileOutputStream fos = FileUtils.openOutputStream(f);
+            OutputStream fos = new BufferedOutputStream(FileUtils.openOutputStream(f));
             return fos;
         } catch (IOException e) {
             throw new WorkspaceException("Could not open OutputStream to resource " + resourcePath, e);

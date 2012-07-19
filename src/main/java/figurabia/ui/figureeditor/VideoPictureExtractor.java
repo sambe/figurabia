@@ -19,6 +19,8 @@ import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
 import figurabia.framework.FigurePositionListener;
 import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
+import figurabia.io.store.StoreListener;
 import figurabia.io.workspace.Workspace;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.video.FigurePlayer;
@@ -27,6 +29,7 @@ import figurabia.ui.video.FigurePlayer;
 public class VideoPictureExtractor extends JPanel {
 
     private final Workspace workspace;
+    private final FigureStore figureStore;
     private final BeatPictureCache beatPictureCache;
     private final FigureModel figureModel;
 
@@ -35,8 +38,9 @@ public class VideoPictureExtractor extends JPanel {
     private JButton new5Button;
     private JButton correctButton;
 
-    public VideoPictureExtractor(Workspace ws, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
+    public VideoPictureExtractor(Workspace ws, FigureStore fs, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
         this.workspace = ws;
+        this.figureStore = fs;
         this.beatPictureCache = bpc;
         this.figureModel = fm;
 
@@ -57,11 +61,20 @@ public class VideoPictureExtractor extends JPanel {
         correctButton.setEnabled(false);
         add(correctButton, "");
 
-        // when the selected figure changes
+        // when the user selects a different figure
         figureModel.addFigurePositionListener(new FigurePositionListener() {
             @Override
             public void update(Figure figure, int position) {
                 updateButtonsEnabled(figure);
+            }
+        });
+
+        // when the user changes the figure between active and inactive
+        figureStore.addStoreListener(new StoreListener<Figure>() {
+            @Override
+            public void update(StateChange change, Figure o) {
+                if (change == StateChange.UPDATED && o.equals(figureModel.getCurrentFigure()))
+                    updateButtonsEnabled(o);
             }
         });
     }

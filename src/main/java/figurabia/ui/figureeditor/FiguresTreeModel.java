@@ -36,9 +36,13 @@ public class FiguresTreeModel implements TreeModel {
                     break;
                 case UPDATED:
                     TreeItem parent = figuresTreeStore.getParentFolder(item);
-                    TreePath parentPath = createTreePath(parent);
-                    int index = parent.getChildIds().indexOf(item.getId());
-                    treeModelSupport.fireChildChanged(parentPath, index, item);
+                    if (parent == null) {
+                        treeModelSupport.fireNewRoot();
+                    } else {
+                        TreePath parentPath = createTreePath(parent);
+                        int index = parent.getChildIds().indexOf(item.getId());
+                        treeModelSupport.fireChildChanged(parentPath, index, item);
+                    }
                     break;
                 case DELETED:
                     // doing nothing because, the event was already sent when it was removed from the folder ([1] remove id from folder, [2] remove item from store)
@@ -74,7 +78,8 @@ public class FiguresTreeModel implements TreeModel {
     }
 
     public TreePath createTreePath(TreeItem item) {
-        return new TreePath(createTreePathArray(item, 0));
+        Object[] treePathArray = createTreePathArray(item, 0);
+        return new TreePath(treePathArray);
     }
 
     @Override
@@ -89,11 +94,12 @@ public class FiguresTreeModel implements TreeModel {
 
     @Override
     public int getChildCount(Object parent) {
-        if (parent instanceof TreeItem) {
-            List<String> childIds = ((TreeItem) parent).getChildIds();
-            return childIds == null ? 0 : childIds.size();
-        }
-        return 0;
+        TreeItem item = (TreeItem) parent;
+        List<String> childIds = item.getChildIds();
+        if (childIds == null)
+            return 0;
+        else
+            return childIds.size();
     }
 
     @Override

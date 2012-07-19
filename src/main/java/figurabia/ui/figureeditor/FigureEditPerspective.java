@@ -36,12 +36,12 @@ public class FigureEditPerspective extends JPanel implements Perspective {
     private FigureList figureList;
     private FigureEditor figureEditor;
 
-    public FigureEditPerspective(Workspace workspace, FiguresTreeStore treeStore, BeatPictureCache bpc,
+    public FigureEditPerspective(Workspace workspace, FigureStore fs, FiguresTreeStore treeStore, BeatPictureCache bpc,
             FigureCreationService fcs, FigureUpdateService fus, MediaPlayer player,
             FigureModel figureModel_) {
         this.figureModel = figureModel_;
         figureList = new FigureList(treeStore, fcs, fus);
-        figureEditor = new FigureEditor(workspace, bpc, player, figureModel_, fcs, fus);
+        figureEditor = new FigureEditor(workspace, fs, bpc, player, figureModel_, fcs, fus);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, figureList, figureEditor);
@@ -109,7 +109,8 @@ public class FigureEditPerspective extends JPanel implements Perspective {
         VideoMetaDataStore vmds = new VideoMetaDataStore(w, "/vids/meta");
         VideoDir videoDir = new VideoDir(w, "/vids", vmds);
 
-        FigureEditPerspective panel = new FigureEditPerspective(w, fts, bpc, new FigureCreationService(w, fs, videoDir,
+        FigureEditPerspective panel = new FigureEditPerspective(w, fs, fts, bpc, new FigureCreationService(w, fs,
+                videoDir,
                 fts), new FigureUpdateService(w, fs, fts, bpc), new MediaPlayer(), new FigureModel());
         final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
     }

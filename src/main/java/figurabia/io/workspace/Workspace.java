@@ -40,6 +40,15 @@ public interface Workspace {
     void removeWorkspaceUpdateListener(String pathPrevix, WorkspaceUpdateListener l);
 
     /**
+     * After each successful writing operation it is mandatory to call this method or the workspace update listeners
+     * won't receive an event.
+     * 
+     * @param path the created/updated path
+     * @param newResource whether it was created (true) or just updated (false)
+     */
+    void finishedWriting(String path, boolean newResource);
+
+    /**
      * Returns a list of resource paths for all the resources below a base path
      * 
      * @param basePath the base path

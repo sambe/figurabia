@@ -62,6 +62,8 @@ public class LocalFileWorkspace extends AbstractWorkspace {
         File f = resPathToFile(resourcePath);
         if (!f.delete())
             throw new WorkspaceException("Resource " + resourcePath + " could not be successfully deleted");
+        notifyWorkspaceUpdateListeners(resourcePath, ChangeType.DELETED);
+        // TODO maybe events should be sent for all resources in sub paths recursively (or a DIR_DELETED event)
     }
 
     @Override
@@ -80,6 +82,8 @@ public class LocalFileWorkspace extends AbstractWorkspace {
         } catch (IOException e) {
             throw new WorkspaceException("Error moving resource " + oldPath + " to " + newPath, e);
         }
+        notifyWorkspaceUpdateListeners(oldPath, ChangeType.DELETED);
+        notifyWorkspaceUpdateListeners(newPath, ChangeType.CREATED);
     }
 
     @Override
@@ -93,6 +97,8 @@ public class LocalFileWorkspace extends AbstractWorkspace {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        notifyWorkspaceUpdateListeners(copyPath, ChangeType.CREATED);
+        // TODO maybe there should be a special DIR_CREATED event
     }
 
 }

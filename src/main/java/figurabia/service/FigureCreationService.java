@@ -63,10 +63,8 @@ public class FigureCreationService {
         }
         TreeItem itemRef = new TreeItem(null, ItemType.ITEM, f.getName());
         itemRef.setRefId(f.getId());
-        String itemRefId = treeStore.create(itemRef);
-
-        parent.getChildIds().add(index, itemRefId);
-        treeStore.update(parent);
+        treeStore.create(itemRef);
+        treeStore.insertItem(parent, index, itemRef);
 
         return f;
     }

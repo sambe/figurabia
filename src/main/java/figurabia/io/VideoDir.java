@@ -82,6 +82,7 @@ public class VideoDir {
             IOUtils.closeQuietly(is);
             IOUtils.closeQuietly(os);
         }
+        workspace.finishedWriting(videoPath, true);
 
         // add an entry to metaDataStore
         VideoMetaData md = new VideoMetaData();

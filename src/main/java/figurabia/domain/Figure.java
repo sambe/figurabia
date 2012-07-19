@@ -209,8 +209,6 @@ public class Figure implements Serializable, Cloneable, Identifiable {
         if (obj instanceof Figure) {
             Figure f = (Figure) obj;
             if (id.equals(f.id)) {
-                if (this != f)
-                    throw new IllegalStateException("Found two different figure objects with id " + id);
                 return true;
             }
         }

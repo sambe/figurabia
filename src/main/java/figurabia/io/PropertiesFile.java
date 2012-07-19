@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
+import org.apache.commons.io.IOUtils;
+
 import figurabia.io.workspace.Workspace;
 import figurabia.io.workspace.Workspace.ChangeType;
 import figurabia.io.workspace.Workspace.WorkspaceUpdateListener;
@@ -63,19 +65,15 @@ public class PropertiesFile {
 
     private void save() {
         OutputStream os = null;
+        boolean existed = workspace.exists(path);
         try {
             os = workspace.write(path);
             properties.store(os, null);
         } catch (IOException e) {
             throw new IllegalStateException("error in saving properties", e);
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            IOUtils.closeQuietly(os);
         }
+        workspace.finishedWriting(path, !existed);
     }
 }

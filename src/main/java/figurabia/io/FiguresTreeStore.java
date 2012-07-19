@@ -25,7 +25,7 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
 
     private Map<String, TreeItem> parentFolder = new HashMap<String, TreeItem>();
     private Map<String, TreeItem> byRefId = new HashMap<String, TreeItem>();
-    private Map<TreeItem, List<String>> childItems = new HashMap<TreeItem, List<String>>();
+    private Map<String, List<String>> childItems = new HashMap<String, List<String>>();
     private List<ParentChangeListener> parentChangeListeners = new ArrayList<FiguresTreeStore.ParentChangeListener>();
 
     protected TreeItem rootFolder;
@@ -46,7 +46,7 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
             if (item.getType() == ItemType.ITEM) {
                 byRefId.put(item.getRefId(), item);
             }
-            childItems.put(item, new ArrayList<String>(item.getChildIds()));
+            childItems.put(item.getId(), new ArrayList<String>(item.getChildIds()));
         }
 
         addStoreListener(new StoreListener<TreeItem>() {
@@ -74,8 +74,8 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
     }
 
     private void updateParentFolder(TreeItem item) {
-        // find difference of change
-        List<String> previousIds = childItems.get(item);
+        // find difference of change (childItems keeps "backup" for comparison)
+        List<String> previousIds = childItems.get(item.getId());
         if (previousIds == null)
             previousIds = Collections.emptyList();
         Set<String> removedIds = new HashSet<String>(previousIds);
@@ -97,7 +97,7 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
             notifyParentChangeListener(StateChange.CREATED, item, index, child);
         }
 
-        childItems.put(item, new ArrayList<String>(item.getChildIds()));
+        childItems.put(item.getId(), new ArrayList<String>(item.getChildIds()));
     }
 
     public interface ParentChangeListener {

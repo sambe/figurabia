@@ -55,6 +55,8 @@ public class BeatPictureCache {
     }
 
     public void deleteAllPictures(String figureId) throws IOException {
-        workspace.delete(basePath + "/" + figureId);
+        String path = basePath + "/" + figureId;
+        if (workspace.exists(path))
+            workspace.delete(path);
     }
 }

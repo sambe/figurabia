@@ -77,16 +77,19 @@ public class XStreamStore<T extends Identifiable> extends AbstractStore<T> {
 
     private long getHighestExistingId() {
         List<String> resources = workspace.list(basePath);
+        int offset = basePath.length() + 1;
         long highest = 0;
         for (String r : resources) {
             if (r.endsWith(SUFFIX)) {
-                String numString = r.substring(0, r.length() - 4);
-                try {
-                    long num = Long.valueOf(numString);
-                    if (num > highest)
-                        highest = num;
-                } catch (NumberFormatException e) {
-                    // just continue
+                String numString = r.substring(offset, r.length() - SUFFIX.length());
+                if (Character.isDigit(numString.charAt(0))) {
+                    try {
+                        long num = Long.valueOf(numString);
+                        if (num > highest)
+                            highest = num;
+                    } catch (NumberFormatException e) {
+                        // just continue
+                    }
                 }
             }
         }
@@ -107,7 +110,7 @@ public class XStreamStore<T extends Identifiable> extends AbstractStore<T> {
         String id = o.getId();
         String rev = o.getRev();
         String currentRevision = getCurrentRevision(id);
-        if (currentRevision != rev)
+        if (!currentRevision.equals(rev))
             throw new StoreException("Object is stale (rev " + rev + "). Newer revision in store: "
                     + currentRevision);
         o.setRev(Long.toString(Long.valueOf(rev) + 1));
@@ -163,12 +166,14 @@ public class XStreamStore<T extends Identifiable> extends AbstractStore<T> {
         preStore(o);
         String path = idToPath(o.getId());
         Writer w = null;
+        boolean existed = workspace.exists(path);
         try {
             w = new OutputStreamWriter(workspace.write(path));
             xstream.toXML(o, w);
         } finally {
             IOUtils.closeQuietly(w);
         }
+        workspace.finishedWriting(path, !existed);
     }
 
     private String getCurrentRevision(String id) {

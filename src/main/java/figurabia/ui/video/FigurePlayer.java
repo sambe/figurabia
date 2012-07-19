@@ -246,12 +246,14 @@ public class FigurePlayer extends JPanel {
     public void captureCurrentImage(String figureId, int bar, int beat, long videoNanoseconds) {
         String picturePath = beatPictureCache.getPicturePath(figureId, bar, beat);
         OutputStream os = null;
+        boolean existed = workspace.exists(picturePath);
         try {
             os = workspace.write(picturePath);
             captureImage(videoNanoseconds, os);
         } finally {
             IOUtils.closeQuietly(os);
         }
+        workspace.finishedWriting(picturePath, !existed);
     }
 
     private void captureImage(long videoNanoseconds, OutputStream targetStream) {

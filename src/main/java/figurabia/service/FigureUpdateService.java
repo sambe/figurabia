@@ -103,9 +103,8 @@ public class FigureUpdateService {
     }
 
     private void moveBarId(Figure f, int oldBarId, int newBarId, int beat) throws IOException {
-        String figurePrefix = "/pics/" + f.getId();
-        String oldPath = figurePrefix + beatPictureCache.getPictureName(f.getId(), oldBarId, beat);
-        String newPath = figurePrefix + beatPictureCache.getPictureName(f.getId(), newBarId, beat);
+        String oldPath = beatPictureCache.getPicturePath(f.getId(), oldBarId, beat);
+        String newPath = beatPictureCache.getPicturePath(f.getId(), newBarId, beat);
         if (workspace.exists(newPath)) {
             List<Integer> barIds = f.getBarIds();
             int index = barIds.indexOf(newBarId);
@@ -122,8 +121,7 @@ public class FigureUpdateService {
             } else {
                 // swap new name out (should only be temporary)
                 int backupBarId = 10000 + newBarId;
-                String backupPath = figurePrefix
-                        + beatPictureCache.getPictureName(f.getId(), backupBarId, beat);
+                String backupPath = beatPictureCache.getPicturePath(f.getId(), backupBarId, beat);
                 workspace.move(oldPath, backupPath);
                 barIds.set(index, backupBarId);
             }
@@ -148,7 +146,7 @@ public class FigureUpdateService {
             figureStore.delete(f);
             // TODO maybe delete video too
             try {
-                beatPictureCache.deleteAllPictures(item.getId());
+                beatPictureCache.deleteAllPictures(f.getId());
             } catch (IOException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(null, "IO Error occured while deleting pictures of the deleted figure: "

@@ -40,6 +40,7 @@ import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.FiguresTreeStore;
 import figurabia.io.VideoDir;
+import figurabia.io.VideoMetaData;
 import figurabia.io.VideoMetaDataStore;
 import figurabia.io.workspace.LocalFileWorkspace;
 import figurabia.io.workspace.Workspace;
@@ -121,7 +122,8 @@ public class ApplicationFrame extends JFrame {
                 if (index != -1) {
                     initialPosition = figure.getVideoPositions().get(index) / 1000000L;
                 }
-                player.openVideo(videoFile, initialPosition);
+                VideoMetaData metaData = videoMetaDataStore.read(figure.getVideoName());
+                player.openVideo(videoFile, metaData.getMediaInfo(), initialPosition);
             }
         });
 
@@ -131,7 +133,8 @@ public class ApplicationFrame extends JFrame {
         contentPane.add(explorerPerspective, explorerPerspective.getPerspectiveId());
 
         // create and add FigureEditPerspective
-        editPerspective = new FigureEditPerspective(workspace, treeStore, beatPictureCache, figureCreationService,
+        editPerspective = new FigureEditPerspective(workspace, figureStore, treeStore, beatPictureCache,
+                figureCreationService,
                 figureUpdateService, player, figureModel);
         contentPane.add(editPerspective, editPerspective.getPerspectiveId());
 
@@ -191,6 +194,9 @@ public class ApplicationFrame extends JFrame {
         perspectiveButtonGroup.add(perspectiveMenuFigureExplorer);
         perspectiveButtonGroup.add(perspectiveMenuFigureMapper);
         perspectiveMenuFigureExplorer.setSelected(true);
+
+        // initialize active perspective
+        switchToPerspective(explorerPerspective);
 
         // set frame properties
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
