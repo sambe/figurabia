@@ -5,6 +5,8 @@
 package figurabia.ui.figureeditor;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -39,6 +41,7 @@ import javax.swing.tree.TreePath;
 import figurabia.domain.Figure;
 import figurabia.domain.TreeItem;
 import figurabia.domain.TreeItem.ItemType;
+import figurabia.framework.FigureModel;
 import figurabia.io.FiguresTreeStore;
 import figurabia.service.FigureCreationService;
 import figurabia.service.FigureUpdateService;
@@ -106,7 +109,8 @@ public class FigureList extends JPanel {
 
     }
 
-    public FigureList(FiguresTreeStore fts, FigureCreationService fcs, FigureUpdateService fus) {
+    public FigureList(FiguresTreeStore fts, FigureCreationService fcs, FigureUpdateService fus,
+            final FigureModel figureModel) {
         this.figuresTreeStore = fts;
         this.creationService = fcs;
         this.figureUpdateService = fus;
@@ -115,6 +119,20 @@ public class FigureList extends JPanel {
         tree = new CheckboxTree();
         tree.setModel(treeModel);
         tree.getSelectionModel().setSelectionMode(DefaultTreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.getCheckingModel().addTreeCheckingListener(new TreeCheckingListener() {
+            @Override
+            public void valueChanged(TreeCheckingEvent e) {
+                TreePath p = e.getPath();
+                TreeItem item = (TreeItem) p.getLastPathComponent();
+                if (item != null) {
+                    List<Figure> figures = figureUpdateService.getAllActiveFiguresInSubTree(item);
+                    if (e.isCheckedPath())
+                        figureModel.addToViewSet(figures);
+                    else
+                        figureModel.removeFromViewSet(figures);
+                }
+            }
+        });
         TransferHandler transferHandler = new TransferHandler() {
             @Override
             public int getSourceActions(JComponent c) {
@@ -142,68 +160,77 @@ public class FigureList extends JPanel {
 
             @Override
             public boolean importData(TransferSupport support) {
-                if (!canImport(support))
-                    return false;
+                try {
+                    if (!canImport(support))
+                        return false;
 
-                // get drop position
-                JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
+                    // get drop position
+                    JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
 
-                // get target folder and index
-                TreeItem target = (TreeItem) dropLocation.getPath().getLastPathComponent();
-                TreeItem targetParent;
-                if (target.getType() == ItemType.FOLDER)
-                    targetParent = target;
-                else
-                    targetParent = figuresTreeStore.getParentFolder(target);
-                int childIndex = dropLocation.getChildIndex();
+                    // get target folder and index
+                    TreeItem target = (TreeItem) dropLocation.getPath().getLastPathComponent();
+                    TreeItem targetParent;
+                    if (target.getType() == ItemType.FOLDER)
+                        targetParent = target;
+                    else
+                        targetParent = figuresTreeStore.getParentFolder(target);
+                    int childIndex = dropLocation.getChildIndex();
 
-                if (support.isDataFlavorSupported(folderItemFlavor)) {
-                    // selection is drag position
-                    TreePath selected = tree.getSelectionPath();
-                    //support.getTransferable().getTransferData(folderItemFlavor);
-                    moveItem(selected, dropLocation.getPath(), dropLocation.getChildIndex());
+                    if (support.isDataFlavorSupported(folderItemFlavor)) {
+                        // selection is drag position
+                        TreePath selected = tree.getSelectionPath();
+                        tree.clearSelection();
+                        //support.getTransferable().getTransferData(folderItemFlavor);
+                        moveItem(selected, dropLocation.getPath(), dropLocation.getChildIndex());
+                        // restore selection after move
+                        tree.setSelectionPath(dropLocation.getPath().pathByAddingChild(selected.getLastPathComponent()));
 
-                } else if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                    // import all files that were dropped
-                    try {
-                        @SuppressWarnings("unchecked")
-                        List<File> files = (List<File>) support.getTransferable().getTransferData(
-                                DataFlavor.javaFileListFlavor);
-                        for (File f : files) {
-                            createFigureForVideo(f, targetParent, childIndex);
+                    } else if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                        // import all files that were dropped
+                        try {
+                            @SuppressWarnings("unchecked")
+                            List<File> files = (List<File>) support.getTransferable().getTransferData(
+                                    DataFlavor.javaFileListFlavor);
+                            for (File f : files) {
+                                createFigureForVideo(f, targetParent, childIndex);
+                            }
+                        } catch (UnsupportedFlavorException e) {
+                            throw new IllegalStateException("Should not be possible to happen.", e);
+                        } catch (IOException e) {
+                            JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
+                            e.printStackTrace();
+                            return false;
                         }
-                    } catch (UnsupportedFlavorException e) {
-                        throw new IllegalStateException("Should not be possible to happen.", e);
-                    } catch (IOException e) {
-                        JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
-                        e.printStackTrace();
+                    } else if (support.isDataFlavorSupported(uriListAsString)) {
+                        try {
+                            String uriStrings = (String) support.getTransferable().getTransferData(uriListAsString);
+                            String[] uris = uriStrings.split("\n");
+                            for (String uri : uris) {
+                                if (uri == null || uri.isEmpty())
+                                    continue;
+                                File f = new File(URI.create(uri.trim()));
+                                createFigureForVideo(f, targetParent, childIndex);
+                            }
+                        } catch (RuntimeException e) {
+                            System.err.println("Runtime Exception on accepting drop: ");
+                            e.printStackTrace();
+                            return false;
+                        } catch (UnsupportedFlavorException e) {
+                            throw new IllegalStateException("Should not be possible to happen.", e);
+                        } catch (IOException e) {
+                            JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
+                            e.printStackTrace();
+                            return false;
+                        }
+                    } else {
                         return false;
                     }
-                } else if (support.isDataFlavorSupported(uriListAsString)) {
-                    try {
-                        String uriStrings = (String) support.getTransferable().getTransferData(uriListAsString);
-                        String[] uris = uriStrings.split("\n");
-                        for (String uri : uris) {
-                            if (uri == null || uri.isEmpty())
-                                continue;
-                            File f = new File(URI.create(uri.trim()));
-                            createFigureForVideo(f, targetParent, childIndex);
-                        }
-                    } catch (RuntimeException e) {
-                        System.err.println("Runtime Exception on accepting drop: ");
-                        e.printStackTrace();
-                        return false;
-                    } catch (UnsupportedFlavorException e) {
-                        throw new IllegalStateException("Should not be possible to happen.", e);
-                    } catch (IOException e) {
-                        JOptionPane.showMessageDialog(tree, "Import failed due to IO error: " + e.getMessage());
-                        e.printStackTrace();
-                        return false;
-                    }
-                } else {
+                    return true;
+                } catch (RuntimeException e) {
+                    System.err.println("RuntimeException during drag and drop (import):");
+                    e.printStackTrace();
                     return false;
                 }
-                return true;
             }
         };
         tree.setTransferHandler(transferHandler);
@@ -238,7 +265,7 @@ public class FigureList extends JPanel {
         delete.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                deleteFigure(e);
+                deleteTreeItem(e);
             }
         });
         final JMenuItem cloneFigure = new JMenuItem("Clone");
@@ -322,56 +349,87 @@ public class FigureList extends JPanel {
     }
 
     private void renameFigure(ActionEvent e) {
-        TreeItem item = getSelectedFolderItem();
-        String newName = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter the new name:",
-                item.getName());
-        if (newName != null && !newName.equals("")) {
-            figureUpdateService.setName(item, newName);
+        try {
+            TreeItem item = getSelectedFolderItem();
+            String newName = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter the new name:",
+                    item.getName());
+            if (newName != null && !newName.equals("")) {
+                figureUpdateService.setName(item, newName);
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error renaming figure: " + ex.getMessage());
         }
     }
 
-    private void deleteFigure(ActionEvent e) {
+    private void deleteTreeItem(ActionEvent e) {
         TreeItem item = getSelectedFolderItem();
         if (item.getType() == ItemType.ITEM) {
             if (JOptionPane.showConfirmDialog((Component) e.getSource(), "Are you sure you want to delete the figure '"
                     + item.getName()
                     + "'?", "Safety Warning", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                figureUpdateService.delete(item);
+                try {
+                    figureUpdateService.delete(item);
+                } catch (RuntimeException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog((Component) e.getSource(), "Error deleting: " + ex.getMessage());
+                }
             }
         } else if (item.getType() == ItemType.FOLDER) {
             if (JOptionPane.showConfirmDialog((Component) e.getSource(), "Are you sure you want to delete the folder '"
                     + item.getName()
                     + "' and all its contents?", "Safety Warning", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                figureUpdateService.delete(item);
+                try {
+                    figureUpdateService.delete(item);
+                } catch (RuntimeException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog((Component) e.getSource(), "Error deleting: " + ex.getMessage());
+                }
             }
         }
     }
 
     private void moveItem(TreePath pathToMove, TreePath newPath, int newIndex) {
-        TreeItem itemToMove = (TreeItem) pathToMove.getLastPathComponent();
-        TreeItem target = (TreeItem) newPath.getLastPathComponent();
-        TreeItem newParent;
-        if (target.getType() == ItemType.FOLDER)
-            newParent = target;
-        else {
-            newParent = figuresTreeStore.getParentFolder(target);
-            // FIXME newIndex is invalid in this case
-            newIndex = 0;
+        try {
+            TreeItem itemToMove = (TreeItem) pathToMove.getLastPathComponent();
+            TreeItem target = (TreeItem) newPath.getLastPathComponent();
+            TreeItem newParent;
+            if (target.getType() == ItemType.FOLDER)
+                newParent = target;
+            else {
+                newParent = figuresTreeStore.getParentFolder(target);
+                // FIXME newIndex is invalid in this case
+                newIndex = 0;
+            }
+            newParent = figuresTreeStore.read(newParent.getId()); // get latest, because it sometimes seems to be stale
+            figuresTreeStore.moveItem(itemToMove, newParent, newIndex);
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error moving: " + ex.getMessage());
         }
-        figuresTreeStore.moveItem(itemToMove, newParent, newIndex);
     }
 
     private void cloneFigure(ActionEvent e) {
-        TreeItem item = getSelectedFolderItem();
-        creationService.cloneFigure(item);
+        try {
+            TreeItem item = getSelectedFolderItem();
+            creationService.cloneFigure(item);
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error cloning: " + ex.getMessage());
+        }
     }
 
     public void newFolder(ActionEvent e) {
-        String name = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter folder name:",
-                "");
-        if (name != null && !name.equals("")) {
-            TreeItem item = getSelectedFolderItem();
-            creationService.createNewFolder(item, name);
+        try {
+            String name = JOptionPane.showInputDialog((Component) e.getSource(), "Please enter folder name:",
+                    "");
+            if (name != null && !name.equals("")) {
+                TreeItem item = getSelectedFolderItem();
+                creationService.createNewFolder(item, name);
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error creating new folder: " + ex.getMessage());
         }
     }
 

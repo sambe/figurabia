@@ -128,6 +128,8 @@ public class VideoPictureExtractor extends JPanel {
 
         // add picture
         figurePlayer.captureCurrentImage(figure.getId(), newBarId, beat, videoTime);
+
+        figureStore.update(figure);
     }
 
     public void correctSelectedPosition() {
@@ -138,6 +140,8 @@ public class VideoPictureExtractor extends JPanel {
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
         figurePlayer.captureCurrentImage(figure.getId(), bar, beat, time);
+
+        figureStore.update(figure);
     }
 
     public void setPosition(int pos) {

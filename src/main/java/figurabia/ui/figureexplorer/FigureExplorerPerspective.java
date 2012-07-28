@@ -46,7 +46,7 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         player = new FigurePlayer(workspace, bpc, mediaPlayer, figureModel);
         positionsView = new FigurePositionsView(bpc);
         positionChooser = new PositionChooser();
-        possibilitiesView = new PositionPossibilitiesView(fs, bpc);
+        possibilitiesView = new PositionPossibilitiesView(fs, bpc, figureModel);
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
@@ -123,7 +123,6 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         player.setRepeatFigureOnly(active);
         if (active) {
             positionsView.setPosition(figureModel.getCurrentFigure(), figureModel.getCurrentPosition());
-            possibilitiesView.updateIndex();
         }
     }
 

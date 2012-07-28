@@ -1,6 +1,6 @@
 <Figure>
   <id>38</id>
-  <rev>0</rev>
+  <rev>2</rev>
   <name>18: 17.03.09 (Bastian &amp; Patrizia)</name>
   <videoName>10-17.03.09.flv</videoName>
   <videoPositions>
@@ -76,7 +76,7 @@
       <manDir>OPPOSITE</manDir>
       <frontOffset>10</frontOffset>
       <sideOffset>0</sideOffset>
-      <handsJoined>FREE</handsJoined>
+      <handsJoined>BOTH_JOINED</handsJoined>
       <handsTwist>0</handsTwist>
       <leftHandHeight>NORMAL</leftHandHeight>
       <rightHandHeight>NORMAL</rightHandHeight>
@@ -329,7 +329,11 @@
       <name>Hook mit Handtaucher</name>
     </Element>
     <Element>
-      <offsetChange reference="../../Element[2]/offsetChange"/>
+      <offsetChange>
+        <ladyLineDir>false</ladyLineDir>
+        <absPosLineDir>0</absPosLineDir>
+        <absPosSideDir>0</absPosSideDir>
+      </offsetChange>
       <name>Kung Fu Panda</name>
     </Element>
     <Element>

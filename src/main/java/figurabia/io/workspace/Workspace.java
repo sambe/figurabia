@@ -17,7 +17,7 @@ import java.util.List;
 public interface Workspace {
 
     enum ChangeType {
-        CREATED, UPDATED, DELETED
+        CREATED, UPDATED, DELETED, PATH_CREATED, PATH_DELETED;
     }
 
     /**
@@ -79,6 +79,13 @@ public interface Workspace {
      * @param copyPath new path for the copy
      */
     void copyPath(String path, String copyPath);
+
+    /**
+     * Deletes a whole path with all its sub path resources.
+     * 
+     * @param path path to delete
+     */
+    void deletePath(String path);
 
     /**
      * Creates and opens a readable stream to the given resource or throws an IOException if the given resource does not

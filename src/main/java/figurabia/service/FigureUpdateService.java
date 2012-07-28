@@ -5,6 +5,7 @@
 package figurabia.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -142,6 +143,7 @@ public class FigureUpdateService {
             TreeItem parent = treeStore.getParentFolder(item);
             int index = parent.getChildIds().indexOf(item.getId());
             treeStore.removeItem(parent, index);
+            treeStore.delete(item);
             Figure f = figureStore.read(item.getRefId());
             figureStore.delete(f);
             // TODO maybe delete video too
@@ -153,10 +155,12 @@ public class FigureUpdateService {
                         + e1.getLocalizedMessage());
             }
         } else if (item.getType() == ItemType.FOLDER) {
+            if (item.getChildIds().size() > 0)
+                throw new IllegalArgumentException("Currently only supports deleting empty folders.");
             TreeItem parent = treeStore.getParentFolder(item);
             int index = parent.getChildIds().indexOf(item.getId());
             treeStore.removeItem(parent, index);
-            // TODO pictures of removed figures are not removed here
+            treeStore.delete(item);
 
         }
     }
@@ -165,6 +169,25 @@ public class FigureUpdateService {
         if (item != null && item.getType() == ItemType.ITEM)
             return figureStore.read(item.getRefId());
         return null;
+    }
+
+    public List<Figure> getAllActiveFiguresInSubTree(TreeItem item) {
+        List<Figure> list = new ArrayList<Figure>();
+        getFiguresInSubTree(list, item, true);
+        return list;
+    }
+
+    private void getFiguresInSubTree(List<Figure> list, TreeItem item, boolean activeOnly) {
+        if (item.getType() == ItemType.ITEM) {
+            Figure f = figureStore.read(item.getRefId());
+            if (!activeOnly || f.isActive())
+                list.add(f);
+        } else {
+            for (String id : item.getChildIds()) {
+                TreeItem child = treeStore.read(id);
+                getFiguresInSubTree(list, child, activeOnly);
+            }
+        }
     }
 
     public Set<String> createElementNames() {

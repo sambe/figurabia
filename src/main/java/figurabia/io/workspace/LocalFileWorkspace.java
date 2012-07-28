@@ -60,10 +60,11 @@ public class LocalFileWorkspace extends AbstractWorkspace {
     @Override
     public void delete(String resourcePath) {
         File f = resPathToFile(resourcePath);
+        if (!f.isFile())
+            throw new IllegalArgumentException("Given resourcePath " + resourcePath + " does not exist as a file.");
         if (!f.delete())
             throw new WorkspaceException("Resource " + resourcePath + " could not be successfully deleted");
         notifyWorkspaceUpdateListeners(resourcePath, ChangeType.DELETED);
-        // TODO maybe events should be sent for all resources in sub paths recursively (or a DIR_DELETED event)
     }
 
     @Override
@@ -88,6 +89,8 @@ public class LocalFileWorkspace extends AbstractWorkspace {
 
     @Override
     public void copyPath(String path, String copyPath) {
+        if (!exists(path))
+            return;
         if (exists(copyPath))
             throw new WorkspaceException("Cannot copy resource path because destination already exists: " + copyPath);
 
@@ -97,8 +100,17 @@ public class LocalFileWorkspace extends AbstractWorkspace {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        notifyWorkspaceUpdateListeners(copyPath, ChangeType.CREATED);
-        // TODO maybe there should be a special DIR_CREATED event
+        notifyWorkspaceUpdateListeners(copyPath, ChangeType.PATH_CREATED);
+    }
+
+    @Override
+    public void deletePath(String path) {
+        File f = resPathToFile(path);
+        if (!f.exists())
+            throw new IllegalArgumentException("Cannot delete file that does not exist: " + path);
+        if (!FileUtils.deleteQuietly(f))
+            throw new WorkspaceException("Resource " + path + " could not be successfully deleted");
+        notifyWorkspaceUpdateListeners(path, ChangeType.PATH_DELETED);
     }
 
 }

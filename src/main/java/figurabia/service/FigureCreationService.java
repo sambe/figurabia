@@ -134,6 +134,13 @@ public class FigureCreationService {
                     String fromPath = "/pics/" + f.getId();
                     String toPath = "/pics/" + clone.getId();
                     workspace.copyPath(fromPath, toPath);
+
+                    TreeItem parent = treeStore.getParentFolder(item);
+                    int index = parent.getChildIds().indexOf(item.getId()) + 1;
+                    TreeItem cloneItem = new TreeItem(null, ItemType.ITEM, newName);
+                    cloneItem.setRefId(clone.getId());
+                    treeStore.create(cloneItem);
+                    treeStore.insertItem(parent, index, cloneItem);
                 } catch (WorkspaceException ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(null,
@@ -152,6 +159,8 @@ public class FigureCreationService {
             TreeItem newParent = treeStore.getParentFolder(parent);
             index = newParent.getChildIds().indexOf(parent.getId()) + 1;
             parent = newParent;
+        } else {
+            parent = treeStore.read(parent.getId()); // in case it is a stale object
         }
         TreeItem newFolder = new TreeItem(null, ItemType.FOLDER, name);
         treeStore.create(newFolder);

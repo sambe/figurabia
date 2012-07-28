@@ -67,6 +67,8 @@ public abstract class AbstractWorkspace implements Workspace {
 
     @Override
     public InputStream read(String resourcePath) {
+        if (resourcePath == null)
+            throw new IllegalArgumentException("resourcePath must not be null");
         File f = fileForReading(resourcePath);
         try {
             InputStream fis = new BufferedInputStream(new FileInputStream(f));

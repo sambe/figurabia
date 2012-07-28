@@ -23,6 +23,8 @@ import figurabia.io.workspace.Workspace;
 
 public class FiguresTreeStore extends XStreamStore<TreeItem> {
 
+    private static final String ROOT_ID = "-1";
+
     private Map<String, TreeItem> parentFolder = new HashMap<String, TreeItem>();
     private Map<String, TreeItem> byRefId = new HashMap<String, TreeItem>();
     private Map<String, List<String>> childItems = new HashMap<String, List<String>>();
@@ -54,12 +56,14 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
             public void update(figurabia.io.store.StoreListener.StateChange change, TreeItem o) {
                 switch (change) {
                 case CREATED:
-                    if (o.getType() == ItemType.ITEM)
-                        byRefId.put(o.getRefId(), o);
                     // intentionally no break here
                 case UPDATED:
+                    if (o.getType() == ItemType.ITEM)
+                        byRefId.put(o.getRefId(), o); // always needed to update stale copies with the newest
                     if (o.getType() == ItemType.FOLDER)
-                        updateParentFolder(o);
+                        updateParentFolderForChildren(o);
+                    if (o.getId().equals(ROOT_ID))
+                        rootFolder = o;
                     break;
                 case DELETED:
                     if (o.getType() == ItemType.ITEM)
@@ -70,10 +74,10 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
             }
         });
 
-        rootFolder = read("-1");
+        rootFolder = read(ROOT_ID);
     }
 
-    private void updateParentFolder(TreeItem item) {
+    private void updateParentFolderForChildren(TreeItem item) {
         // find difference of change (childItems keeps "backup" for comparison)
         List<String> previousIds = childItems.get(item.getId());
         if (previousIds == null)
@@ -83,6 +87,7 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
         Set<String> addedIds = new HashSet<String>(item.getChildIds());
         addedIds.removeAll(previousIds);
 
+        // first remove, the ones that were deleted
         for (String childId : removedIds) {
             parentFolder.remove(childId);
             int index = previousIds.indexOf(childId);
@@ -90,12 +95,18 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
             notifyParentChangeListener(StateChange.DELETED, item, index, child);
         }
 
-        for (String childId : addedIds) {
+        // then add/update all current ids (updating older to prevent stale objects in the parentFolder map)
+        for (String childId : item.getChildIds()) {
             parentFolder.put(childId, item);
             int index = item.getChildIds().indexOf(childId);
             TreeItem child = read(childId);
-            notifyParentChangeListener(StateChange.CREATED, item, index, child);
+            if (addedIds.contains(childId)) {
+                notifyParentChangeListener(StateChange.CREATED, item, index, child);
+            }
+            // currently not sending out parentChange updated events (probably not needed, and potentially a big waste of performance)
         }
+
+        // in case a child moved inside the list of children, the parent did not change (thus no notification)
 
         childItems.put(item.getId(), new ArrayList<String>(item.getChildIds()));
     }
@@ -136,6 +147,8 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
     }
 
     public void insertItem(TreeItem parent, int index, TreeItem child) {
+        if (child.getId() == null)
+            throw new IllegalArgumentException("child has an id of null (probably not created in store yet)");
         parent.getChildIds().add(index, child.getId());
         update(parent);
     }
@@ -146,17 +159,21 @@ public class FiguresTreeStore extends XStreamStore<TreeItem> {
     }
 
     public void moveItem(TreeItem itemToMove, TreeItem newParent, int newIndex) {
-        TreeItem oldParent = parentFolder.get(itemToMove);
+        TreeItem oldParent = parentFolder.get(itemToMove.getId());
         if (oldParent == null)
             throw new IllegalArgumentException("item does not have a parent, but it needs one to move");
         int oldIndex = oldParent.getChildIds().indexOf(itemToMove.getId());
-        // to account for the removed one (when in the same folder)
-        if (oldParent.equals(newParent) && newIndex > oldIndex) {
-            newIndex--;
-        }
         if (newIndex == -1)
             newIndex = 0;
-        removeItem(oldParent, oldIndex);
-        insertItem(newParent, newIndex, itemToMove);
+        if (oldParent.equals(newParent)) {
+            if (newIndex > oldIndex)
+                newIndex--;
+            oldParent.getChildIds().remove(oldIndex);
+            newParent.getChildIds().add(newIndex, itemToMove.getId());
+            update(newParent); // just one update needed
+        } else {
+            removeItem(oldParent, oldIndex);
+            insertItem(newParent, newIndex, itemToMove);
+        }
     }
 }

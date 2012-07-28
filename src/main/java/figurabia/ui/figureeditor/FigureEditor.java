@@ -162,6 +162,7 @@ public class FigureEditor extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 pictureExtractor.addNewPosition(1);
+                // FIXME this should be notified through backend
                 positionList.updateList();
             }
         });
@@ -169,6 +170,7 @@ public class FigureEditor extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 pictureExtractor.addNewPosition(5);
+                // FIXME this should be notified through backend
                 positionList.updateList();
             }
         });
@@ -178,6 +180,7 @@ public class FigureEditor extends JPanel {
                 if (positionList.getSelectedIndex() == -1)
                     return;
                 pictureExtractor.correctSelectedPosition();
+                // FIXME this should be updated indirectly via backend (listener on beatPictureCache)
                 positionList.updatePicture(positionList.getSelectedIndex());
             }
         });

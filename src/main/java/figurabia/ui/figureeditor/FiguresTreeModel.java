@@ -15,9 +15,7 @@ import org.jdesktop.swingx.tree.TreeModelSupport;
 import figurabia.domain.TreeItem;
 import figurabia.domain.TreeItem.ItemType;
 import figurabia.io.FiguresTreeStore;
-import figurabia.io.FiguresTreeStore.ParentChangeListener;
 import figurabia.io.store.StoreListener;
-import figurabia.io.store.StoreListener.StateChange;
 
 public class FiguresTreeModel implements TreeModel {
 
@@ -35,34 +33,15 @@ public class FiguresTreeModel implements TreeModel {
                     // not doing anything, because it cannot yet be referenced anywhere in the tree ([1] create item, [2] add its id to one already in the tree)
                     break;
                 case UPDATED:
-                    TreeItem parent = figuresTreeStore.getParentFolder(item);
-                    if (parent == null) {
+                    if (item.equals(figuresTreeStore.getRootFolder())) {
                         treeModelSupport.fireNewRoot();
                     } else {
-                        TreePath parentPath = createTreePath(parent);
-                        int index = parent.getChildIds().indexOf(item.getId());
-                        treeModelSupport.fireChildChanged(parentPath, index, item);
+                        TreePath treePath = createTreePath(item);
+                        treeModelSupport.fireTreeStructureChanged(treePath);
                     }
                     break;
                 case DELETED:
                     // doing nothing because, the event was already sent when it was removed from the folder ([1] remove id from folder, [2] remove item from store)
-                    break;
-                }
-            }
-        });
-        figuresTreeStore.addParentChangeListener(new ParentChangeListener() {
-            @Override
-            public void update(StateChange change, TreeItem parent, int index, TreeItem child) {
-                TreePath parentPath = createTreePath(parent);
-                switch (change) {
-                case CREATED:
-                    treeModelSupport.fireChildAdded(parentPath, index, child);
-                    break;
-                case UPDATED:
-                    treeModelSupport.fireChildChanged(parentPath, index, child);
-                    break;
-                case DELETED:
-                    treeModelSupport.fireChildRemoved(parentPath, index, child);
                     break;
                 }
             }

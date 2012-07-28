@@ -24,6 +24,8 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
+import figurabia.framework.FigureModel;
+import figurabia.framework.ViewSetListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.service.FiguresByPositionService;
@@ -46,21 +48,20 @@ public class PositionPossibilitiesView extends JPanel {
 
     private List<FigureLinkActionListener> actionListeners = new ArrayList<FigureLinkActionListener>();
 
-    public PositionPossibilitiesView(FigureStore fs, BeatPictureCache bpc) {
+    public PositionPossibilitiesView(FigureStore fs, BeatPictureCache bpc, final FigureModel figureModel) {
         figureStore = fs;
         beatPictureCache = bpc;
-        service = new FiguresByPositionService();
-        updateIndex();
+        service = new FiguresByPositionService(figureModel);
+        figureModel.addViewSetListener(new ViewSetListener() {
+            @Override
+            public void update(ChangeType type, List<Figure> changed) {
+                service.init(figureModel.getViewSet());
+                refreshRelatedFigures();
+            }
+        });
 
         //setLayout(new MigLayout("nogrid")); // problem: puts everything in one line
         setLayout(new FlowLayout());
-    }
-
-    /**
-     * Updates the index to reflect the current state
-     */
-    public void updateIndex() {
-        service.init(figureStore.getAllActiveFigures());
     }
 
     /**
@@ -87,8 +88,12 @@ public class PositionPossibilitiesView extends JPanel {
         currentPosition = p;
         currentOffset = offset;
 
+        refreshRelatedFigures();
+    }
+
+    private void refreshRelatedFigures() {
         // retrieve figures for position
-        Map<Element, List<Result>> figures = service.retrieveFiguresByPosition(p);
+        Map<Element, List<Result>> figures = service.retrieveFiguresByPosition(currentPosition);
 
         // add a panel for each figure
         removeAll();

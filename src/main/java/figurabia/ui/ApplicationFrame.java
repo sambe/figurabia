@@ -139,7 +139,7 @@ public class ApplicationFrame extends JFrame {
         contentPane.add(editPerspective, editPerspective.getPerspectiveId());
 
         // create and add FigureMapperPerspective
-        mapperPerspective = new FigureMapperPerspective(figureStore);
+        mapperPerspective = new FigureMapperPerspective(figureModel);
         contentPane.add(mapperPerspective, mapperPerspective.getPerspectiveId());
 
         // set up menu bar

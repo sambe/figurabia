@@ -40,7 +40,7 @@ public class FigureEditPerspective extends JPanel implements Perspective {
             FigureCreationService fcs, FigureUpdateService fus, MediaPlayer player,
             FigureModel figureModel_) {
         this.figureModel = figureModel_;
-        figureList = new FigureList(treeStore, fcs, fus);
+        figureList = new FigureList(treeStore, fcs, fus, figureModel_);
         figureEditor = new FigureEditor(workspace, fs, bpc, player, figureModel_, fcs, fus);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));

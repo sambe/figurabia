@@ -14,10 +14,16 @@ import java.util.Map;
 import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoPosition;
+import figurabia.framework.FigureModel;
 
 public class FiguresByPositionService {
-
+    private FigureModel figureModel;
     private Map<PuertoPosition, Map<Element, List<Result>>> figuresByPosition;
+
+    public FiguresByPositionService(final FigureModel figureModel) {
+        this.figureModel = figureModel;
+        init(figureModel.getViewSet());
+    }
 
     /**
      * Creates the index of all the figures.

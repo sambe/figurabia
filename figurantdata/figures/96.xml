@@ -1,18 +1,18 @@
 <Figure>
-  <id>83</id>
-  <rev>7</rev>
-  <name>111-22.06.09</name>
+  <id>96</id>
+  <rev>0</rev>
+  <name>111-22.06.09 (3)</name>
   <videoName>111-22.06.09.flv</videoName>
   <videoPositions>
-    <long>11541000000</long>
+    <long>5443000000</long>
+    <long>6868000000</long>
+    <long>8068000000</long>
+    <long>9209000000</long>
+    <long>10272000000</long>
+    <long>11337000000</long>
+    <long>12201000000</long>
     <long>13201000000</long>
-    <long>14606000000</long>
-    <long>15682000000</long>
-    <long>17670000000</long>
-    <long>19276000000</long>
-    <long>20940000000</long>
-    <long>22476000000</long>
-    <long>23942000000</long>
+    <long>14074000000</long>
   </videoPositions>
   <positions>
     <PuertoPosition>
@@ -186,16 +186,16 @@
     <absPosLineDir>0</absPosLineDir>
     <absPosSideDir>0</absPosSideDir>
   </baseOffset>
-  <active>true</active>
+  <active>false</active>
   <barIds>
-    <int>1</int>
-    <int>1</int>
-    <int>2</int>
-    <int>2</int>
-    <int>3</int>
-    <int>3</int>
-    <int>4</int>
-    <int>4</int>
-    <int>5</int>
+    <int>1000</int>
+    <int>1001</int>
+    <int>1002</int>
+    <int>1003</int>
+    <int>1004</int>
+    <int>1005</int>
+    <int>1006</int>
+    <int>1007</int>
+    <int>1008</int>
   </barIds>
 </Figure>

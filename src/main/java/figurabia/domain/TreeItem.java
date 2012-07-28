@@ -84,4 +84,19 @@ public class TreeItem implements Identifiable {
     public String toString() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TreeItem) {
+            return id != null && id.equals(((TreeItem) obj).id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        if (id == null)
+            return 0;
+        return id.hashCode();
+    }
 }
