@@ -12,6 +12,10 @@ public class GeometryUtil {
         return new Point2D.Double(p1.getX() + p2.getX(), p1.getY() + p2.getY());
     }
 
+    public static Point2D scale(Point2D p, double scale) {
+        return new Point2D.Double(p.getX() * scale, p.getY() * scale);
+    }
+
     public static double dotProduct(Point2D p1, Point2D p2) {
         return p1.getX() * p2.getY() - p1.getY() * p2.getX();
     }

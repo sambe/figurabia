@@ -5,6 +5,7 @@
 package figurabia.ui.figuremapper;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -14,50 +15,57 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
+import java.util.WeakHashMap;
 
 import javax.swing.JComponent;
 
+import edu.uci.ics.jung.algorithms.layout.KKLayout;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
-import figurabia.ui.figuremapper.placement.JungLayoutPlacement;
-import figurabia.ui.figuremapper.placement.PlacementStrategy;
+import figurabia.framework.ViewSetListener;
+import figurabia.ui.figuremapper.placement.JungPlacementModel;
+import figurabia.ui.figuremapper.placement.PlacementModel;
 import figurabia.ui.positionviewer.PositionPainter;
 
 @SuppressWarnings("serial")
 public class FigureMapScreen extends JComponent {
 
-    private static final double WIDTH = 20;
+    private static final int WIDTH = 20;
+    private static final double SCALE_STEP = 1.5;
 
     private FigureModel figureModel;
     private ConnectionDrawer connectionDrawer;
 
-    private Map<PuertoPosition, Point2D> coordinates;
-    private Map<Figure, Color> colors;
+    private PlacementModel placementModel;
+    private Collection<Figure> selectedFigures;
 
     private PuertoPosition selectedPosition;
     private double moveDiffX, moveDiffY;
     private Point originalPoint;
+    private AffineTransform originalTransform = new AffineTransform();
 
-    private AffineTransform transform = AffineTransform.getScaleInstance(0.25, 0.25);
+    private static final Dimension LAYOUT_SIZE = new Dimension(1000, 700);
+    private static final AffineTransform INITIAL_TRANSFORM = AffineTransform.getTranslateInstance(
+            -LAYOUT_SIZE.width,
+            -LAYOUT_SIZE.height);
+    private AffineTransform transform = new AffineTransform(INITIAL_TRANSFORM);
+
+    private Map<PuertoPosition, BufferedImage> positionImages = new WeakHashMap<PuertoPosition, BufferedImage>();
+    double scaledWidth = WIDTH;
 
     public FigureMapScreen(FigureModel fm) {
         figureModel = fm;
+        //placementModel = new StrategyPlacementModel();
+        placementModel = new JungPlacementModel(KKLayout.class, 2.0);
+        placementModel.setInitial(800);
+        placementModel.setPause(500);
         setOpaque(true);
-        /*connectionDrawer = new ConnectionDrawer() {
-            @Override
-            public void draw(Graphics2D g, Point2D previous, Point2D from, Point2D to, Point2D next) {
-                // minimal implementation
-                g.draw(new Line2D.Double(from.getX(), from.getY(), to.getX(), to.getY()));
-            }
-        };*/
         connectionDrawer = new CurveConnectionDrawer();
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
@@ -66,14 +74,17 @@ public class FigureMapScreen extends JComponent {
                 Point eventPoint = event.getPoint();
                 Point2D mp = inverseTransform(eventPoint);
                 originalPoint = eventPoint;
+                originalTransform.setTransform(transform);
+                addMouseMotionListener(this);
                 // select position by coordinates (CAUTION: if multiple are in range, the last wins!)
-                for (Entry<PuertoPosition, Point2D> e : coordinates.entrySet()) {
-                    Point2D pp = e.getValue();
-                    if (pp.getX() + WIDTH > mp.getX() && pp.getX() - WIDTH < mp.getX() && pp.getY() + WIDTH > mp.getY()
-                            && pp.getY() - WIDTH < mp.getY()) {
-                        selectedPosition = e.getKey();
-                        moveDiffX = mp.getX() - pp.getX();
-                        moveDiffY = mp.getY() - pp.getY();
+                for (PuertoPosition p : placementModel.getAllPositions()) {
+                    Point2D coord = placementModel.getCoord(p);
+                    if (coord.getX() + WIDTH > mp.getX() && coord.getX() - WIDTH < mp.getX()
+                            && coord.getY() + WIDTH > mp.getY()
+                            && coord.getY() - WIDTH < mp.getY()) {
+                        selectedPosition = p;
+                        moveDiffX = mp.getX() - coord.getX();
+                        moveDiffY = mp.getY() - coord.getY();
                     }
                 }
             }
@@ -82,33 +93,51 @@ public class FigureMapScreen extends JComponent {
             public void mouseReleased(MouseEvent e) {
                 // reset on double click
                 if (e.getClickCount() == 2) {
-                    transform = new AffineTransform();
+                    transform = new AffineTransform(INITIAL_TRANSFORM);
                     selectedPosition = null;
+                    setScaledWidth(WIDTH);
                     paintImmediately(-50000, -50000, 100000, 100000);
                     return;
                 }
                 // only if one was selected
                 if (selectedPosition != null) {
                     // set new coordinates of position
-                    Point mp = e.getPoint();
-                    Point2D ptDst = inverseTransform(mp);
-                    Point2D ptCorrectedDst = new Point2D.Double(ptDst.getX() - moveDiffX, ptDst.getY() - moveDiffY);
-                    coordinates.put(selectedPosition, ptCorrectedDst);
+                    movePosition(e.getPoint());
                     selectedPosition = null;
-                    paintImmediately(-50000, -50000, 100000, 100000);
                 } else {
-                    Point2D ptOrig = inverseTransform(originalPoint);
-                    double oldX = ptOrig.getX();
-                    double oldY = ptOrig.getY();
-                    Point mp = e.getPoint();
-                    Point2D ptNew = inverseTransform(mp);
-                    double newX = ptNew.getX();
-                    double newY = ptNew.getY();
-                    double dX = newX - oldX;
-                    double dY = newY - oldY;
-                    transform.translate(dX, dY);
-                    paintImmediately(-50000, -50000, 100000, 100000);
+                    moveTransform(e.getPoint());
                 }
+                removeMouseMotionListener(this);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (selectedPosition != null) {
+                    movePosition(e.getPoint());
+                } else {
+                    moveTransform(e.getPoint());
+                }
+            }
+
+            private void movePosition(Point mousePoint) {
+                Point2D ptDst = inverseTransform(mousePoint);
+                Point2D ptCorrectedDst = new Point2D.Double(ptDst.getX() - moveDiffX, ptDst.getY() - moveDiffY);
+                placementModel.setCoord(selectedPosition, ptCorrectedDst);
+                paintImmediately(-50000, -50000, 100000, 100000);
+            }
+
+            private void moveTransform(Point mousePoint) {
+                Point2D ptOrig = inverseTransform(originalPoint);
+                double oldX = ptOrig.getX();
+                double oldY = ptOrig.getY();
+                Point2D ptNew = inverseTransform(mousePoint);
+                double newX = ptNew.getX();
+                double newY = ptNew.getY();
+                double dX = newX - oldX;
+                double dY = newY - oldY;
+                transform.setTransform(originalTransform);
+                transform.translate(dX, dY);
+                paintImmediately(-50000, -50000, 100000, 100000);
             }
 
             private Point2D inverseTransform(Point src) {
@@ -126,7 +155,7 @@ public class FigureMapScreen extends JComponent {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
                 int clicks = e.getWheelRotation();
-                double scale = clicks < 0 ? -2 * clicks : 0.5 / clicks;
+                double scale = clicks < 0 ? -SCALE_STEP * clicks : 1.0 / SCALE_STEP / clicks;
                 Point mp = e.getPoint();
                 Point2D ptFocus = inverseTransform(mp);
                 // first, transform mouse location into center
@@ -134,32 +163,76 @@ public class FigureMapScreen extends JComponent {
                 // then, scale
                 transform.scale(scale, scale);
                 // last, transform center back into mouse location
-                double afterScale = scale > 1.0 ? scale / 2.0 : scale * 2.0;
+                double afterScale = scale > 1.0 ? scale / SCALE_STEP : scale * SCALE_STEP;
                 transform.translate(-ptFocus.getX() * afterScale, -ptFocus.getY() * afterScale);
+
+                // update scaledWidth for caching position images and clear cache
+                if (clicks > 0)
+                    setScaledWidth(scaledWidth / SCALE_STEP);
+                else
+                    setScaledWidth(scaledWidth * SCALE_STEP);
 
                 paintImmediately(-50000, -50000, 100000, 100000);
             }
         };
         addMouseWheelListener(mouseAdapter);
         addMouseListener(mouseAdapter);
+
+        figureModel.addViewSetListener(new ViewSetListener() {
+            @Override
+            public void update(ChangeType type, List<Figure> changed) {
+                switch (type) {
+                case ADDED:
+                    for (Figure f : changed)
+                        placementModel.addFigure(f);
+                    break;
+                case REMOVED:
+                    for (Figure f : changed)
+                        placementModel.removeFigure(f);
+                    break;
+                }
+                if (isVisible())
+                    refreshData();
+            }
+        });
+
+        placementModel.addPlacementChangeListener(new PlacementModel.PlacementChangeListener() {
+            @Override
+            public void update() {
+                repaint();
+            }
+        });
+    }
+
+    private void setScaledWidth(double scaledWidth) {
+        this.scaledWidth = scaledWidth;
+        positionImages.clear();
     }
 
     public void refreshData() {
-        Collection<Figure> allFigures = figureModel.getViewSet();
-        coordinates = new HashMap<PuertoPosition, Point2D>();
-        colors = new HashMap<Figure, Color>();
+        selectedFigures = figureModel.getViewSet();
 
-        // set random coordinates for all positions
-        //PlacementStrategy strategy = new RandomPlacement(getWidth(), getHeight(), 25);
-        //PlacementStrategy strategy = new GraphBasedPlacement(getWidth(), getHeight(), 25);
-        PlacementStrategy strategy = new JungLayoutPlacement(getSize());
-        strategy.assignCoordinates(allFigures, coordinates);
+        placementModel.stopRelax();
+        placementModel.recalculate(LAYOUT_SIZE);
 
-        // set a color for each figure
-        Random rand = new Random(1);
-        for (Figure f : allFigures) {
-            colors.put(f, new Color(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256)));
+        placementModel.startRelax();
+    }
+
+    private BufferedImage getPositionImage(PuertoPosition p) {
+        PositionPainter pp = new PositionPainter();
+        pp.setBaseOffset(PuertoOffset.getInitialOffset());
+        pp.setOffset(PuertoOffset.getInitialOffset());
+
+        if (!positionImages.containsKey(p)) {
+            BufferedImage image = new BufferedImage((int) (2 * scaledWidth), (int) (2 * scaledWidth),
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            pp.setPosition(p);
+            pp.paintCompactPosition(g, 0, 0, (int) (2 * scaledWidth), (int) (2 * scaledWidth));
+            g.dispose();
+            positionImages.put(p, image);
         }
+        return positionImages.get(p);
     }
 
     /**
@@ -167,6 +240,10 @@ public class FigureMapScreen extends JComponent {
      */
     @Override
     protected void paintComponent(Graphics g) {
+        long startTime = System.nanoTime();
+        // TODO this should not be needed to preserve the background color
+        System.out.println("Background color: " + ((Graphics2D) g).getBackground());
+        ((Graphics2D) g).setBackground(new Color(21, 21, 21));
         // draw background
         g.clearRect(0, 0, getWidth(), getHeight());
 
@@ -182,29 +259,43 @@ public class FigureMapScreen extends JComponent {
         pp.setBaseOffset(PuertoOffset.getInitialOffset());
         pp.setOffset(PuertoOffset.getInitialOffset());
 
-        for (Map.Entry<PuertoPosition, Point2D> e : coordinates.entrySet()) {
-            pp.setPosition(e.getKey());
-            Point2D p = e.getValue();
-            pp.paintCompactPosition((Graphics2D) g, (int) (p.getX() - WIDTH), (int) (p.getY() - WIDTH),
-                    (int) (2 * WIDTH),
-                    (int) (2 * WIDTH));
+        for (PuertoPosition p : placementModel.getAllPositions()) {
+            Point2D pt = placementModel.getCoord(p);
+            // TODO was too pixely: maybe this would have a chance, if recreated for each zoom level (only generating those visible, especially important for extreme zoom levels)
+            int x = (int) (pt.getX() - WIDTH);
+            int y = (int) (pt.getY() - WIDTH);
+            int w = (int) (2 * WIDTH);
+            if (g.getClipBounds().intersects(x, y, w, w)) {
+                if (scaledWidth < 200) {
+                    BufferedImage image = getPositionImage(p);
+                    g.drawImage(image, x, y, w,
+                            w, null);
+                } else {
+                    pp.setPosition(p);
+                    pp.paintCompactPosition((Graphics2D) g, x, y, w, w);
+                }
+            }
         }
 
-        // 2) draw all figures as connections
-        for (Map.Entry<Figure, Color> e : colors.entrySet()) {
-            g.setColor(e.getValue());
-            List<PuertoPosition> positions = e.getKey().getPositions();
+        // 2) draw figures as connections
+        for (Figure f : selectedFigures) {
+            g.setColor(f.getColor());
+            List<PuertoPosition> positions = f.getPositions();
             Point2D previous = null;
             Point2D from = null;
-            Point2D to = positions.size() > 0 ? coordinates.get(positions.get(0)) : null;
-            Point2D next = positions.size() > 1 ? coordinates.get(positions.get(1)) : null;
+            Point2D to = positions.size() > 0 ? placementModel.getCoord(positions.get(0)) : null;
+            Point2D next = positions.size() > 1 ? placementModel.getCoord(positions.get(1)) : null;
             for (int i = 1; i < positions.size(); i++) {
                 previous = from;
                 from = to;
                 to = next;
-                next = positions.size() > i + 1 ? coordinates.get(positions.get(i + 1)) : null;
+                next = positions.size() > i + 1 ? placementModel.getCoord(positions.get(i + 1)) : null;
                 connectionDrawer.draw((Graphics2D) g, previous, from, to, next);
             }
         }
+        long endTime = System.nanoTime();
+        System.out.println("total time rendering figure map screen (w=" + scaledWidth + "): " + (endTime - startTime)
+                / 1000000.0 + "ms");
+
     }
 }

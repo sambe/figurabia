@@ -4,10 +4,12 @@
  */
 package figurabia.io;
 
+import java.awt.Color;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import com.thoughtworks.xstream.XStream;
@@ -23,6 +25,7 @@ import figurabia.io.workspace.Workspace;
 public class FigureStore extends XStreamStore<Figure> {
 
     private Set<Figure> activeFigures = new HashSet<Figure>();
+    private Random rand;
 
     public FigureStore(Workspace workspace, String basePath) {
         super(createXStream(), workspace, basePath, Figure.class);
@@ -109,6 +112,14 @@ public class FigureStore extends XStreamStore<Figure> {
                 e.setInitialPosition(positions.get(i));
                 e.setFinalPosition(positions.get(i + 1));
             }
+        }
+
+        // TODO remove this again, once all figures have color saved
+        if (rand == null)
+            rand = new Random();
+        if (f.getColor() == null) {
+            f.setColor(new Color(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256)));
+            //update(f);
         }
     }
 }

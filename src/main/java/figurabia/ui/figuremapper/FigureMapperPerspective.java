@@ -13,10 +13,13 @@ import figurabia.ui.framework.Perspective;
 @SuppressWarnings("serial")
 public class FigureMapperPerspective extends JPanel implements Perspective {
 
-    FigureMapScreen mapScreen;
+    private FigureMapScreen mapScreen;
+
+    //private JungFigureMapScreen mapScreen;
 
     public FigureMapperPerspective(FigureModel fm) {
         mapScreen = new FigureMapScreen(fm);
+        //mapScreen = new JungFigureMapScreen(fm);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         add(mapScreen, "push");

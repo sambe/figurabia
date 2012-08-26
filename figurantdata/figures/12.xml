@@ -1,7 +1,13 @@
 <Figure>
   <id>12</id>
-  <rev>0</rev>
+  <rev>4</rev>
   <name>2: 03.03.09 (Harlin &amp; Patrizia)</name>
+  <color>
+    <red>239</red>
+    <green>124</green>
+    <blue>101</blue>
+    <alpha>255</alpha>
+  </color>
   <videoName>10-03.03.09.flv</videoName>
   <videoPositions>
     <long>2853424032</long>

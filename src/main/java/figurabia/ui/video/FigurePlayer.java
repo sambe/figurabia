@@ -75,7 +75,7 @@ public class FigurePlayer extends JPanel {
             }
         });
 
-        setBackground(Color.BLACK);
+        //setBackground(Color.BLACK);
         setOpaque(true);
 
         setLayout(new MigLayout("ins 0,gap 0", "[fill]", "[fill][22]"));

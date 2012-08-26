@@ -15,6 +15,10 @@ public class CurveConnectionDrawer implements ConnectionDrawer {
 
     private CubicCurve2D cubicCurve = new CubicCurve2D.Double();
 
+    private static final double ARROW_DEGREES = Math.PI / 8.0;
+    private static final double ARROW_RADIUS = 10;
+    private static final double ARROW_LENGTH = Math.cos(ARROW_DEGREES) * ARROW_RADIUS;
+
     @Override
     public void draw(Graphics2D g, Point2D previous, Point2D from, Point2D to, Point2D next) {
         // draw curve
@@ -30,10 +34,7 @@ public class CurveConnectionDrawer implements ConnectionDrawer {
         } else {
             cp2 = to;
         }
-        cubicCurve.setCurve(from, cp1, cp2, to);
-        g.draw(cubicCurve);
 
-        // draw small arrow
         Point2D ref;
         if (next != null) {
             ref = cp2;
@@ -41,14 +42,20 @@ public class CurveConnectionDrawer implements ConnectionDrawer {
             ref = cp1;
         }
         double targetAngle = GeometryUtil.getAngle(to, ref);
-        Point2D arrowCorner1 = GeometryUtil.pointOnCircle(to, 10, targetAngle - Math.PI / 8.0);
-        Point2D arrowCorner2 = GeometryUtil.pointOnCircle(to, 10, targetAngle + Math.PI / 8.0);
+        // draw small arrow
+        Point2D arrowCorner1 = GeometryUtil.pointOnCircle(to, ARROW_RADIUS, targetAngle - ARROW_DEGREES);
+        Point2D arrowCorner2 = GeometryUtil.pointOnCircle(to, ARROW_RADIUS, targetAngle + ARROW_DEGREES);
         Path2D path = new Path2D.Double();
         path.moveTo(to.getX(), to.getY());
         path.lineTo(arrowCorner1.getX(), arrowCorner1.getY());
         path.lineTo(arrowCorner2.getX(), arrowCorner2.getY());
         path.closePath();
         g.fill(path);
+
+        Point2D modifiedTo = GeometryUtil.pointOnCircle(to, ARROW_LENGTH, targetAngle);
+        Point2D modifiedCp2 = GeometryUtil.pointOnCircle(cp2, ARROW_LENGTH, targetAngle);
+        cubicCurve.setCurve(from, cp1, modifiedCp2, modifiedTo);
+        g.draw(cubicCurve);
     }
 
     private Point2D getControlPoint(Point2D near, Point2D point, Point2D far, boolean isTo) {
@@ -74,7 +81,7 @@ public class CurveConnectionDrawer implements ConnectionDrawer {
         }
 
         // length = half of distance between points
-        double length = GeometryUtil.distance(point, near) / 2.0;
+        double length = (GeometryUtil.distance(point, near) - ARROW_LENGTH) / 2.0;
 
         return GeometryUtil.pointOnCircle(point, length, midAngle);
     }

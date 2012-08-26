@@ -4,6 +4,7 @@
  */
 package figurabia.domain;
 
+import java.awt.Color;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ public class Figure implements Serializable, Cloneable, Identifiable {
      * Name of this figure (optional)
      */
     private String name;
+    private Color color;
     private String videoName;
     /**
      * The video times where the positions start (in nanoseconds).
@@ -81,6 +83,20 @@ public class Figure implements Serializable, Cloneable, Identifiable {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * @return the color
+     */
+    public Color getColor() {
+        return color;
+    }
+
+    /**
+     * @param color the color to set
+     */
+    public void setColor(Color color) {
+        this.color = color;
     }
 
     /**
