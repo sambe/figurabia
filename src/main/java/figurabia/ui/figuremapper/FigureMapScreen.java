@@ -17,6 +17,7 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -28,6 +29,7 @@ import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
 import figurabia.framework.FigureModel;
+import figurabia.framework.FigurePositionListener;
 import figurabia.framework.ViewSetListener;
 import figurabia.ui.figuremapper.placement.JungPlacementModel;
 import figurabia.ui.figuremapper.placement.PlacementModel;
@@ -43,7 +45,8 @@ public class FigureMapScreen extends JComponent {
     private ConnectionDrawer connectionDrawer;
 
     private PlacementModel placementModel;
-    private Collection<Figure> selectedFigures;
+    private Collection<Figure> selectedFigures = Collections.emptySet();
+    private boolean selectedFiguresChanged;
 
     private PuertoPosition selectedPosition;
     private double moveDiffX, moveDiffY;
@@ -185,10 +188,12 @@ public class FigureMapScreen extends JComponent {
                 case ADDED:
                     for (Figure f : changed)
                         placementModel.addFigure(f);
+                    selectedFiguresChanged = true;
                     break;
                 case REMOVED:
                     for (Figure f : changed)
                         placementModel.removeFigure(f);
+                    selectedFiguresChanged = true;
                     break;
                 }
                 if (isVisible())
@@ -202,6 +207,13 @@ public class FigureMapScreen extends JComponent {
                 repaint();
             }
         });
+
+        figureModel.addFigurePositionListener(new FigurePositionListener() {
+            @Override
+            public void update(Figure f, int position) {
+                repaint();
+            }
+        });
     }
 
     private void setScaledWidth(double scaledWidth) {
@@ -210,12 +222,15 @@ public class FigureMapScreen extends JComponent {
     }
 
     public void refreshData() {
-        selectedFigures = figureModel.getViewSet();
+        if (selectedFiguresChanged) {
+            selectedFiguresChanged = false;
+            selectedFigures = figureModel.getViewSet();
 
-        placementModel.stopRelax();
-        placementModel.recalculate(LAYOUT_SIZE);
+            placementModel.stopRelax();
+            placementModel.recalculate(LAYOUT_SIZE);
 
-        placementModel.startRelax();
+            placementModel.startRelax();
+        }
     }
 
     private BufferedImage getPositionImage(PuertoPosition p) {
@@ -241,7 +256,7 @@ public class FigureMapScreen extends JComponent {
     @Override
     protected void paintComponent(Graphics g) {
         long startTime = System.nanoTime();
-        // TODO this should not be needed to preserve the background color
+        // TODO this should not be needed to preserve the background color (but currently it is needed)
         System.out.println("Background color: " + ((Graphics2D) g).getBackground());
         ((Graphics2D) g).setBackground(new Color(21, 21, 21));
         // draw background
@@ -254,6 +269,14 @@ public class FigureMapScreen extends JComponent {
         // apply transform (user's view)
         g2d.transform(transform);
 
+        Figure selectedFigure = figureModel.getCurrentFigure();
+        PuertoPosition selectedPosition = PuertoPosition.getInitialPosition();
+        if (selectedFigure != null && selectedFigure.getPositions().size() != 0) {
+            int position = figureModel.getCurrentPosition();
+            if (position != -1)
+                selectedPosition = selectedFigure.getPositions().get(position);
+        }
+
         // 1) draw all positions
         PositionPainter pp = new PositionPainter();
         pp.setBaseOffset(PuertoOffset.getInitialOffset());
@@ -261,7 +284,6 @@ public class FigureMapScreen extends JComponent {
 
         for (PuertoPosition p : placementModel.getAllPositions()) {
             Point2D pt = placementModel.getCoord(p);
-            // TODO was too pixely: maybe this would have a chance, if recreated for each zoom level (only generating those visible, especially important for extreme zoom levels)
             int x = (int) (pt.getX() - WIDTH);
             int y = (int) (pt.getY() - WIDTH);
             int w = (int) (2 * WIDTH);
@@ -274,6 +296,10 @@ public class FigureMapScreen extends JComponent {
                     pp.setPosition(p);
                     pp.paintCompactPosition((Graphics2D) g, x, y, w, w);
                 }
+            }
+            if (p.equals(selectedPosition)) {
+                g.setColor(Color.LIGHT_GRAY);
+                g.drawRect(x - 1, y - 1, w + 2, w + 2);
             }
         }
 
