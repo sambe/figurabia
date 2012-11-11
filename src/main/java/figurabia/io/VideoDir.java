@@ -36,14 +36,7 @@ public class VideoDir {
      */
     public String addVideo(File localVideoFile) throws IOException {
         // generate md5/sha1 or the like of the file
-        String md5;
-        InputStream is = null;
-        try {
-            is = new FileInputStream(localVideoFile);
-            md5 = DigestUtils.md5Hex(is);
-        } finally {
-            IOUtils.closeQuietly(is);
-        }
+        String md5 = calculateMD5(localVideoFile);
 
         // look for existing video (if it exists just return that)
         VideoMetaData existingMetaData = metaDataStore.getByMD5(md5);
@@ -53,6 +46,18 @@ public class VideoDir {
             // otherwise copy it in (via stream to support client/server later on)
             return uploadVideo(localVideoFile, md5);
 
+    }
+
+    private String calculateMD5(File localVideoFile) throws IOException {
+        String md5;
+        InputStream is = null;
+        try {
+            is = new FileInputStream(localVideoFile);
+            md5 = DigestUtils.md5Hex(is);
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
+        return md5;
     }
 
     private String uploadVideo(File localVideoFile, String md5Sum) throws IOException {
@@ -85,12 +90,27 @@ public class VideoDir {
         workspace.finishedWriting(videoPath, true);
 
         // add an entry to metaDataStore
+        createAndStoreMetaData(videoId, localVideoFile, md5Sum);
+
+        return videoId;
+    }
+
+    public void createAndStoreMetaData(String videoId) throws IOException {
+        String path = "/vids/" + videoId;
+        try {
+            File localVideoFile = workspace.fileForReading(path);
+            String md5Sum = calculateMD5(localVideoFile);
+            createAndStoreMetaData(videoId, localVideoFile, md5Sum);
+        } finally {
+            workspace.finishedWriting(path, true);
+        }
+    }
+
+    private void createAndStoreMetaData(String videoId, File localVideoFile, String md5Sum) throws IOException {
         VideoMetaData md = new VideoMetaData();
         md.setId(videoId);
         md.setMd5Sum(md5Sum);
         md.setMediaInfo(MediaAnalyzer.analyze(localVideoFile));
         metaDataStore.createWithId(md);
-
-        return videoId;
     }
 }

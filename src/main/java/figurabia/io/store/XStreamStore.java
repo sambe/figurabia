@@ -141,6 +141,12 @@ public class XStreamStore<T extends Identifiable> extends AbstractStore<T> {
                     + currentRev);
     }
 
+    @Override
+    public boolean exists(String id) {
+        String path = idToPath(id);
+        return workspace.exists(path);
+    }
+
     private T load(String id) {
         String path = idToPath(id);
         Reader r = null;

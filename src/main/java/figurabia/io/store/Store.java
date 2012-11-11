@@ -65,6 +65,14 @@ public interface Store<T extends Identifiable> {
     void delete(T o);
 
     /**
+     * Return true if the object with the given ID exists, otherwise false.
+     * 
+     * @param id the ID to check
+     * @return true or false depending on whether the ID exists
+     */
+    boolean exists(String id);
+
+    /**
      * Adds a StoreListener.
      * 
      * @param l the listener

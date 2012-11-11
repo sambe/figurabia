@@ -95,6 +95,7 @@ public class ApplicationFrame extends JFrame {
         this.beatPictureCache = new BeatPictureCache(ws, "/pics");
         this.videoMetaDataStore = new VideoMetaDataStore(ws, "/vids/meta");
         this.videoDir = new VideoDir(ws, "/vids", videoMetaDataStore);
+        pregenerateMissingMetadata();
 
         this.figureCreationService = new FigureCreationService(ws, figureStore, videoDir, treeStore);
         this.figureUpdateService = new FigureUpdateService(ws, figureStore, treeStore, beatPictureCache);
@@ -235,6 +236,23 @@ public class ApplicationFrame extends JFrame {
         // select the new figure
         if (figure != null) {
             figureModel.setCurrentFigure(figure, -1);
+        }
+    }
+
+    private void pregenerateMissingMetadata() {
+        List<String> videoPaths = workspace.list("/vids");
+        for (String vp : videoPaths) {
+            String metadataId = vp.replace("/vids", "/vids/meta");
+            if (!videoMetaDataStore.exists(metadataId)) {
+                String videoId = vp.substring("/vids/".length());
+                System.out.println("Pregenerating metadata for video " + videoId);
+                try {
+                    videoDir.createAndStoreMetaData(videoId);
+                } catch (IOException e) {
+                    System.err.println("Exception while creating meta data for " + videoId);
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
