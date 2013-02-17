@@ -34,7 +34,8 @@ public class LocalFileWorkspace extends AbstractWorkspace {
             return Collections.emptyList();
         List<String> paths = new ArrayList<String>();
         for (File f : files) {
-            paths.add(fileToResPath(f));
+            if (f.isFile())
+                paths.add(fileToResPath(f));
         }
         return paths;
     }

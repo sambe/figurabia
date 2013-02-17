@@ -242,9 +242,8 @@ public class ApplicationFrame extends JFrame {
     private void pregenerateMissingMetadata() {
         List<String> videoPaths = workspace.list("/vids");
         for (String vp : videoPaths) {
-            String metadataId = vp.replace("/vids", "/vids/meta");
-            if (!videoMetaDataStore.exists(metadataId)) {
-                String videoId = vp.substring("/vids/".length());
+            String videoId = vp.substring("/vids/".length());
+            if (!videoMetaDataStore.exists(videoId)) {
                 System.out.println("Pregenerating metadata for video " + videoId);
                 try {
                     videoDir.createAndStoreMetaData(videoId);
