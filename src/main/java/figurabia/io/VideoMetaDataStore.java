@@ -46,6 +46,8 @@ public class VideoMetaDataStore extends XStreamStore<VideoMetaData> {
         XStream xstream = new XStream();
         xstream.alias("VideoMetaData", VideoMetaData.class);
         xstream.alias("MediaInfo", MediaInfo.class);
+        xstream.omitField(MediaInfo.class, "audioSamplesInfoBySamplesOffset");
+        xstream.omitField(MediaInfo.class, "videoPictureInfoDecompressed");
         return xstream;
     }
 
