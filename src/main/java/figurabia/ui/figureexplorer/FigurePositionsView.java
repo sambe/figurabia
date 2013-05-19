@@ -8,10 +8,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +29,8 @@ import javax.swing.event.ListSelectionListener;
 import net.miginfocom.swing.MigLayout;
 import figurabia.domain.Figure;
 import figurabia.io.BeatPictureCache;
+import figurabia.io.ProxyImage;
+import figurabia.io.ProxyImage.ImageUpdateListener;
 import figurabia.ui.FigurabiaBlackLookAndFeel;
 import figurabia.ui.util.JListSelectionFollower;
 
@@ -43,7 +44,7 @@ public class FigurePositionsView extends JPanel {
 
     private JList list;
     private JScrollPane scrollPane;
-    private List<Image> positionImages = Collections.emptyList();
+    private List<ProxyImage> positionImages = Collections.emptyList();
 
     private Figure figure;
     private int active = -1;
@@ -64,14 +65,14 @@ public class FigurePositionsView extends JPanel {
         }
     }
 
-    private ImageObserver imageObserver = new ImageObserver() {
+    private ImageUpdateListener imageUpdateListener = new ImageUpdateListener() {
         @Override
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-            if ((infoflags & ALLBITS) != 0) {
+        public void imageUpdated(ProxyImage img) {
+            int index = positionImages.indexOf(img);
+            Point p = list.indexToLocation(index);
+            // repaint if visible
+            if (p.y >= -160 && p.y <= list.getHeight())
                 repaint();
-                return false;
-            }
-            return true;
         }
     };
 
@@ -142,12 +143,26 @@ public class FigurePositionsView extends JPanel {
         }
 
         // load pictures
-        positionImages = new ArrayList<Image>();
+        unregisterImageListeners(positionImages);
+        positionImages = new ArrayList<ProxyImage>();
         for (int i = 0; i < n; i++) {
             positionImages.add(beatPictureCache.getPicture(figure.getId(), i / 2 + 1, (i % 2) * 4 + 1));
         }
+        registerImageListeners(positionImages);
 
         System.out.println("DEBUG: updated figure");
+    }
+
+    private void registerImageListeners(List<ProxyImage> images) {
+        for (ProxyImage img : images) {
+            img.addImageUpdateListener(imageUpdateListener);
+        }
+    }
+
+    private void unregisterImageListeners(List<ProxyImage> images) {
+        for (ProxyImage img : images) {
+            img.removeImageUpdateListener(imageUpdateListener);
+        }
     }
 
     private class FigurePositionsViewCellRenderer extends JComponent implements ListCellRenderer {
@@ -194,8 +209,8 @@ public class FigurePositionsView extends JPanel {
             g.fillRect(0, 0, getWidth(), getHeight());
 
             // draw picture
-            Image image = positionImages.get(index);
-            g.drawImage(image, 0, 0, 80, 60, imageObserver);
+            ProxyImage image = positionImages.get(index);
+            image.draw(g, 0, 0, 80, 60);
             if (selected) {
                 g.setColor(new Color(255, 255, 255, 63));
                 g.fillRect(0, 0, 80, 60);

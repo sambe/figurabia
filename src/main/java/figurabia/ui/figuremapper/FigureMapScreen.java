@@ -288,11 +288,15 @@ public class FigureMapScreen extends JComponent {
             int y = (int) (pt.getY() - WIDTH);
             int w = (int) (2 * WIDTH);
             if (g.getClipBounds().intersects(x, y, w, w)) {
-                if (scaledWidth < 200) {
+                if (scaledWidth < 1) {
+                    // skip (to avoid exception, because too small)
+                } else if (scaledWidth < 200) {
+                    // prerender positions up to a certain size
                     BufferedImage image = getPositionImage(p);
                     g.drawImage(image, x, y, w,
                             w, null);
                 } else {
+                    // for larger sizes, render the real position (usually just one visible anyway, at this zoom level)
                     pp.setPosition(p);
                     pp.paintCompactPosition((Graphics2D) g, x, y, w, w);
                 }

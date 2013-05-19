@@ -9,10 +9,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +26,8 @@ import figurabia.framework.FigureModel;
 import figurabia.framework.ViewSetListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
+import figurabia.io.ProxyImage;
+import figurabia.io.ProxyImage.ImageUpdateListener;
 import figurabia.service.FiguresByPositionService;
 import figurabia.service.FiguresByPositionService.Result;
 import figurabia.ui.positionviewer.PositionPainter;
@@ -95,8 +95,15 @@ public class PositionPossibilitiesView extends JPanel {
         // retrieve figures for position
         Map<Element, List<Result>> figures = service.retrieveFiguresByPosition(currentPosition);
 
-        // add a panel for each figure
+        // remove and dispose all previous panels (to cleanup listeners)
+        for (java.awt.Component c : getComponents()) {
+            if (c instanceof RelatedFiguresPanel) {
+                RelatedFiguresPanel p = (RelatedFiguresPanel) c;
+                p.dispose();
+            }
+        }
         removeAll();
+        // add a panel for each figure
         for (Element element : figures.keySet()) {
             List<Result> results = figures.get(element);
 
@@ -139,9 +146,7 @@ public class PositionPossibilitiesView extends JPanel {
         private final static int MAX_THUMBS = 8;
         private final static int MAX_WIDTH = (MAX_THUMBS + 1) * SQUARE_SIDE;
 
-        //private Element element; // caution: this is just one of the contained elements (currently name can vary between elements)
-        //private List<Result> figures;
-        private List<Image> thumbs;
+        private List<ProxyImage> thumbs;
         private PositionPainter painter;
         private JComponent positionPicture = new JComponent() {
             @Override
@@ -157,8 +162,6 @@ public class PositionPossibilitiesView extends JPanel {
                 figures = figures.subList(0, MAX_THUMBS);
                 // TODO make sure that first one is selected from every different figure present to prevent one figure from occupying all the spots
             }
-            //this.element = element;
-            //this.figures = figures;
 
             painter = new PositionPainter();
             painter.setPosition(element.getFinalPosition());
@@ -166,14 +169,15 @@ public class PositionPossibilitiesView extends JPanel {
             painter.setBaseOffset(currentOffset);
 
             // obtain thumbnails
-            thumbs = new ArrayList<Image>();
+            thumbs = new ArrayList<ProxyImage>();
             for (int i = 0; i < figures.size(); i++) {
                 int index = figures.get(i).index + 1;
-                Image image = beatPictureCache.getPicture(figures.get(i).figure.getId(), index / 2 + 1,
+                String pictureName = beatPictureCache.getPictureName(figures.get(i).figure.getId(), index / 2 + 1,
                         (index % 2) * 4 + 1);
-                Image thumb = image.getScaledInstance(SQUARE_SIDE * 4 / 3, SQUARE_SIDE, Image.SCALE_DEFAULT);
+                ProxyImage thumb = beatPictureCache.getScaledPicture(pictureName, SQUARE_SIDE * 4 / 3, SQUARE_SIDE);
                 thumbs.add(thumb);
             }
+            registerImageListeners(thumbs);
 
             setLayout(null);
             positionPicture.setBounds(0, 0, SQUARE_SIDE, SQUARE_SIDE);
@@ -210,11 +214,15 @@ public class PositionPossibilitiesView extends JPanel {
             setMaximumSize(dim);
         }
 
+        public void dispose() {
+            unregisterImageListeners(thumbs);
+        }
+
         private class FigureThumbnail extends JComponent {
 
-            private Image thumbnail;
+            private ProxyImage thumbnail;
 
-            public FigureThumbnail(Image thumbnail, String elementName) {
+            public FigureThumbnail(ProxyImage thumbnail, String elementName) {
                 this.thumbnail = thumbnail;
                 setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 setToolTipText(elementName);
@@ -222,19 +230,26 @@ public class PositionPossibilitiesView extends JPanel {
 
             @Override
             public void paint(Graphics g) {
-                g.drawImage(thumbnail, 0, 0, SQUARE_SIDE, SQUARE_SIDE, OFFSET, 0, OFFSET + SQUARE_SIDE, SQUARE_SIDE,
-                        imageObserver);
+                thumbnail.draw(g, 0, 0, SQUARE_SIDE, SQUARE_SIDE, OFFSET, 0, OFFSET + SQUARE_SIDE, SQUARE_SIDE);
             }
         }
 
-        private ImageObserver imageObserver = new ImageObserver() {
+        private void registerImageListeners(List<ProxyImage> images) {
+            for (ProxyImage img : images) {
+                img.addImageUpdateListener(imageUpdateListener);
+            }
+        }
+
+        private void unregisterImageListeners(List<ProxyImage> images) {
+            for (ProxyImage img : images) {
+                img.removeImageUpdateListener(imageUpdateListener);
+            }
+        }
+
+        private ImageUpdateListener imageUpdateListener = new ImageUpdateListener() {
             @Override
-            public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-                if ((infoflags & ALLBITS) != 0) {
-                    repaint();
-                    return false;
-                }
-                return true;
+            public void imageUpdated(ProxyImage img) {
+                repaint();
             }
         };
     }

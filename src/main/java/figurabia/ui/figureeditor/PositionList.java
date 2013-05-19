@@ -9,7 +9,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -18,7 +17,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -50,6 +48,8 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoPosition;
 import figurabia.io.BeatPictureCache;
+import figurabia.io.ProxyImage;
+import figurabia.io.ProxyImage.ImageUpdateListener;
 import figurabia.io.workspace.Workspace;
 import figurabia.ui.FigurabiaBlackLookAndFeel;
 import figurabia.ui.util.JListPopupMenu;
@@ -64,7 +64,7 @@ public class PositionList extends JPanel {
     private JList list;
 
     private Figure figure;
-    private List<Image> positionImages;
+    private List<ProxyImage> positionImages = new ArrayList<ProxyImage>();
     private Set<String> elementNames;
 
     private JMenuItem deletePosition;
@@ -72,6 +72,7 @@ public class PositionList extends JPanel {
 
     private static final Color BACKGROUND_COLOR;
     private static final Color FOREGROUND_COLOR;
+
     static {
         if (UIManager.getLookAndFeel() instanceof FigurabiaBlackLookAndFeel) {
             BACKGROUND_COLOR = new Color(31, 31, 31);
@@ -81,6 +82,20 @@ public class PositionList extends JPanel {
             FOREGROUND_COLOR = Color.DARK_GRAY;
         }
     }
+
+    private ImageUpdateListener imageUpdateListener = new ImageUpdateListener() {
+        @Override
+        public void imageUpdated(ProxyImage img) {
+            int index = positionImages.indexOf(img);
+            Point p = list.indexToLocation(index);
+            Rectangle imageRect = new Rectangle(p.x, p.y, 160, 160);
+            Rectangle visibleRect = list.getVisibleRect();
+            // repaint if visible
+            if (imageRect.intersects(visibleRect)) {
+                list.repaint(imageRect);
+            }
+        }
+    };
 
     public PositionList(Workspace ws, BeatPictureCache bpc, Set<String> elementNames) {
         this.workspace = ws;
@@ -265,16 +280,17 @@ public class PositionList extends JPanel {
         }
     }
 
-    private ImageObserver imageObserver = new ImageObserver() {
-        @Override
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-            if ((infoflags & ALLBITS) != 0) {
-                repaint();
-                return false;
-            }
-            return true;
+    private void registerImageListeners(List<ProxyImage> images) {
+        for (ProxyImage img : images) {
+            img.addImageUpdateListener(imageUpdateListener);
         }
-    };
+    }
+
+    private void unregisterImageListeners(List<ProxyImage> images) {
+        for (ProxyImage img : images) {
+            img.removeImageUpdateListener(imageUpdateListener);
+        }
+    }
 
     private class PositionListCellRenderer extends JPanel implements ListCellRenderer {
 
@@ -317,8 +333,8 @@ public class PositionList extends JPanel {
             g.fillRect(0, 0, getWidth(), getHeight());
 
             // draw picture
-            Image image = positionImages.get(index);
-            g.drawImage(image, 0, 0, 160, 120, imageObserver);
+            ProxyImage image = positionImages.get(index);
+            image.draw(g, 0, 0, 160, 120);
             if (selected) {
                 g.setColor(new Color(255, 255, 255, 63));
                 g.fillRect(0, 0, 160, 120);
@@ -351,26 +367,35 @@ public class PositionList extends JPanel {
         // fill list with index values
         int n = figure.getVideoPositions().size();
         DefaultListModel model = (DefaultListModel) list.getModel();
-        model.removeAllElements();
+        model.clear();
         for (int i = 0; i < n; i++) {
             model.addElement(i);
         }
 
         // load pictures
-        positionImages = new ArrayList<Image>();
+        unregisterImageListeners(positionImages);
+        positionImages = new ArrayList<ProxyImage>();
         for (int i = 0; i < n; i++) {
             int bar = figure.getBarIds().get(i);
             int beat = figure.getPositions().get(i).getBeat();
             positionImages.add(beatPictureCache.getPicture(figure.getId(), bar, beat));
         }
+        registerImageListeners(positionImages);
         repaint();
     }
 
     public void updatePicture(int index) {
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
+
+        // get updated picture and update listeners
         beatPictureCache.removePictureFromCache(figure.getId(), bar, beat);
-        positionImages.set(index, beatPictureCache.getPicture(figure.getId(), bar, beat));
+        ProxyImage image = beatPictureCache.getPicture(figure.getId(), bar, beat);
+        positionImages.get(index).removeImageUpdateListener(imageUpdateListener);
+        image.addImageUpdateListener(imageUpdateListener);
+
+        // update picture and repaint
+        positionImages.set(index, image);
         repaint();
     }
 
