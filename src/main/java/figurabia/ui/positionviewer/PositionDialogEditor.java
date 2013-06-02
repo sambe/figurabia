@@ -23,7 +23,7 @@ import figurabia.domain.PuertoPosition;
 import figurabia.domain.PuertoPosition.ArmWrapped;
 import figurabia.domain.PuertoPosition.HandHeight;
 import figurabia.domain.PuertoPosition.HandJoint;
-import figurabia.ui.framework.PositionListener;
+import figurabia.ui.framework.PositionChangeListener;
 
 @SuppressWarnings("serial")
 public class PositionDialogEditor extends JPanel {
@@ -36,7 +36,9 @@ public class PositionDialogEditor extends JPanel {
 
     private JButton copyToNext;
 
-    private List<PositionListener> positionListeners = new ArrayList<PositionListener>();
+    private List<PositionChangeListener> positionListeners = new ArrayList<PositionChangeListener>();
+
+    private boolean inSetter = false;
 
     public PositionDialogEditor() {
         this(true);
@@ -70,11 +72,13 @@ public class PositionDialogEditor extends JPanel {
         }
 
         // propagate position listener events
-        positionViewer.addPositionListener(new PositionListener() {
+        positionViewer.addPositionChangeListener(new PositionChangeListener() {
             @Override
             public void positionActive(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
                 assignPosition(p);
-                updatePositionListeners(p, offset, offsetChange);
+                if (!inSetter) {
+                    updatePositionListeners(p, offset, offsetChange);
+                }
             }
         });
     }
@@ -218,8 +222,13 @@ public class PositionDialogEditor extends JPanel {
      */
     public void setPosition(PuertoPosition p) {
         if (!p.equals(positionViewer.getPosition())) {
-            p = updateEnabledState(p);
-            positionViewer.setPosition(p);
+            inSetter = true;
+            try {
+                p = updateEnabledState(p);
+                positionViewer.setPosition(p);
+            } finally {
+                inSetter = false;
+            }
         }
     }
 
@@ -249,7 +258,12 @@ public class PositionDialogEditor extends JPanel {
      * @param offset the offset (modifiable part of the offset)
      */
     public void setOffset(PuertoOffset offset) {
-        positionViewer.setOffset(offset);
+        inSetter = true;
+        try {
+            positionViewer.setOffset(offset);
+        } finally {
+            inSetter = false;
+        }
     }
 
     public PuertoOffset getOffset() {
@@ -491,16 +505,16 @@ public class PositionDialogEditor extends JPanel {
         copyToNext.setEnabled(b);
     }
 
-    public void addPositionListener(PositionListener l) {
+    public void addPositionChangeListener(PositionChangeListener l) {
         positionListeners.add(l);
     }
 
-    public void removePositionListener(PositionListener l) {
+    public void removePositionChangeListener(PositionChangeListener l) {
         positionListeners.remove(l);
     }
 
     protected void updatePositionListeners(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
-        for (PositionListener l : positionListeners) {
+        for (PositionChangeListener l : positionListeners) {
             try {
                 l.positionActive(p, offset, offsetChange);
             } catch (RuntimeException e) {
@@ -516,6 +530,11 @@ public class PositionDialogEditor extends JPanel {
     }
 
     public void finishCollectingUpdates() {
-        positionViewer.finishCollectingUpdates();
+        inSetter = true;
+        try {
+            positionViewer.finishCollectingUpdates();
+        } finally {
+            inSetter = false;
+        }
     }
 }

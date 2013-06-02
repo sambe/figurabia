@@ -8,5 +8,5 @@ import figurabia.domain.Figure;
 
 public interface PlayerListener {
 
-    void positionActive(Figure f, int position);
+    void update(Figure f, int index);
 }

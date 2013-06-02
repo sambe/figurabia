@@ -48,6 +48,7 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoPosition;
 import figurabia.io.BeatPictureCache;
+import figurabia.io.FigureStore;
 import figurabia.io.ProxyImage;
 import figurabia.io.ProxyImage.ImageUpdateListener;
 import figurabia.io.workspace.Workspace;
@@ -60,6 +61,7 @@ public class PositionList extends JPanel {
 
     private final Workspace workspace;
     private final BeatPictureCache beatPictureCache;
+    private final FigureStore figureStore;
 
     private JList list;
 
@@ -97,10 +99,11 @@ public class PositionList extends JPanel {
         }
     };
 
-    public PositionList(Workspace ws, BeatPictureCache bpc, Set<String> elementNames) {
+    public PositionList(Workspace ws, FigureStore fs, BeatPictureCache bpc, Set<String> elementNames) {
         this.workspace = ws;
         this.beatPictureCache = bpc;
         this.elementNames = elementNames;
+        this.figureStore = fs;
         list = new JList();
         list.setModel(new DefaultListModel());
         list.setCellRenderer(new PositionListCellRenderer());
@@ -182,7 +185,9 @@ public class PositionList extends JPanel {
                 PuertoPosition p = positions.get(selected);
                 int bar = barIds.get(selected);
                 String pictureName = beatPictureCache.getPictureName(figure.getId(), bar, p.getBeat());
-                workspace.delete("/pics" + pictureName);
+                String picturePath = "/pics" + pictureName;
+                if (workspace.exists(picturePath))
+                    workspace.delete(picturePath);
                 positions.remove(selected);
                 videoPositions.remove(selected);
                 barIds.remove(selected);
@@ -200,6 +205,7 @@ public class PositionList extends JPanel {
                     }
                 }
             }
+            figureStore.update(figure);
 
             updateList();
         }
@@ -381,21 +387,6 @@ public class PositionList extends JPanel {
             positionImages.add(beatPictureCache.getPicture(figure.getId(), bar, beat));
         }
         registerImageListeners(positionImages);
-        repaint();
-    }
-
-    public void updatePicture(int index) {
-        int bar = figure.getBarIds().get(index);
-        int beat = figure.getPositions().get(index).getBeat();
-
-        // get updated picture and update listeners
-        beatPictureCache.removePictureFromCache(figure.getId(), bar, beat);
-        ProxyImage image = beatPictureCache.getPicture(figure.getId(), bar, beat);
-        positionImages.get(index).removeImageUpdateListener(imageUpdateListener);
-        image.addImageUpdateListener(imageUpdateListener);
-
-        // update picture and repaint
-        positionImages.set(index, image);
         repaint();
     }
 

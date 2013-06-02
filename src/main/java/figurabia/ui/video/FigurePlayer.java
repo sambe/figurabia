@@ -7,22 +7,12 @@ package figurabia.ui.video;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
-
-import org.apache.commons.io.IOUtils;
-
 import exmoplay.access.VideoFormat;
 import exmoplay.engine.MediaPlayer;
 import exmoplay.engine.PositionListener;
@@ -31,17 +21,15 @@ import exmoplay.engine.messages.PositionUpdate;
 import exmoplay.engine.ui.ControlBar;
 import exmoplay.engine.ui.VideoScreen;
 import figurabia.domain.Figure;
-import figurabia.framework.FigureModel;
+import figurabia.framework.FigurabiaModel;
 import figurabia.io.BeatPictureCache;
-import figurabia.io.workspace.Workspace;
 import figurabia.ui.framework.PlayerListener;
 
 @SuppressWarnings("serial")
 public class FigurePlayer extends JPanel {
 
-    private final Workspace workspace;
     private final BeatPictureCache beatPictureCache;
-    private final FigureModel figureModel;
+    private final FigurabiaModel figurabiaModel;
 
     private MediaPlayer mediaPlayer;
     private VideoScreen videoScreen;
@@ -49,7 +37,7 @@ public class FigurePlayer extends JPanel {
 
     private List<PlayerListener> playerListeners = new ArrayList<PlayerListener>();
 
-    private int currentlyActivePosition = -1;
+    private int currentlyActiveIndex = -1;
 
     private boolean inSetter = false;
 
@@ -59,10 +47,9 @@ public class FigurePlayer extends JPanel {
 
     private long currentTime = 0;
 
-    public FigurePlayer(Workspace ws, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
-        this.workspace = ws;
+    public FigurePlayer(BeatPictureCache bpc, MediaPlayer player, FigurabiaModel fm) {
         this.beatPictureCache = bpc;
-        this.figureModel = fm;
+        this.figurabiaModel = fm;
 
         mediaPlayer = player;
         videoScreen = player.createScreen();
@@ -85,7 +72,7 @@ public class FigurePlayer extends JPanel {
 
     private void onPositionUpdate(long position) {
         lastUpdatedPosition = position;
-        Figure figure = figureModel.getCurrentFigure();
+        Figure figure = figurabiaModel.getCurrentFigure();
         //System.out.println("DEBUG: FigurePlayer " + this + " figure = " + figure);
         if (figure == null || figure.getPositions().size() == 0)
             return;
@@ -95,11 +82,11 @@ public class FigurePlayer extends JPanel {
             // find the newest position
             int newActive = findNearest(videoPos, currentTime);
             // only send notifier update if the currently active really changed or the view was just activated
-            if (currentlyActivePosition != newActive || !previouslyActive) {
+            if (currentlyActiveIndex != newActive || !previouslyActive) {
                 previouslyActive = true;
                 //System.out.println("DEBUG: new position: " + newActive + " (time = " + time + ")");
-                currentlyActivePosition = newActive;
-                notifyPlayerListeners(figure, currentlyActivePosition);
+                currentlyActiveIndex = newActive;
+                notifyPlayerListeners(figure, currentlyActiveIndex);
             }
         } else {
             if (previouslyActive == true) {
@@ -142,30 +129,30 @@ public class FigurePlayer extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
     }
 
-    public void setPosition(int i) {
-        boolean animated = currentlyActivePosition != -1 && Math.abs(i - currentlyActivePosition) == 1;
-        setPosition(i, animated);
+    public void setCurrentIndex(int i) {
+        boolean animated = currentlyActiveIndex != -1 && Math.abs(i - currentlyActiveIndex) == 1;
+        setCurrentIndex(i, animated);
     }
 
-    public void setPosition(int i, boolean animated) {
+    public void setCurrentIndex(int i, boolean animated) {
         if (inSetter) // prevent recursive setting of the position (would result in multiple times repositioning the video)
             return;
 
         // set media player to the correct position
-        Figure figure = figureModel.getCurrentFigure();
+        Figure figure = figurabiaModel.getCurrentFigure();
         long videoTime = figure.getVideoPositions().get(i);
         if (animated)
             setVideoTimeAnimated(videoTime);
         else
             setVideoTime(videoTime);
-        currentlyActivePosition = i;
+        currentlyActiveIndex = i;
 
         // explicit call still necessary because the normal timer will only notify the next change
         notifyPlayerListeners(figure, i);
     }
 
-    public int getPosition() {
-        return currentlyActivePosition;
+    public int getCurrentIndex() {
+        return currentlyActiveIndex;
     }
 
     public void addPlayerListener(PlayerListener l) {
@@ -180,7 +167,7 @@ public class FigurePlayer extends JPanel {
         inSetter = true;
         for (PlayerListener l : playerListeners) {
             try {
-                l.positionActive(f, position);
+                l.update(f, position);
             } catch (RuntimeException e) {
                 // catch exceptions here to avoid unnecessary effects
                 System.err.println("Exception from a PlayerListener. Figure: " + f + " position: " + position);
@@ -205,7 +192,7 @@ public class FigurePlayer extends JPanel {
     }
 
     public void setRepeatFigureOnly(boolean figureOnly) {
-        Figure f = figureModel.getCurrentFigure();
+        Figure f = figurabiaModel.getCurrentFigure();
         if (f == null)
             return;
         if (figureOnly) {
@@ -244,51 +231,19 @@ public class FigurePlayer extends JPanel {
     }
 
     public void captureCurrentImage(String figureId, int bar, int beat, long videoNanoseconds) {
-        String picturePath = beatPictureCache.getPicturePath(figureId, bar, beat);
-        OutputStream os = null;
-        boolean existed = workspace.exists(picturePath);
-        try {
-            os = workspace.write(picturePath);
-            captureImage(videoNanoseconds, os);
-        } finally {
-            IOUtils.closeQuietly(os);
-        }
-        workspace.finishedWriting(picturePath, !existed);
-    }
-
-    private void captureImage(long videoNanoseconds, OutputStream targetStream) {
         long mediaTime = videoNanoseconds / 1000000L;
         VideoFormat format = mediaPlayer.getVideoFormat();
         double frameRate = format.getFrameRate();
         long frameSeqNum = (long) Math.floor(mediaTime * frameRate / 1000);
         CachedFrame frame = mediaPlayer.getFrame(frameSeqNum);
-        if (frame.frame.isEndOfMedia()) {
-            System.out.println("ERROR: Capturing frame: end of media.");
-            return;
-        }
-        Image img = frame.frame.video.getImage();
-
-        // code for creating the image and storing it to disk
-        // maybe for this purpose: do not even save them, just reference
         try {
-            BufferedImage outImage = new BufferedImage(format.getSize().width, format.getSize().height,
-                    BufferedImage.TYPE_INT_RGB);
-            Graphics og = outImage.getGraphics();
-            og.drawImage(img, 0, 0, format.getSize().width, format.getSize().height, null);
-            // prepareImage(outImage,rheight,rheight, null);
-            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
-            ImageWriter writer = writers.next();
+            if (frame.frame.isEndOfMedia()) {
+                System.out.println("ERROR: Capturing frame: end of media.");
+                return;
+            }
+            Image image = frame.frame.video.getImage();
 
-            // Once an ImageWriter has been obtained, its destination must be set to an ImageOutputStream:
-            ImageOutputStream ios = ImageIO.createImageOutputStream(targetStream);
-            writer.setOutput(ios);
-
-            // Finally, the image may be written to the output stream:
-            writer.write(outImage);
-            ios.close();
-        } catch (IOException e) {
-            System.out.println("ERROR: An IO problem occured during saving of the picture");
-            e.printStackTrace();
+            beatPictureCache.storePicture(figureId, bar, beat, image);
         } finally {
             frame.recycle();
         }

@@ -33,13 +33,6 @@ public class ProxyImage {
         return img;
     }
 
-    //public final int width, height;
-
-    /*public ProxyImage(int width, int height) {
-        this.width = width;
-        this.height = height;
-    }*/
-
     public void update(Image img) {
         this.img = img;
         notifyListeners();
@@ -87,5 +80,11 @@ public class ProxyImage {
             });
         }
 
+    }
+
+    public void foreach(final ImageUpdateListener updateListener) {
+        if (img != null)
+            updateListener.imageUpdated(this);
+        addImageUpdateListener(updateListener);
     }
 }

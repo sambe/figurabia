@@ -28,7 +28,7 @@ import figurabia.domain.PuertoPosition.ArmWrapped;
 import figurabia.domain.PuertoPosition.HandJoint;
 import figurabia.domain.PuertoPosition.ManDir;
 import figurabia.domain.util.PositionMutator;
-import figurabia.ui.framework.PositionListener;
+import figurabia.ui.framework.PositionChangeListener;
 import figurabia.ui.positionviewer.PositionPainter.Selection;
 import figurabia.ui.util.SimplePanelFrame;
 
@@ -56,7 +56,7 @@ public class PositionViewer extends JComponent {
     private int hoverX = 0;
     private int hoverY = 0;
     private PositionPainter painter = new PositionPainter();
-    private List<PositionListener> positionListeners = new ArrayList<PositionListener>();
+    private List<PositionChangeListener> positionListeners = new ArrayList<PositionChangeListener>();
     private int suppressingUpdates = 0;
     private int suppressedUpdates = 0;
 
@@ -67,7 +67,7 @@ public class PositionViewer extends JComponent {
         setDoubleBuffered(true);
         setOpaque(true); // probably accelerates rendering
 
-        addPositionListener(new PositionListener() {
+        addPositionChangeListener(new PositionChangeListener() {
             @Override
             public void positionActive(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
                 paintAllImmediately();
@@ -343,11 +343,11 @@ public class PositionViewer extends JComponent {
         this.beatChangeable = beatChangeable;
     }
 
-    public void addPositionListener(PositionListener l) {
+    public void addPositionChangeListener(PositionChangeListener l) {
         positionListeners.add(l);
     }
 
-    public void removePositionListener(PositionListener l) {
+    public void removePositionChangeListener(PositionChangeListener l) {
         positionListeners.remove(l);
     }
 
@@ -361,7 +361,7 @@ public class PositionViewer extends JComponent {
             suppressedUpdates++;
             return;
         }
-        for (PositionListener l : positionListeners) {
+        for (PositionChangeListener l : positionListeners) {
             try {
                 l.positionActive(p, combinedOffset, offset);
             } catch (RuntimeException e) {

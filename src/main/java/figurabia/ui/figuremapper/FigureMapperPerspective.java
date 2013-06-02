@@ -7,7 +7,7 @@ package figurabia.ui.figuremapper;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
-import figurabia.framework.FigureModel;
+import figurabia.framework.FigurabiaModel;
 import figurabia.ui.framework.Perspective;
 
 @SuppressWarnings("serial")
@@ -17,7 +17,7 @@ public class FigureMapperPerspective extends JPanel implements Perspective {
 
     //private JungFigureMapScreen mapScreen;
 
-    public FigureMapperPerspective(FigureModel fm) {
+    public FigureMapperPerspective(FigurabiaModel fm) {
         mapScreen = new FigureMapScreen(fm);
         //mapScreen = new JungFigureMapScreen(fm);
 

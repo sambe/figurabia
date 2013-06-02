@@ -34,18 +34,18 @@ import edu.uci.ics.jung.visualization.control.ScalingGraphMousePlugin;
 import edu.uci.ics.jung.visualization.control.TranslatingGraphMousePlugin;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
+import figurabia.framework.FigurabiaModel;
 
 public class JungFigureMapScreen extends JPanel {
 
     private static final Color HIGHLIGHT_COLOR = new Color(255, 204, 0);
 
-    private FigureModel figureModel;
+    private FigurabiaModel figureModel;
     private Graph<PuertoPosition, Integer> graph;
     private Layout<PuertoPosition, Integer> layout;
     private VisualizationViewer<PuertoPosition, Integer> graphPanel;
 
-    public JungFigureMapScreen(FigureModel fm) {
+    public JungFigureMapScreen(FigurabiaModel fm) {
         figureModel = fm;
         graph = new SparseMultigraph<PuertoPosition, Integer>();
         buildGraph();

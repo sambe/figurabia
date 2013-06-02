@@ -16,37 +16,35 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.store.StoreListener;
-import figurabia.io.workspace.Workspace;
 import figurabia.ui.framework.PlayerListener;
 import figurabia.ui.video.FigurePlayer;
 
 @SuppressWarnings("serial")
 public class VideoPictureExtractor extends JPanel {
 
-    private final Workspace workspace;
     private final FigureStore figureStore;
     private final BeatPictureCache beatPictureCache;
-    private final FigureModel figureModel;
+    private final FigurabiaModel figurabiaModel;
 
     private FigurePlayer figurePlayer;
     private JButton new1Button;
     private JButton new5Button;
     private JButton correctButton;
 
-    public VideoPictureExtractor(Workspace ws, FigureStore fs, BeatPictureCache bpc, MediaPlayer player, FigureModel fm) {
-        this.workspace = ws;
+    public VideoPictureExtractor(FigureStore fs, BeatPictureCache bpc, MediaPlayer player,
+            FigurabiaModel fm) {
         this.figureStore = fs;
         this.beatPictureCache = bpc;
-        this.figureModel = fm;
+        this.figurabiaModel = fm;
 
         setLayout(new MigLayout("ins 0", "[][][]push[]", "[][]"));
 
-        figurePlayer = new FigurePlayer(workspace, beatPictureCache, player, fm);
+        figurePlayer = new FigurePlayer(beatPictureCache, player, fm);
         add(figurePlayer, "span 4,grow,push,wrap");
 
         new1Button = new JButton("New 1");
@@ -62,10 +60,12 @@ public class VideoPictureExtractor extends JPanel {
         add(correctButton, "");
 
         // when the user selects a different figure
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
             @Override
-            public void update(Figure figure, int position) {
-                updateButtonsEnabled(figure);
+            public void update(Figure figure, int position, boolean figureChanged) {
+                if (figureChanged) {
+                    updateButtonsEnabled(figure);
+                }
             }
         });
 
@@ -73,7 +73,7 @@ public class VideoPictureExtractor extends JPanel {
         figureStore.addStoreListener(new StoreListener<Figure>() {
             @Override
             public void update(StateChange change, Figure o) {
-                if (change == StateChange.UPDATED && o.equals(figureModel.getCurrentFigure()))
+                if (change == StateChange.UPDATED && o.equals(figurabiaModel.getCurrentFigure()))
                     updateButtonsEnabled(o);
             }
         });
@@ -81,7 +81,7 @@ public class VideoPictureExtractor extends JPanel {
 
     public void addNewPosition(int beat) {
         long videoTime = figurePlayer.getVideoNanoseconds();
-        Figure figure = figureModel.getCurrentFigure();
+        Figure figure = figurabiaModel.getCurrentFigure();
         // find position to insert
         List<Long> videoPositions = figure.getVideoPositions();
         int pos = videoPositions.size();
@@ -134,8 +134,8 @@ public class VideoPictureExtractor extends JPanel {
 
     public void correctSelectedPosition() {
         long time = figurePlayer.getVideoNanoseconds();
-        Figure figure = figureModel.getCurrentFigure();
-        int index = figurePlayer.getPosition();
+        Figure figure = figurabiaModel.getCurrentFigure();
+        int index = figurePlayer.getCurrentIndex();
         figure.getVideoPositions().set(index, time);
         int bar = figure.getBarIds().get(index);
         int beat = figure.getPositions().get(index).getBeat();
@@ -145,7 +145,7 @@ public class VideoPictureExtractor extends JPanel {
     }
 
     public void setPosition(int pos) {
-        figurePlayer.setPosition(pos);
+        figurePlayer.setCurrentIndex(pos);
     }
 
     private void updateButtonsEnabled(Figure figure) {

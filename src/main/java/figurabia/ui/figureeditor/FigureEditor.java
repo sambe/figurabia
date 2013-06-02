@@ -18,15 +18,15 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.workspace.Workspace;
 import figurabia.service.FigureCreationService;
 import figurabia.service.FigureUpdateService;
 import figurabia.ui.framework.PlayerListener;
-import figurabia.ui.framework.PositionListener;
+import figurabia.ui.framework.PositionChangeListener;
 import figurabia.ui.positionviewer.PositionDialogEditor;
 
 @SuppressWarnings("serial")
@@ -38,21 +38,21 @@ public class FigureEditor extends JPanel {
     private VideoPictureExtractor pictureExtractor;
     private PositionDialogEditor dialogEditor;
 
-    private FigureModel figureModel;
+    private FigurabiaModel figurabiaModel;
 
     private final FigureCreationService figureCreationService;
+    private final FigureStore figureStore;
 
-    private int selected = -1;
     private boolean inSetter = false;
-    private boolean inPositionChangedAfterListSelect = false;
 
     public FigureEditor(Workspace workspace, FigureStore fs, BeatPictureCache bpc, MediaPlayer player,
-            FigureModel fm, FigureCreationService fcs, FigureUpdateService fus) {
-        this.figureModel = fm;
+            FigurabiaModel fm, FigureCreationService fcs, FigureUpdateService fus) {
+        this.figurabiaModel = fm;
         this.figureCreationService = fcs;
+        this.figureStore = fs;
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
 
-        positionList = new PositionList(workspace, bpc, fus.createElementNames());
+        positionList = new PositionList(workspace, fs, bpc, fus.createElementNames());
         positionList.setAutoscrolls(true);
         add(positionList, "south,gap 0 1");
 
@@ -60,7 +60,7 @@ public class FigureEditor extends JPanel {
         centerPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
 
         //pictureView = new PositionPictureView(workspace);
-        pictureExtractor = new VideoPictureExtractor(workspace, fs, bpc, player, fm);
+        pictureExtractor = new VideoPictureExtractor(fs, bpc, player, fm);
         dialogEditor = new PositionDialogEditor();
         //centerPanel.add(pictureView, "push,gap 0 1 0 6");
         centerPanel.add(pictureExtractor, "push,gap 0 1 0 6");
@@ -68,61 +68,67 @@ public class FigureEditor extends JPanel {
 
         add(centerPanel, "push");
 
-        positionList.addListSelectionListener(new ListSelectionListener() {
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
             @Override
-            public void valueChanged(ListSelectionEvent e) {
-
-                // only process the final value change, not intermediate events
-                if (e.getValueIsAdjusting())
-                    return;
-
-                dialogEditor.startCollectingUpdates();
-
-                try {
-                    selected = positionList.getSelectedIndex();
-                    if (selected != -1) {
-                        //pictureView.setPosition(figure, selected);
-                        if (!inSetter)
-                            pictureExtractor.setPosition(selected);
-
+            public void update(Figure figure, int index, boolean figureChanged) {
+                if (figureChanged) {
+                    figureCreationService.prepareFigure(figure); // TODO move this to the appropriate place (creation)
+                    positionList.setFigure(figure);
+                }
+                positionList.setSelectedIndex(index);
+                if (index != -1) {
+                    dialogEditor.startCollectingUpdates();
+                    try {
                         // set offset & base offset
-                        Figure figure = figureModel.getCurrentFigure();
-                        if (selected == 0) {
+                        if (index == 0) {
                             dialogEditor.setOffset(figure.getBaseOffset());
                             dialogEditor.setBaseOffset(PuertoOffset.getInitialOffset());
                         } else {
-                            dialogEditor.setOffset(figure.getElements().get(selected - 1).getOffsetChange());
+                            dialogEditor.setOffset(figure.getElements().get(index - 1).getOffsetChange());
 
                             PuertoOffset baseOffset = figure.getBaseOffset();
-                            for (int i = 0; i < selected - 1; i++) {
+                            for (int i = 0; i < index - 1; i++) {
                                 baseOffset = baseOffset.addOffset(figure.getElements().get(i).getOffsetChange());
                             }
                             dialogEditor.setBaseOffset(baseOffset);
                         }
 
                         // set position
-                        dialogEditor.setPosition(figure.getPositions().get(selected));
-
-                        // enable/disable CopyToNext button
-                        dialogEditor.setCopyToNextEnabled(selected != figure.getPositions().size() - 1);
-                    } else {
-                        dialogEditor.setCopyToNextEnabled(false);
+                        PuertoPosition position = figure.getPositions().get(index);
+                        dialogEditor.setPosition(position);
+                    } finally {
+                        dialogEditor.finishCollectingUpdates();
                     }
-                } finally {
-                    inPositionChangedAfterListSelect = true;
-                    dialogEditor.finishCollectingUpdates();
-                    inPositionChangedAfterListSelect = false;
+
+                    // enable/disable CopyToNext button
+                    dialogEditor.setCopyToNextEnabled(index != figure.getPositions().size() - 1);
+                } else {
+                    dialogEditor.setCopyToNextEnabled(false);
                 }
             }
         });
 
-        dialogEditor.addPositionListener(new PositionListener() {
+        positionList.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                // only process the final value change, not intermediate events
+                if (e.getValueIsAdjusting())
+                    return;
+
+                int selected = positionList.getSelectedIndex();
+                if (selected != -1) {
+                    figurabiaModel.setCurrentFigureIndex(selected);
+                    if (!inSetter)
+                        pictureExtractor.setPosition(selected);
+                }
+            }
+        });
+
+        dialogEditor.addPositionChangeListener(new PositionChangeListener() {
             @Override
             public void positionActive(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
-                if (inPositionChangedAfterListSelect) // no real change, just changed the displayed position
-                    return;
                 // update position in figure
-                int index = positionList.getSelectedIndex();
+                int index = figurabiaModel.getCurrentFigureIndex();
                 setPositionInFigure(p, offsetChange, index);
             }
         });
@@ -131,30 +137,17 @@ public class FigureEditor extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final PuertoPosition p = dialogEditor.getPosition();
-                int index = positionList.getSelectedIndex();
+                int index = figurabiaModel.getCurrentFigureIndex();
                 // we set a neutral offset, because we don't want to reapply the offset of the position before
                 setPositionInFigure(p, PuertoOffset.getInitialOffset(), index + 1);
-                positionList.setSelectedIndex(index + 1);
+                figurabiaModel.setCurrentFigureIndex(index + 1);
             }
         });
 
         pictureExtractor.addPlayerListener(new PlayerListener() {
             @Override
-            public void positionActive(Figure f, int position) {
-                // the figure can only change when the perspective was switched (other than from outside i.e. the figure list)
-                if (figureModel.getCurrentFigure() != f) {
-                    figureModel.setCurrentFigure(f, position);
-                } else {
-                    setPositionIndex(position);
-                }
-            }
-        });
-
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
-            @Override
-            public void update(Figure figure, int position) {
-                figureCreationService.prepareFigure(figure); // TODO move this to the appropriate place (creation)
-                positionList.setFigure(figure);
+            public void update(Figure f, int index) {
+                figurabiaModel.setCurrentFigure(f, index);
             }
         });
 
@@ -180,14 +173,13 @@ public class FigureEditor extends JPanel {
                 if (positionList.getSelectedIndex() == -1)
                     return;
                 pictureExtractor.correctSelectedPosition();
-                // FIXME this should be updated indirectly via backend (listener on beatPictureCache)
-                positionList.updatePicture(positionList.getSelectedIndex());
             }
         });
     }
 
+    // FIXME needs call to FigureStore to persist, 
     private void setPositionInFigure(PuertoPosition position, PuertoOffset offset, int index) {
-        Figure f = figureModel.getCurrentFigure();
+        Figure f = figurabiaModel.getCurrentFigure();
         PuertoPosition previousP = f.getPositions().get(index);
         // be careful not to change the beat of the target position
         position = position.withBeat(previousP.getBeat());
@@ -205,12 +197,8 @@ public class FigureEditor extends JPanel {
         } else {
             f.setBaseOffset(offset);
         }
-    }
 
-    public void setPositionIndex(int i) {
-        inSetter = true;
-        positionList.setSelectedIndex(i);
-        inSetter = false;
+        figureStore.update(f);
     }
 
     public int getPositionIndex() {

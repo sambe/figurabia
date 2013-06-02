@@ -6,7 +6,7 @@ package figurabia.framework;
 
 import figurabia.domain.Figure;
 
-public interface FigurePositionListener {
+public interface FigureIndexListener {
 
-    void update(Figure f, int position);
+    void update(Figure f, int index, boolean figureChanged);
 }

@@ -34,8 +34,8 @@ import com.xuggle.ferry.JNIMemoryManager.MemoryModel;
 
 import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.FiguresTreeStore;
@@ -74,7 +74,7 @@ public class ApplicationFrame extends JFrame {
     private FigureEditPerspective editPerspective;
     private FigureExplorerPerspective explorerPerspective;
     private FigureMapperPerspective mapperPerspective;
-    private FigureModel figureModel;
+    private FigurabiaModel figurabiaModel;
 
     private JMenuBar appMenuBar;
     private JMenu fileMenu;
@@ -112,35 +112,37 @@ public class ApplicationFrame extends JFrame {
         contentPane.setLayout(cardLayout); //new MigLayout("", "[fill]", "[fill]")
 
         final MediaPlayer player = new MediaPlayer();
-        figureModel = new FigureModel();
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
+        figurabiaModel = new FigurabiaModel();
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
             @Override
-            public void update(Figure figure, int index) {
-                // set video of figure
-                String videoPath = "/vids/" + figure.getVideoName();
-                File videoFile = workspace.fileForReading(videoPath);
-                long initialPosition = 0;
-                if (index != -1) {
-                    initialPosition = figure.getVideoPositions().get(index) / 1000000L;
+            public void update(Figure figure, int index, boolean figureChanged) {
+                if (figureChanged) {
+                    // set video of figure
+                    String videoPath = "/vids/" + figure.getVideoName();
+                    File videoFile = workspace.fileForReading(videoPath);
+                    long initialPosition = 0;
+                    if (index != -1) {
+                        initialPosition = figure.getVideoPositions().get(index) / 1000000L;
+                    }
+                    VideoMetaData metaData = videoMetaDataStore.read(figure.getVideoName());
+                    player.openVideo(videoFile, metaData.getMediaInfo(), initialPosition);
                 }
-                VideoMetaData metaData = videoMetaDataStore.read(figure.getVideoName());
-                player.openVideo(videoFile, metaData.getMediaInfo(), initialPosition);
             }
         });
 
         // create and add FigureExplorerPerspective
-        explorerPerspective = new FigureExplorerPerspective(workspace, figureStore, beatPictureCache, player,
-                figureModel);
+        explorerPerspective = new FigureExplorerPerspective(figureStore, beatPictureCache, player,
+                figurabiaModel);
         contentPane.add(explorerPerspective, explorerPerspective.getPerspectiveId());
 
         // create and add FigureEditPerspective
         editPerspective = new FigureEditPerspective(workspace, figureStore, treeStore, beatPictureCache,
                 figureCreationService,
-                figureUpdateService, player, figureModel);
+                figureUpdateService, player, figurabiaModel);
         contentPane.add(editPerspective, editPerspective.getPerspectiveId());
 
         // create and add FigureMapperPerspective
-        mapperPerspective = new FigureMapperPerspective(figureModel);
+        mapperPerspective = new FigureMapperPerspective(figurabiaModel);
         contentPane.add(mapperPerspective, mapperPerspective.getPerspectiveId());
 
         // set up menu bar
@@ -235,7 +237,7 @@ public class ApplicationFrame extends JFrame {
 
         // select the new figure
         if (figure != null) {
-            figureModel.setCurrentFigure(figure, -1);
+            figurabiaModel.setCurrentFigure(figure, -1);
         }
     }
 

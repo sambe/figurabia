@@ -22,7 +22,7 @@ import figurabia.domain.Element;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
+import figurabia.framework.FigurabiaModel;
 import figurabia.framework.ViewSetListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
@@ -48,14 +48,14 @@ public class PositionPossibilitiesView extends JPanel {
 
     private List<FigureLinkActionListener> actionListeners = new ArrayList<FigureLinkActionListener>();
 
-    public PositionPossibilitiesView(FigureStore fs, BeatPictureCache bpc, final FigureModel figureModel) {
+    public PositionPossibilitiesView(FigureStore fs, BeatPictureCache bpc, final FigurabiaModel figurabiaModel) {
         figureStore = fs;
         beatPictureCache = bpc;
-        service = new FiguresByPositionService(figureModel);
-        figureModel.addViewSetListener(new ViewSetListener() {
+        service = new FiguresByPositionService(figurabiaModel);
+        figurabiaModel.addViewSetListener(new ViewSetListener() {
             @Override
             public void update(ChangeType type, List<Figure> changed) {
-                service.init(figureModel.getViewSet());
+                service.init(figurabiaModel.getViewSet());
                 refreshRelatedFigures();
             }
         });

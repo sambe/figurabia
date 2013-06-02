@@ -28,8 +28,8 @@ import edu.uci.ics.jung.algorithms.layout.KKLayout;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
 import figurabia.framework.ViewSetListener;
 import figurabia.ui.figuremapper.placement.JungPlacementModel;
 import figurabia.ui.figuremapper.placement.PlacementModel;
@@ -41,7 +41,7 @@ public class FigureMapScreen extends JComponent {
     private static final int WIDTH = 20;
     private static final double SCALE_STEP = 1.5;
 
-    private FigureModel figureModel;
+    private FigurabiaModel figurabiaModel;
     private ConnectionDrawer connectionDrawer;
 
     private PlacementModel placementModel;
@@ -62,8 +62,8 @@ public class FigureMapScreen extends JComponent {
     private Map<PuertoPosition, BufferedImage> positionImages = new WeakHashMap<PuertoPosition, BufferedImage>();
     double scaledWidth = WIDTH;
 
-    public FigureMapScreen(FigureModel fm) {
-        figureModel = fm;
+    public FigureMapScreen(FigurabiaModel fm) {
+        figurabiaModel = fm;
         //placementModel = new StrategyPlacementModel();
         placementModel = new JungPlacementModel(KKLayout.class, 2.0);
         placementModel.setInitial(800);
@@ -181,7 +181,7 @@ public class FigureMapScreen extends JComponent {
         addMouseWheelListener(mouseAdapter);
         addMouseListener(mouseAdapter);
 
-        figureModel.addViewSetListener(new ViewSetListener() {
+        figurabiaModel.addViewSetListener(new ViewSetListener() {
             @Override
             public void update(ChangeType type, List<Figure> changed) {
                 switch (type) {
@@ -208,9 +208,9 @@ public class FigureMapScreen extends JComponent {
             }
         });
 
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
             @Override
-            public void update(Figure f, int position) {
+            public void update(Figure f, int position, boolean figureChanged) {
                 repaint();
             }
         });
@@ -224,7 +224,7 @@ public class FigureMapScreen extends JComponent {
     public void refreshData() {
         if (selectedFiguresChanged) {
             selectedFiguresChanged = false;
-            selectedFigures = figureModel.getViewSet();
+            selectedFigures = figurabiaModel.getViewSet();
 
             placementModel.stopRelax();
             placementModel.recalculate(LAYOUT_SIZE);
@@ -269,10 +269,10 @@ public class FigureMapScreen extends JComponent {
         // apply transform (user's view)
         g2d.transform(transform);
 
-        Figure selectedFigure = figureModel.getCurrentFigure();
+        Figure selectedFigure = figurabiaModel.getCurrentFigure();
         PuertoPosition selectedPosition = PuertoPosition.getInitialPosition();
         if (selectedFigure != null && selectedFigure.getPositions().size() != 0) {
-            int position = figureModel.getCurrentPosition();
+            int position = figurabiaModel.getCurrentFigureIndex();
             if (position != -1)
                 selectedPosition = selectedFigure.getPositions().get(position);
         }

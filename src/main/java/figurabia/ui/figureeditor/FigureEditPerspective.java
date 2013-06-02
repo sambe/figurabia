@@ -15,8 +15,8 @@ import javax.swing.event.TreeSelectionListener;
 import net.miginfocom.swing.MigLayout;
 import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.FiguresTreeStore;
@@ -32,16 +32,16 @@ import figurabia.ui.util.SimplePanelFrame;
 @SuppressWarnings("serial")
 public class FigureEditPerspective extends JPanel implements Perspective {
 
-    private FigureModel figureModel;
+    private FigurabiaModel figurabiaModel;
     private FigureList figureList;
     private FigureEditor figureEditor;
 
     public FigureEditPerspective(Workspace workspace, FigureStore fs, FiguresTreeStore treeStore, BeatPictureCache bpc,
             FigureCreationService fcs, FigureUpdateService fus, MediaPlayer player,
-            FigureModel figureModel_) {
-        this.figureModel = figureModel_;
-        figureList = new FigureList(treeStore, fcs, fus, figureModel_);
-        figureEditor = new FigureEditor(workspace, fs, bpc, player, figureModel_, fcs, fus);
+            FigurabiaModel figurabiaModel_) {
+        this.figurabiaModel = figurabiaModel_;
+        figureList = new FigureList(treeStore, fcs, fus, figurabiaModel_);
+        figureEditor = new FigureEditor(workspace, fs, bpc, player, figurabiaModel_, fcs, fus);
 
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, figureList, figureEditor);
@@ -58,25 +58,21 @@ public class FigureEditPerspective extends JPanel implements Perspective {
                     int initialPosition = -1;
                     if (selectedFigure.getVideoPositions().size() > 0)
                         initialPosition = 0;
-                    figureModel.setCurrentFigure(selectedFigure, initialPosition);
+                    figurabiaModel.setCurrentFigure(selectedFigure, initialPosition);
                 }
             }
         });
 
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
             @Override
-            public void update(Figure figure, int position) {
-                figureList.setSelectedFigure(figure);
+            public void update(Figure figure, int position, boolean figureChanged) {
+                if (figureChanged) {
+                    figureList.setSelectedFigure(figure);
+                }
             }
         });
 
         setOpaque(true);
-    }
-
-    public void setFigure(Figure f, int i) {
-        figureList.setSelectedFigure(f);
-        if (i != -1)
-            figureEditor.setPositionIndex(i);
     }
 
     public Figure getFigure() {
@@ -111,7 +107,7 @@ public class FigureEditPerspective extends JPanel implements Perspective {
 
         FigureEditPerspective panel = new FigureEditPerspective(w, fs, fts, bpc, new FigureCreationService(w, fs,
                 videoDir,
-                fts), new FigureUpdateService(w, fs, fts, bpc), new MediaPlayer(), new FigureModel());
+                fts), new FigureUpdateService(w, fs, fts, bpc), new MediaPlayer(), new FigurabiaModel());
         final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
     }
 

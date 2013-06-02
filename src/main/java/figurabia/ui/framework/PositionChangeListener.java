@@ -12,7 +12,7 @@ import figurabia.domain.PuertoPosition;
  * 
  * @author Samuel Berner
  */
-public interface PositionListener {
+public interface PositionChangeListener {
 
     /**
      * Passes the newly active position

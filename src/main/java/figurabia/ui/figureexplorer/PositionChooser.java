@@ -12,7 +12,7 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.ui.framework.PositionListener;
+import figurabia.ui.framework.PositionChangeListener;
 import figurabia.ui.positionviewer.PositionDialogEditor;
 
 @SuppressWarnings("serial")
@@ -20,7 +20,7 @@ public class PositionChooser extends JPanel {
 
     private PositionDialogEditor editor;
 
-    private List<PositionListener> positionListeners = new ArrayList<PositionListener>();
+    private List<PositionChangeListener> positionListeners = new ArrayList<PositionChangeListener>();
 
     public PositionChooser() {
         editor = new PositionDialogEditor(false);
@@ -31,7 +31,7 @@ public class PositionChooser extends JPanel {
         add(editor);
 
         // propagate position listener events
-        editor.addPositionListener(new PositionListener() {
+        editor.addPositionChangeListener(new PositionChangeListener() {
             @Override
             public void positionActive(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
                 updatePositionListeners(p, offset, offsetChange);
@@ -51,16 +51,16 @@ public class PositionChooser extends JPanel {
         }
     }
 
-    public void addPositionListener(PositionListener l) {
+    public void addPositionListener(PositionChangeListener l) {
         positionListeners.add(l);
     }
 
-    public void removePositionListener(PositionListener l) {
+    public void removePositionListener(PositionChangeListener l) {
         positionListeners.remove(l);
     }
 
     protected void updatePositionListeners(PuertoPosition p, PuertoOffset offset, PuertoOffset offsetChange) {
-        for (PositionListener l : positionListeners) {
+        for (PositionChangeListener l : positionListeners) {
             try {
                 l.positionActive(p, offset, offsetChange);
             } catch (RuntimeException e) {

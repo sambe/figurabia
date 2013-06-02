@@ -18,8 +18,9 @@ import exmoplay.engine.MediaPlayer;
 import figurabia.domain.Figure;
 import figurabia.domain.PuertoOffset;
 import figurabia.domain.PuertoPosition;
-import figurabia.framework.FigureModel;
-import figurabia.framework.FigurePositionListener;
+import figurabia.framework.FigurabiaModel;
+import figurabia.framework.FigureIndexListener;
+import figurabia.framework.PositionListener;
 import figurabia.io.BeatPictureCache;
 import figurabia.io.FigureStore;
 import figurabia.io.workspace.LocalFileWorkspace;
@@ -27,26 +28,26 @@ import figurabia.io.workspace.Workspace;
 import figurabia.ui.figureexplorer.PositionPossibilitiesView.FigureLinkActionListener;
 import figurabia.ui.framework.Perspective;
 import figurabia.ui.framework.PlayerListener;
-import figurabia.ui.framework.PositionListener;
+import figurabia.ui.framework.PositionChangeListener;
 import figurabia.ui.util.SimplePanelFrame;
 import figurabia.ui.video.FigurePlayer;
 
 @SuppressWarnings("serial")
 public class FigureExplorerPerspective extends JPanel implements Perspective {
 
-    private FigureModel figureModel;
+    private FigurabiaModel figurabiaModel;
     private FigurePlayer player;
     private FigurePositionsView positionsView;
     private PositionChooser positionChooser;
     private PositionPossibilitiesView possibilitiesView;
 
-    public FigureExplorerPerspective(Workspace workspace, FigureStore fs, BeatPictureCache bpc,
-            MediaPlayer mediaPlayer, FigureModel fm) {
-        figureModel = fm;
-        player = new FigurePlayer(workspace, bpc, mediaPlayer, figureModel);
+    public FigureExplorerPerspective(FigureStore fs, BeatPictureCache bpc,
+            MediaPlayer mediaPlayer, FigurabiaModel fm) {
+        figurabiaModel = fm;
+        player = new FigurePlayer(bpc, mediaPlayer, figurabiaModel);
         positionsView = new FigurePositionsView(bpc);
         positionChooser = new PositionChooser();
-        possibilitiesView = new PositionPossibilitiesView(fs, bpc, figureModel);
+        possibilitiesView = new PositionPossibilitiesView(fs, bpc, figurabiaModel);
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
@@ -62,21 +63,32 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         setLayout(new MigLayout("ins 0", "[fill]", "[fill]"));
         add(splitPane, "push");
 
-        player.addPlayerListener(new PlayerListener() {
+        figurabiaModel.addPositionListener(new PositionListener() {
             @Override
-            public void positionActive(Figure f, int i) {
-                positionsView.setPosition(f, i);
-                if (i != -1) {
-                    PuertoPosition p = f.getPositions().get(i);
-                    positionChooser.setPosition(p, f.getCombinedOffset(i));
-                }
+            public void update(PuertoPosition position, PuertoOffset offset) {
+                positionChooser.setPosition(position, offset);
+                possibilitiesView.setPosition(position, offset);
             }
         });
 
-        positionChooser.addPositionListener(new PositionListener() {
+        figurabiaModel.addFigureIndexListener(new FigureIndexListener() {
+            @Override
+            public void update(Figure f, int position, boolean figureChanged) {
+                positionsView.setPosition(f, position);
+            }
+        });
+
+        player.addPlayerListener(new PlayerListener() {
+            @Override
+            public void update(Figure f, int i) {
+                figurabiaModel.setCurrentFigure(f, i);
+            }
+        });
+
+        positionChooser.addPositionListener(new PositionChangeListener() {
             @Override
             public void positionActive(PuertoPosition p, PuertoOffset combinedOffset, PuertoOffset offset) {
-                possibilitiesView.setPosition(p, combinedOffset);
+                figurabiaModel.setCurrentPosition(p, combinedOffset);
             }
         });
 
@@ -85,7 +97,7 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
             public void actionPerformed(ActionEvent e) {
                 int selected = positionsView.getSelectedIndex();
                 if (selected != -1) {
-                    player.setPosition(selected);
+                    player.setCurrentIndex(selected);
                 }
             }
         });
@@ -93,20 +105,13 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         possibilitiesView.addFigureLinkActionListener(new FigureLinkActionListener() {
             @Override
             public void linkActivated(Figure figure, int index) {
-                if (figure != figureModel.getCurrentFigure()) {
-                    figureModel.setCurrentFigure(figure, index);
+                if (figure != figurabiaModel.getCurrentFigure()) {
+                    figurabiaModel.setCurrentFigure(figure, index);
                     // TODO this is only a rough fix: setting the restricted position range
                     player.setRepeatFigureOnly(true);
                 } else {
-                    player.setPosition(index);
+                    player.setCurrentIndex(index);
                 }
-            }
-        });
-
-        figureModel.addFigurePositionListener(new FigurePositionListener() {
-            @Override
-            public void update(Figure f, int position) {
-                positionsView.setPosition(f, position);
             }
         });
 
@@ -122,7 +127,7 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         player.setActive(active);
         player.setRepeatFigureOnly(active);
         if (active) {
-            positionsView.setPosition(figureModel.getCurrentFigure(), figureModel.getCurrentPosition());
+            positionsView.setPosition(figurabiaModel.getCurrentFigure(), figurabiaModel.getCurrentFigureIndex());
         }
     }
 
@@ -142,8 +147,8 @@ public class FigureExplorerPerspective extends JPanel implements Perspective {
         FigureStore fs = new FigureStore(w, "/figures");
         BeatPictureCache bpc = new BeatPictureCache(w, "/pics");
 
-        FigureModel figureModel = new FigureModel();
-        FigureExplorerPerspective panel = new FigureExplorerPerspective(w, fs, bpc, new MediaPlayer(), figureModel);
+        FigurabiaModel figureModel = new FigurabiaModel();
+        FigureExplorerPerspective panel = new FigureExplorerPerspective(fs, bpc, new MediaPlayer(), figureModel);
         final SimplePanelFrame frame = new SimplePanelFrame(panel, 1000, 720);
     }
 }

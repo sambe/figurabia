@@ -10,12 +10,18 @@ import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutionException;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.SwingWorker;
+
+import org.apache.commons.io.IOUtils;
 
 import figurabia.io.ProxyImage.ImageUpdateListener;
 import figurabia.io.workspace.Workspace;
@@ -45,37 +51,46 @@ public class BeatPictureCache {
     private ProxyImage getPictureByName(final String name) {
         if (!imageCache.containsKey(name)) {
             imageCache.put(name, new ProxyImage(name));
-            SwingWorker<Image, Void> worker = new SwingWorker<Image, Void>() {
-                @Override
-                protected Image doInBackground() throws Exception {
-                    File file = workspace.fileForReading(basePath + "/" + name);
-                    Image image = ImageIO.read(file);
-                    return image;
-                }
-
-                /**
-                 * @see javax.swing.SwingWorker#done()
-                 */
-                @Override
-                protected void done() {
-                    if (getState() == StateValue.DONE) {
-                        try {
-                            Image image = get();
-                            ProxyImage proxy = imageCache.get(name);
-                            proxy.update(image);
-                        } catch (ExecutionException e) {
-                            System.err.println("Exception while loading image " + name + " in background.");
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            // ignore
-                        }
-                    }
-                }
-
-            };
-            worker.execute();
+            loadPicture(name);
         }
         return imageCache.get(name);
+    }
+
+    private void reloadPicture(final String name) {
+        if (imageCache.containsKey(name))
+            loadPicture(name);
+    }
+
+    private void loadPicture(final String name) {
+        SwingWorker<Image, Void> worker = new SwingWorker<Image, Void>() {
+            @Override
+            protected Image doInBackground() throws Exception {
+                File file = workspace.fileForReading(basePath + "/" + name);
+                Image image = ImageIO.read(file);
+                return image;
+            }
+
+            /**
+             * @see javax.swing.SwingWorker#done()
+             */
+            @Override
+            protected void done() {
+                if (getState() == StateValue.DONE) {
+                    try {
+                        Image image = get();
+                        ProxyImage proxy = imageCache.get(name);
+                        proxy.update(image);
+                    } catch (ExecutionException e) {
+                        System.err.println("Exception while loading image " + name + " in background.");
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                }
+            }
+
+        };
+        worker.execute();
     }
 
     public ProxyImage getScaledPicture(String name, final int width, final int height) {
@@ -84,7 +99,7 @@ public class BeatPictureCache {
             final ProxyImage scaledProxyImage = new ProxyImage(scaledName);
             imageCache.put(scaledName, scaledProxyImage);
             ProxyImage proxyImage = getPictureByName(name);
-            proxyImage.once(new ImageUpdateListener() {
+            proxyImage.foreach(new ImageUpdateListener() {
                 @Override
                 public void imageUpdated(final ProxyImage img) {
                     SwingWorker<Image, Void> worker = new SwingWorker<Image, Void>() {
@@ -117,6 +132,48 @@ public class BeatPictureCache {
             });
         }
         return imageCache.get(scaledName);
+    }
+
+    public void storePicture(String figureId, int bar, int beat, Image picture) {
+        String name = getPictureName(figureId, bar, beat);
+
+        // store
+        writePicture(name, picture);
+
+        // reload (causes update if already displayed somewhere, otherwise not loaded)
+        reloadPicture(name);
+    }
+
+    private void writePicture(String name, Image picture) {
+        String picturePath = basePath + name;
+        OutputStream os = null;
+        boolean existed = workspace.exists(picturePath);
+        try {
+            os = workspace.write(picturePath);
+            try {
+                BufferedImage outImage = new BufferedImage(picture.getWidth(null), picture.getHeight(null),
+                        BufferedImage.TYPE_INT_RGB);
+                Graphics og = outImage.getGraphics();
+                og.drawImage(picture, 0, 0, picture.getWidth(null), picture.getHeight(null), null);
+                Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
+                ImageWriter writer = writers.next();
+
+                // Once an ImageWriter has been obtained, its destination must be set to an ImageOutputStream:
+                ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+                writer.setOutput(ios);
+
+                // Finally, the image may be written to the output stream:
+                writer.write(outImage);
+                ios.close();
+            } catch (IOException e) {
+                System.out.println("ERROR: An IO problem occured during saving of the picture");
+                e.printStackTrace();
+            }
+        } finally {
+            IOUtils.closeQuietly(os);
+        }
+        workspace.finishedWriting(picturePath, !existed);
+
     }
 
     public void removePictureFromCache(String figureId, int bar, int beat) {

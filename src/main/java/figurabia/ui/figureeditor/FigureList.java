@@ -41,7 +41,7 @@ import javax.swing.tree.TreePath;
 import figurabia.domain.Figure;
 import figurabia.domain.TreeItem;
 import figurabia.domain.TreeItem.ItemType;
-import figurabia.framework.FigureModel;
+import figurabia.framework.FigurabiaModel;
 import figurabia.io.FiguresTreeStore;
 import figurabia.service.FigureCreationService;
 import figurabia.service.FigureUpdateService;
@@ -110,7 +110,7 @@ public class FigureList extends JPanel {
     }
 
     public FigureList(FiguresTreeStore fts, FigureCreationService fcs, FigureUpdateService fus,
-            final FigureModel figureModel) {
+            final FigurabiaModel figurabiaModel) {
         this.figuresTreeStore = fts;
         this.creationService = fcs;
         this.figureUpdateService = fus;
@@ -127,9 +127,9 @@ public class FigureList extends JPanel {
                 if (item != null) {
                     List<Figure> figures = figureUpdateService.getAllActiveFiguresInSubTree(item);
                     if (e.isCheckedPath())
-                        figureModel.addToViewSet(figures);
+                        figurabiaModel.addToViewSet(figures);
                     else
-                        figureModel.removeFromViewSet(figures);
+                        figurabiaModel.removeFromViewSet(figures);
                 }
             }
         });
